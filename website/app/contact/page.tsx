@@ -80,13 +80,45 @@ export default function ContactPage() {
         aria-hidden="true"
       >
         <input type="hidden" name="form-name" value="contact-inquiry" />
-        <input type="text" name="parent_name" />
-        <input type="email" name="email" />
-        <input type="tel" name="phone" />
-        <input type="text" name="student_grade" />
-        <textarea name="focus_area" />
-        <input type="text" name="preferred_time" />
-        <input type="text" name="inquiry_type" value="contact" />
+        <input
+          type="hidden"
+          name="subject"
+          data-remove-prefix
+          value="New inquiry from %{formName} on %{siteName} (%{submissionId})"
+        />
+        <label>
+          Parent or guardian name
+          <input type="text" name="parent_name" />
+        </label>
+        <label>
+          Email address
+          <input type="email" name="email" />
+        </label>
+        <label>
+          Phone number
+          <input type="tel" name="phone" />
+        </label>
+        <label>
+          Student grade level
+          <select name="student_grade">
+            <option value="">Select grade range</option>
+            <option value="K-2">Kindergarten – Grade 2</option>
+            <option value="3-5">Grades 3 – 5</option>
+            <option value="6-8">Grades 6 – 8</option>
+          </select>
+        </label>
+        <label>
+          Focus area
+          <textarea name="focus_area" />
+        </label>
+        <label>
+          Preferred consultation time
+          <input type="text" name="preferred_time" />
+        </label>
+        <label>
+          Inquiry type
+          <input type="text" name="inquiry_type" value="contact" />
+        </label>
         <input type="text" name="bot-field" />
       </form>
       <script
