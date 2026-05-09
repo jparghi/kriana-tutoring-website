@@ -10,5 +10,3 @@
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
-  [plugins.inputs]
-    appDir = "website"
