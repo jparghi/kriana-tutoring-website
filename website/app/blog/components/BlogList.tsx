@@ -16,6 +16,8 @@ export function BlogList({ posts }: BlogListProps) {
           category={post.category}
           date={post.date}
           excerpt={post.excerpt}
+          image={post.image}
+          imageAlt={post.imageAlt}
         />
       ))}
     </div>

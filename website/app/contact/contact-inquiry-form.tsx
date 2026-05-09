@@ -1,12 +1,62 @@
+"use client";
+
+import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
+
+function encodeForm(values: Record<string, string>) {
+  return new URLSearchParams(values).toString();
+}
+
 export function ContactInquiryForm() {
+  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSubmitError(null);
+    setIsSubmitting(true);
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const values = Array.from(formData.entries()).reduce<Record<string, string>>(
+      (accumulator, [key, value]) => {
+        accumulator[key] = typeof value === "string" ? value : "";
+        return accumulator;
+      },
+      {}
+    );
+
+    try {
+      const response = await fetch("/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: encodeForm(values)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Submission failed with status ${response.status}`);
+      }
+
+      form.reset();
+      router.push("/contact/success");
+    } catch {
+      setSubmitError("We couldn't send your inquiry right now. Please try again in a moment.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <form
       name="contact-inquiry"
       method="POST"
-      action="/contact/success"
       data-netlify="true"
       netlify-honeypot="bot-field"
       className="order-1 rounded-3xl border border-slate-200 bg-white p-8 shadow-[0_24px_60px_rgba(15,23,42,0.12)] lg:order-2"
+      onSubmit={handleSubmit}
     >
       <input type="hidden" name="form-name" value="contact-inquiry" />
       <input
@@ -117,10 +167,12 @@ export function ContactInquiryForm() {
         <div className="space-y-3">
           <button
             type="submit"
-            className="w-full rounded-full bg-brand-rose px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-[0_18px_40px_rgba(244,63,94,0.35)] transition hover:-translate-y-0.5 hover:bg-brand-sky"
+            disabled={isSubmitting}
+            className="w-full rounded-full bg-brand-rose px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-[0_18px_40px_rgba(244,63,94,0.35)] transition hover:-translate-y-0.5 hover:bg-brand-sky disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0"
           >
-            Submit inquiry
+            {isSubmitting ? "Submitting..." : "Submit inquiry"}
           </button>
+          {submitError ? <p className="text-sm text-red-600">{submitError}</p> : null}
           <p className="text-xs leading-relaxed text-slate-500">
             By submitting this form you agree to our privacy policy and consent to be contacted by the Kriana Tutoring team. We respect your inbox and only send information relevant to your request.
           </p>

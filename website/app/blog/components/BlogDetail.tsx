@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { blogCategoryStyles, formatBlogDate, getRelatedBlogPosts } from "../data";
@@ -28,6 +29,19 @@ export function BlogDetail({ post }: BlogDetailProps) {
       </h1>
 
       <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">{post.excerpt}</p>
+
+      {post.image ? (
+        <div className="relative mt-8 aspect-[16/9] overflow-hidden rounded-[1.75rem] border border-slate-200 bg-slate-100">
+          <Image
+            src={post.image}
+            alt={post.imageAlt ?? post.title}
+            fill
+            className="object-cover"
+            sizes="(min-width: 1024px) 960px, 100vw"
+            priority
+          />
+        </div>
+      ) : null}
 
       <BlogContent content={post.content} />
 

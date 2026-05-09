@@ -24,6 +24,8 @@ export const blogPosts: BlogPost[] = [
     slug: "why-kids-struggle-with-math-and-how-to-fix-it-early",
     category: "Parent Tips",
     date: "2026-05-01",
+    image: "/images/blog/building-math-confidence.svg",
+    imageAlt: "Child building math confidence with hands-on tutoring support",
     excerpt:
       "Many children struggle with math not because they lack ability, but because they miss foundational concepts early on...",
     metaTitle: "Math Tutoring for Kids in Ottawa | Kriana Tutoring Blog",
@@ -55,6 +57,8 @@ export const blogPosts: BlogPost[] = [
     slug: "reading-routines-that-build-confidence-after-school",
     category: "Learning Strategies",
     date: "2026-04-21",
+    image: "/images/blog/reading-adventures-at-home.svg",
+    imageAlt: "Young learner enjoying a calm reading routine at home",
     excerpt:
       "Short, repeatable reading routines can reduce resistance, improve fluency, and help children end the day feeling successful instead of overwhelmed.",
     metaTitle: "Reading Help for Grade 1-3 | Kriana Tutoring Blog",
@@ -86,6 +90,8 @@ export const blogPosts: BlogPost[] = [
     slug: "what-personalized-tutoring-looks-like-at-kriana",
     category: "Kriana Approach",
     date: "2026-04-12",
+    image: "/images/blog/confidence-through-creativity.svg",
+    imageAlt: "Student building confidence through personalized tutoring activities",
     excerpt:
       "Personalized tutoring should do more than review homework. It should identify gaps, build confidence, and adapt to how each child learns best.",
     metaTitle: "Homework Help for Kids in Ottawa | Kriana Tutoring Blog",
@@ -117,6 +123,8 @@ export const blogPosts: BlogPost[] = [
     slug: "best-math-tutoring-for-kids-in-ottawa-what-parents-should-look-for",
     category: "Parent Tips",
     date: "2026-03-14",
+    image: "/images/blog/math-games-road-trip.svg",
+    imageAlt: "Math learning activity that keeps students engaged and confident",
     excerpt:
       "Parents looking for the best math tutoring for kids in Ottawa should focus on fit, teaching approach, and whether sessions build confidence as well as skills.",
     metaTitle: "Best Math Tutoring for Kids in Ottawa | Kriana Tutoring Blog",
@@ -143,6 +151,8 @@ export const blogPosts: BlogPost[] = [
     slug: "how-to-find-reading-help-for-grade-1-students-in-ottawa",
     category: "Learning Strategies",
     date: "2025-10-03",
+    image: "/images/blog/family-literacy-night-guide.svg",
+    imageAlt: "Family literacy support for young readers",
     excerpt:
       "Families looking for reading help for Grade 1 students in Ottawa should focus on early literacy support that improves phonics, fluency, and confidence without overwhelming young learners.",
     metaTitle: "How to Find Reading Help for Grade 1 Students in Ottawa | Kriana Tutoring Blog",
@@ -169,6 +179,8 @@ export const blogPosts: BlogPost[] = [
     slug: "homework-help-for-kids-in-kanata-when-to-get-extra-support",
     category: "Parent Tips",
     date: "2025-06-18",
+    image: "/images/blog/executive-functioning-habits.svg",
+    imageAlt: "Student working through homework with better structure and support",
     excerpt:
       "Homework help for kids in Kanata becomes important when nightly schoolwork is turning into stress, avoidance, or a constant battle at home.",
     metaTitle: "Homework Help for Kids in Kanata | Kriana Tutoring Blog",
@@ -195,6 +207,8 @@ export const blogPosts: BlogPost[] = [
     slug: "signs-your-child-needs-a-tutor-for-math-in-ottawa",
     category: "Parent Tips",
     date: "2025-01-27",
+    image: "/images/blog/10-fun-winter-math-activities-for-snowy-days.svg",
+    imageAlt: "Math learner receiving extra support to rebuild confidence",
     excerpt:
       "If your child is avoiding math, taking too long on homework, or losing confidence at school, those may be signs it is time to consider a math tutor in Ottawa.",
     metaTitle: "Signs Your Child Needs a Tutor for Math in Ottawa | Kriana Tutoring Blog",
@@ -221,6 +235,8 @@ export const blogPosts: BlogPost[] = [
     slug: "how-to-help-a-grade-2-child-with-reading-at-home",
     category: "Learning Strategies",
     date: "2024-09-09",
+    image: "/images/blog/mindful-moments-for-learners.svg",
+    imageAlt: "Calm at-home reading practice for a Grade 2 learner",
     excerpt:
       "Helping a Grade 2 child with reading at home works best when families use short, steady routines that strengthen fluency, vocabulary, and comprehension.",
     metaTitle: "How to Help a Grade 2 Child With Reading at Home | Kriana Tutoring Blog",
@@ -247,6 +263,8 @@ export const blogPosts: BlogPost[] = [
     slug: "what-makes-personalized-tutoring-better-than-homework-clubs",
     category: "Kriana Approach",
     date: "2024-06-24",
+    image: "/images/blog/stem-club-ideas.svg",
+    imageAlt: "Personalized tutoring session that feels more focused than a group homework club",
     excerpt:
       "Personalized tutoring is often more effective than homework clubs because it adapts to the learner instead of giving the same kind of support to every child in the room.",
     metaTitle: "Personalized Tutoring Better Than Homework Clubs | Kriana Tutoring Blog",

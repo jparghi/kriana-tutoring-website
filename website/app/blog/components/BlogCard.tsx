@@ -1,15 +1,28 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { blogCategoryStyles, formatBlogDate } from "../data";
 import type { BlogPost } from "../types";
 
-type BlogCardProps = Pick<BlogPost, "title" | "slug" | "category" | "date" | "excerpt">;
+type BlogCardProps = Pick<BlogPost, "title" | "slug" | "category" | "date" | "excerpt" | "image" | "imageAlt">;
 
-export function BlogCard({ title, slug, category, date, excerpt }: BlogCardProps) {
+export function BlogCard({ title, slug, category, date, excerpt, image, imageAlt }: BlogCardProps) {
   const categoryStyle = blogCategoryStyles[category];
 
   return (
-    <article className="flex h-full flex-col rounded-[2rem] border border-white/70 bg-white/95 p-6 shadow-soft ring-1 ring-slate-100/80 transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_18px_50px_rgba(6,11,26,0.08)]">
+    <article className="flex h-full flex-col overflow-hidden rounded-[2rem] border border-white/70 bg-white/95 shadow-soft ring-1 ring-slate-100/80 transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_18px_50px_rgba(6,11,26,0.08)]">
+      {image ? (
+        <div className="relative aspect-[16/10] w-full overflow-hidden">
+          <Image
+            src={image}
+            alt={imageAlt ?? title}
+            fill
+            className="object-cover transition-transform duration-500 hover:scale-105"
+            sizes="(min-width: 1280px) 360px, (min-width: 768px) 50vw, 100vw"
+          />
+        </div>
+      ) : null}
+      <div className="flex flex-1 flex-col p-6">
       <div className="flex items-start justify-between gap-4">
         <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] ${categoryStyle.pill}`}>
           {category}
@@ -29,6 +42,7 @@ export function BlogCard({ title, slug, category, date, excerpt }: BlogCardProps
         >
           Read More
         </Link>
+      </div>
       </div>
     </article>
   );
