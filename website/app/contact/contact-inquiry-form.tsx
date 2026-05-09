@@ -3,10 +3,6 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
-function encodeForm(values: Record<string, string>) {
-  return new URLSearchParams(values).toString();
-}
-
 export function ContactInquiryForm() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -19,25 +15,17 @@ export function ContactInquiryForm() {
 
     const form = event.currentTarget;
     const formData = new FormData(form);
-    const values = Array.from(formData.entries()).reduce<Record<string, string>>(
-      (accumulator, [key, value]) => {
-        accumulator[key] = typeof value === "string" ? value : "";
-        return accumulator;
-      },
-      {}
-    );
 
     try {
-      const response = await fetch("/", {
+      const response = await fetch("https://api.web3forms.com/submit", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
-        },
-        body: encodeForm(values)
+        body: formData,
       });
 
-      if (!response.ok) {
-        throw new Error(`Submission failed with status ${response.status}`);
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message ?? `Submission failed with status ${response.status}`);
       }
 
       form.reset();
@@ -51,25 +39,13 @@ export function ContactInquiryForm() {
 
   return (
     <form
-      name="contact-inquiry"
-      method="POST"
-      data-netlify="true"
-      netlify-honeypot="bot-field"
       className="order-1 rounded-3xl border border-slate-200 bg-white p-8 shadow-[0_24px_60px_rgba(15,23,42,0.12)] lg:order-2"
       onSubmit={handleSubmit}
     >
-      <input type="hidden" name="form-name" value="contact-inquiry" />
-      <input
-        type="hidden"
-        name="subject"
-        data-remove-prefix
-        value="New inquiry from %{formName} on %{siteName} (%{submissionId})"
-      />
-      <p className="hidden">
-        <label>
-          Don&apos;t fill this out if you&apos;re human: <input name="bot-field" />
-        </label>
-      </p>
+      <input type="hidden" name="access_key" value="79a62080-f514-40a4-ab9f-be7ccea0b65e" />
+      <input type="hidden" name="subject" value="New Contact Inquiry – Kriana Tutoring" />
+      <input type="hidden" name="from_name" value="Kriana Tutoring Website" />
+      <input type="hidden" name="botcheck" className="hidden" style={{ display: "none" }} />
 
       <div className="space-y-6">
         <div className="grid gap-6 sm:grid-cols-2">
