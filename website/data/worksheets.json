@@ -1,0 +1,434 @@
+[
+  {
+    "id": "jk-math-bright-shapes",
+    "title": "Bright Shapes Number Trail",
+    "subject": "Mathematics",
+    "grade": "JK",
+    "description": "Guide joyful counting walks using colour-coded mats, shape mats, and chants that connect numbers to patterns through hands-on play.",
+    "tags": ["Counting to 5", "Shape Recognition", "Patterning"],
+    "downloadUrl": "/worksheets/jk/jk-math-bright-shapes.pdf"
+  },
+  {
+    "id": "jk-early-colour-match",
+    "title": "Colour Match Adventure",
+    "subject": "Early Learning",
+    "grade": "JK",
+    "description": "Spark collaborative colour hunts with sorting mats, movement cues, and reflections that reinforce colour recognition and sorting language.",
+    "tags": ["Colours", "Sorting", "Motor Skills"],
+    "downloadUrl": "/worksheets/jk/jk-early-colour-match.pdf"
+  },
+  {
+    "id": "jk-storytime-fun",
+    "title": "Storytime Fun with Friends",
+    "subject": "Language",
+    "grade": "JK",
+    "description": "Encourage early reading habits through picture-storytelling, rhyming games, and name-recognition activities.",
+    "tags": ["Rhyming", "Storytelling", "Alphabet"],
+    "downloadUrl": "/worksheets/jk/jk-storytime-fun.pdf"
+  },
+  {
+    "id": "jk-nature-explorers",
+    "title": "Nature Explorers",
+    "subject": "Science",
+    "grade": "JK",
+    "description": "Introduce children to plants, animals, and weather through observation and sensory exploration outdoors.",
+    "tags": ["Seasons", "Plants", "Animals"],
+    "downloadUrl": "/worksheets/jk/jk-nature-explorers.pdf"
+  },
+  {
+    "id": "jk-math-counting-fun",
+    "title": "Counting Fun Adventure",
+    "subject": "Mathematics",
+    "grade": "JK",
+    "description": "Practice counting objects up to 10 through fun images, finger-play, and movement songs.",
+    "tags": ["Counting", "Numbers to 10", "One-to-One Matching"],
+    "downloadUrl": "/worksheets/jk/jk-math-counting-fun.pdf"
+  },
+  {
+    "id": "sk-rhythm-builders-math",
+    "title": "Rhythm Builders Math Lab",
+    "subject": "Mathematics",
+    "grade": "SK",
+    "description": "Build rhythm-based counting patterns using body percussion and sound repetition to explore number patterns to 20.",
+    "tags": ["Patterning", "Counting to 20", "Sound and Math"],
+    "downloadUrl": "/worksheets/sk/sk-rhythm-builders-math.pdf"
+  },
+  {
+    "id": "sk-story-shapes-playground",
+    "title": "Story Shapes Playground",
+    "subject": "Mathematics",
+    "grade": "SK",
+    "description": "Explore shapes and measurements through storytelling and creative drawing tasks.",
+    "tags": ["Shape Sorting", "Measurement", "Visual Thinking"],
+    "downloadUrl": "/worksheets/sk/sk-story-shapes-playground.pdf"
+  },
+  {
+    "id": "sk-word-builders",
+    "title": "Word Builders",
+    "subject": "Language",
+    "grade": "SK",
+    "description": "Blend and segment sounds to build early words using letter tiles and phonics patterns.",
+    "tags": ["Phonics", "Word Building", "Sound Blending"],
+    "downloadUrl": "/worksheets/sk/sk-word-builders.pdf"
+  },
+  {
+    "id": "sk-measure-play-lab",
+    "title": "Measure & Play Lab",
+    "subject": "Mathematics",
+    "grade": "SK",
+    "description": "Use non-standard units like blocks and paper clips to measure and compare lengths in everyday items.",
+    "tags": ["Measurement", "Comparison", "Hands-on Math"],
+    "downloadUrl": "/worksheets/sk/sk-measure-play-lab.pdf"
+  },
+  {
+    "id": "sk-weather-watchers",
+    "title": "Weather Watchers",
+    "subject": "Science",
+    "grade": "SK",
+    "description": "Track daily weather using charts and discussions, learning vocabulary like sunny, cloudy, rainy, and snowy.",
+    "tags": ["Weather", "Observation", "Data Tracking"],
+    "downloadUrl": "/worksheets/sk/sk-weather-watchers.pdf"
+  },
+  {
+    "id": "g1-add-play-treasure-hunt",
+    "title": "Add & Play Treasure Hunt",
+    "subject": "Mathematics",
+    "grade": "Grade 1",
+    "description": "Navigate playful treasure maps that invite counting warm-ups, addition within twenty, and real-life word problems with manipulatives and storytelling prompts.",
+    "tags": ["Counting", "Addition within 20", "Word Problems"],
+    "downloadUrl": "/worksheets/grade-1/g1-add-play-treasure-hunt.pdf"
+  },
+  {
+    "id": "g1-sound-spell-safari",
+    "title": "Sound & Spell Safari",
+    "subject": "English",
+    "grade": "Grade 1",
+    "description": "Embark on phonics adventures featuring short vowel sounds, decoding, kinesthetic spelling, and expressive reading practice.",
+    "tags": ["Phonics", "Short Vowels", "Reading Practice"],
+    "downloadUrl": "/worksheets/grade-1/g1-sound-spell-safari.pdf"
+  },
+  {
+    "id": "g1-shape-fun-measure",
+    "title": "Shape Fun & Measure Moments",
+    "subject": "Mathematics",
+    "grade": "Grade 1",
+    "description": "Explore two-dimensional shapes, measure lengths with non-standard units, and compare sizes with everyday items.",
+    "tags": ["Shapes", "Measurement", "Comparison"],
+    "downloadUrl": "/worksheets/grade-1/g1-shape-fun-measure-moments.pdf"
+  },
+  {
+    "id": "g1-data-picture-graphs",
+    "title": "Picture Graphs & Favourite Things",
+    "subject": "Mathematics",
+    "grade": "Grade 1",
+    "description": "Students gather data about favourite items, create picture graphs and interpret them through questions and discussions.",
+    "tags": ["Data", "Picture Graphs", "Interpretation"],
+    "downloadUrl": "/worksheets/grade-1/g1-data-picture-graphs.pdf"
+  },
+  {
+    "id": "g2-money-making-change",
+    "title": "Money & Making Change Challenge",
+    "subject": "Mathematics",
+    "grade": "Grade 2",
+    "description": "Simulate bustling market booths where learners count Canadian coins, make change, and role-play customer conversations.",
+    "tags": ["Canadian Coins", "Skip Counting", "Problem Solving"],
+    "downloadUrl": "/worksheets/grade-2/g2-money-making-change.pdf"
+  },
+  {
+    "id": "g2-reading-buddies-story-time",
+    "title": "Reading Buddies Story Time",
+    "subject": "English",
+    "grade": "Grade 2",
+    "description": "Pair readers to explore picture texts, unpack vocabulary, and capture sequencing cards for comprehension practice.",
+    "tags": ["Reading Comprehension", "Vocabulary", "Sequencing"],
+    "downloadUrl": "/worksheets/grade-2/g2-reading-buddies.pdf"
+  },
+  {
+    "id": "g2-fractions-fair-share",
+    "title": "Fractions & Fair-Share Fun",
+    "subject": "Mathematics",
+    "grade": "Grade 2",
+    "description": "Model halves, quarters, and fair-sharing scenarios using visual aids and real-life objects.",
+    "tags": ["Fractions", "Fair Share", "Visual Models"],
+    "downloadUrl": "/worksheets/grade-2/g2-fractions-fair-share.pdf"
+  },
+  {
+    "id": "g2-shapes-space-measure",
+    "title": "Shapes, Space & Measurement",
+    "subject": "Mathematics",
+    "grade": "Grade 2",
+    "description": "Explore 2D and 3D shapes, compare space, and measure non-standard units in everyday objects.",
+    "tags": ["2D/3D Shapes", "Spatial Sense", "Measurement"],
+    "downloadUrl": "/worksheets/grade-2/g2-shapes-space-measure.pdf"
+  },
+  {
+    "id": "g2-data-graphs-interpretation",
+    "title": "Data & Graph Interpretation",
+    "subject": "Mathematics",
+    "grade": "Grade 2",
+    "description": "Collect class data, create bar graphs, ask questions, and interpret answers.",
+    "tags": ["Data", "Graphs", "Interpretation"],
+    "downloadUrl": "/worksheets/grade-2/g2-data-graphs-interpretation.pdf"
+  },
+  {
+    "id": "g3-fractions-everyday-life",
+    "title": "Fractions in Everyday Life",
+    "subject": "Mathematics",
+    "grade": "Grade 3",
+    "description": "Connect fractions to daily routines by modelling division scenarios and sharing community-inspired stories.",
+    "tags": ["Fractions", "Division", "Visual Models"],
+    "downloadUrl": "/worksheets/grade-3/g3-fractions-everyday-life.pdf"
+  },
+  {
+    "id": "g3-word-problem-builders",
+    "title": "Word Problem Builders",
+    "subject": "Mathematics",
+    "grade": "Grade 3",
+    "description": "Design multi-step story problems using addition and subtraction toolkits.",
+    "tags": ["Multi-Step Reasoning", "Addition/Subtraction", "Critical Thinking"],
+    "downloadUrl": "/worksheets/grade-3/g3-word-problem-builders.pdf"
+  },
+  {
+    "id": "g3-decimals-intro",
+    "title": "Decimals & Money Connections",
+    "subject": "Mathematics",
+    "grade": "Grade 3",
+    "description": "Introduce decimal notation through money and real-world applications.",
+    "tags": ["Decimals", "Money", "Visual Models"],
+    "downloadUrl": "/worksheets/grade-3/g3-decimals-intro.pdf"
+  },
+  {
+    "id": "g3-area-perimeter-explorers",
+    "title": "Area & Perimeter Explorers",
+    "subject": "Mathematics",
+    "grade": "Grade 3",
+    "description": "Explore area and perimeter through map design and measurement tasks.",
+    "tags": ["Area", "Perimeter", "Measurement"],
+    "downloadUrl": "/worksheets/grade-3/g3-area-perimeter-explorers.pdf"
+  },
+  {
+    "id": "g3-data-probability-fun",
+    "title": "Data & Probability Fun",
+    "subject": "Mathematics",
+    "grade": "Grade 3",
+    "description": "Gather data, analyze chance events, and predict outcomes with pictographs.",
+    "tags": ["Data", "Probability", "Graphs"],
+    "downloadUrl": "/worksheets/grade-3/g3-data-probability-fun.pdf"
+  },
+  {
+    "id": "g4-long-division-explorers",
+    "title": "Long Division Explorers",
+    "subject": "Mathematics",
+    "grade": "Grade 4",
+    "description": "Navigate map-themed missions that unpack division strategies, multiplication connections, and step-by-step modelling with peer-coaching checkpoints.",
+    "tags": ["Division", "Multiplication", "Problem Solving"],
+    "downloadUrl": "/worksheets/grade-4/g4-long-division-explorers.pdf"
+  },
+  {
+    "id": "g4-science-detectives-habitats",
+    "title": "Science Detectives: Habitats",
+    "subject": "Science",
+    "grade": "Grade 4",
+    "description": "Investigate habitats through classification stations, research pods, observation logs, and collaborative discussions.",
+    "tags": ["Classification", "Research", "Observation"],
+    "downloadUrl": "/worksheets/grade-4/g4-science-detectives.pdf"
+  },
+  {
+    "id": "g4-fractions-decimals-bridge",
+    "title": "Fractions & Decimals Bridge",
+    "subject": "Mathematics",
+    "grade": "Grade 4",
+    "description": "Bridge fractions and decimals with visual models, conversion tasks and real-world measurement scenarios.",
+    "tags": ["Fractions", "Decimals", "Measurement"],
+    "downloadUrl": "/worksheets/grade-4/g4-fractions-decimals-bridge.pdf"
+  },
+  {
+    "id": "g4-geometry-transformations",
+    "title": "Geometry & Transformations Mission",
+    "subject": "Mathematics",
+    "grade": "Grade 4",
+    "description": "Explore transformations in coordinate grids and real-world design tasks.",
+    "tags": ["Geometry", "Transformations", "Spatial Sense"],
+    "downloadUrl": "/worksheets/grade-4/g4-geometry-transformations.pdf"
+  },
+  {
+    "id": "g4-reading-nonfiction-fluency",
+    "title": "Reading Non-Fiction Fluency",
+    "subject": "English",
+    "grade": "Grade 4",
+    "description": "Build fluency and comprehension with non-fiction texts, guided questioning, summarization tasks, and partner discussions.",
+    "tags": ["Fluency", "Non-Fiction", "Comprehension"],
+    "downloadUrl": "/worksheets/grade-4/g4-reading-nonfiction-fluency.pdf"
+  },
+  {
+    "id": "g5-decimal-discovery-quest",
+    "title": "Decimal Discovery Quest",
+    "subject": "Mathematics",
+    "grade": "Grade 5",
+    "description": "Engineer math stations that unpack decimal place value, practical estimation, and data-storytelling through collaborative quests and reflection journals.",
+    "tags": ["Place Value", "Decimals", "Real-World Math"],
+    "downloadUrl": "/worksheets/grade-5/g5-decimal-discovery-quest.pdf"
+  },
+  {
+    "id": "g5-grammar-garden",
+    "title": "Grammar Garden",
+    "subject": "English",
+    "grade": "Grade 5",
+    "description": "Cultivate sentence gardens that spotlight sentence types, noun and verb pairings, and editing moves through creative drafting circles.",
+    "tags": ["Sentence Types", "Nouns/Verbs", "Editing"],
+    "downloadUrl": "/worksheets/grade-5/g5-grammar-garden.pdf"
+  },
+  {
+    "id": "g5-ratio-proportion-puzzles",
+    "title": "Ratio & Proportion Puzzles",
+    "subject": "Mathematics",
+    "grade": "Grade 5",
+    "description": "Solve puzzles involving ratios, proportions and scaling, model with images, and apply to real-life contexts such as maps and recipes.",
+    "tags": ["Ratios", "Proportions", "Real-Life Math"],
+    "downloadUrl": "/worksheets/grade-5/g5-ratio-proportion-puzzles.pdf"
+  },
+  {
+    "id": "g5-literature-circle-analysis",
+    "title": "Literature Circle Analysis",
+    "subject": "English",
+    "grade": "Grade 5",
+    "description": "Engage with literature circle format to analyse themes, character motivations, vocabulary and writing responses.",
+    "tags": ["Literature", "Analysis", "Vocabulary"],
+    "downloadUrl": "/worksheets/grade-5/g5-literature-circle-analysis.pdf"
+  },
+  {
+    "id": "g5-data-statistics-explorers",
+    "title": "Data & Statistics Explorers",
+    "subject": "Mathematics",
+    "grade": "Grade 5",
+    "description": "Collect, analyse and present data using graphs, central tendency and simple statistics in meaningful class investigations.",
+    "tags": ["Data", "Statistics", "Graphs"],
+    "downloadUrl": "/worksheets/grade-5/g5-data-statistics-explorers.pdf"
+  },
+  {
+    "id": "g6-fraction-architects",
+    "title": "Fraction Architects",
+    "subject": "Mathematics",
+    "grade": "Grade 6",
+    "description": "Design geometric blueprints that compare, simplify, and apply fractions using drafting templates, collaboration protocols, and reflective math journals.",
+    "tags": ["Fractions", "Simplification", "Geometry"],
+    "downloadUrl": "/worksheets/grade-6/g6-fraction-architects.pdf"
+  },
+  {
+    "id": "g6-planet-investigators",
+    "title": "Planet Investigators",
+    "subject": "Science",
+    "grade": "Grade 6",
+    "description": "Lead solar system research labs featuring data analysis charts, multimedia notetaking, and writing integration that amplify scientific storytelling.",
+    "tags": ["Solar System", "Data Analysis", "Writing"],
+    "downloadUrl": "/worksheets/grade-6/g6-planet-investigators.pdf"
+  },
+  {
+    "id": "g6-algebra-intro-equations",
+    "title": "Algebra Intro & Equations",
+    "subject": "Mathematics",
+    "grade": "Grade 6",
+    "description": "Introduce algebraic thinking through simple equations, variables, tables and real-world problem contexts.",
+    "tags": ["Algebra", "Variables", "Problem Solving"],
+    "downloadUrl": "/worksheets/grade-6/g6-algebra-intro-equations.pdf"
+  },
+  {
+    "id": "g6-earth-climate-change",
+    "title": "Earth & Climate Change Investigators",
+    "subject": "Science",
+    "grade": "Grade 6",
+    "description": "Explore climate systems, data charts, predictions and human impact through class-based investigation and action plans.",
+    "tags": ["Climate Change", "Data", "Investigation"],
+    "downloadUrl": "/worksheets/grade-6/g6-earth-climate-change.pdf"
+  },
+  {
+    "id": "g6-persuasive-writing-project",
+    "title": "Persuasive Writing Project",
+    "subject": "English",
+    "grade": "Grade 6",
+    "description": "Develop persuasive writing skills through rhetorical strategies, audience awareness and authentic writing tasks.",
+    "tags": ["Persuasive Writing", "Audience", "Editing"],
+    "downloadUrl": "/worksheets/grade-6/g6-persuasive-writing-project.pdf"
+  },
+  {
+    "id": "g7-algebra-starter-lab",
+    "title": "Algebra Starter Lab",
+    "subject": "Mathematics",
+    "grade": "Grade 7",
+    "description": "Experiment with solving for x using equation stations, manipulatives, and narrative word problems that connect to real-life contexts.",
+    "tags": ["Solving for x", "Equations", "Word Problems"],
+    "downloadUrl": "/worksheets/grade-7/g7-algebra-starter-lab.pdf"
+  },
+  {
+    "id": "g7-writing-with-voice",
+    "title": "Writing with Voice",
+    "subject": "English",
+    "grade": "Grade 7",
+    "description": "Coach narrative writing craft through tone mini-lessons, descriptive language challenges, and peer conferences that build authentic voice.",
+    "tags": ["Narrative Writing", "Tone", "Descriptive Language"],
+    "downloadUrl": "/worksheets/grade-7/g7-writing-with-voice.pdf"
+  },
+  {
+    "id": "g7-proportional-relationships-mission",
+    "title": "Proportional Relationships Mission",
+    "subject": "Mathematics",
+    "grade": "Grade 7",
+    "description": "Explore proportional relationships through scale diagrams, ratio tables and real-world design tasks.",
+    "tags": ["Proportions", "Ratios", "Real-World Math"],
+    "downloadUrl": "/worksheets/grade-7/g7-proportional-relationships-mission.pdf"
+  },
+  {
+    "id": "g7-literary-analysis-challenge",
+    "title": "Literary Analysis Challenge",
+    "subject": "English",
+    "grade": "Grade 7",
+    "description": "Analyse short stories to uncover theme, character development, vocabulary usage and narrative structure.",
+    "tags": ["Literary Analysis", "Vocabulary", "Comprehension"],
+    "downloadUrl": "/worksheets/grade-7/g7-literary-analysis-challenge.pdf"
+  },
+  {
+    "id": "g7-data-modeling-graphs",
+    "title": "Data Modeling & Graphs Lab",
+    "subject": "Mathematics",
+    "grade": "Grade 7",
+    "description": "Build and interpret multiple representations of data, model using spreadsheets and graphs, and draw conclusions.",
+    "tags": ["Data", "Graphs", "Analysis"],
+    "downloadUrl": "/worksheets/grade-7/g7-data-modeling-graphs.pdf"
+  },
+  {
+    "id": "g8-linear-graph-masters",
+    "title": "Linear Graph Masters",
+    "subject": "Mathematics",
+    "grade": "Grade 8",
+    "description": "Master slope and intercepts through graphing challenges, collaborative data stories, and digital modelling that translate algebra into visuals.",
+    "tags": ["Slope", "Intercepts", "Graphing"],
+    "downloadUrl": "/worksheets/grade-8/g8-linear-graph-masters.pdf"
+  },
+  {
+    "id": "g8-science-innovators",
+    "title": "Science Innovators",
+    "subject": "Science",
+    "grade": "Grade 8",
+    "description": "Drive inquiry into cell theory and experimental design using lab challenges, data interpretation sprints, and collaborative reflection routines.",
+    "tags": ["Cell Theory", "Experimental Design", "Data Interpretation"],
+    "downloadUrl": "/worksheets/grade-8/g8-science-innovators.pdf"
+  },
+  {
+    "id": "g8-financial-literacy-venture",
+    "title": "Financial Literacy Venture",
+    "subject": "Mathematics",
+    "grade": "Grade 8",
+    "description": "Explore budgeting, income, investments and graphs in the context of school and personal finance.",
+    "tags": ["Financial Literacy", "Budgeting", "Graphs"],
+    "downloadUrl": "/worksheets/grade-8/g8-financial-literacy-venture.pdf"
+  },
+  {
+    "id": "g8-media-literacy-studios",
+    "title": "Media Literacy Studios",
+    "subject": "English",
+    "grade": "Grade 8",
+    "description": "Examine media messages, advertisements and digital storytelling, then create and edit student-news articles with peer review.",
+    "tags": ["Media Literacy", "Digital Writing", "Editing"],
+    "downloadUrl": "/worksheets/grade-8/g8-media-literacy-studios.pdf"
+  }
+]

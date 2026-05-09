@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(lsof -ti:3000,3001)",
+      "Bash(xargs kill -9)",
+      "Bash(npm run *)",
+      "Read(//tmp/**)",
+      "Bash(jobs)"
+    ]
+  }
+}

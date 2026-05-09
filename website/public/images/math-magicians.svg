@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 300">
+  <defs>
+    <linearGradient id="mathBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f6fbff" />
+      <stop offset="100%" stop-color="#d4ecff" />
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="420" height="300" rx="28" fill="url(#mathBg)" />
+  <g transform="translate(60 60)">
+    <rect x="0" y="120" width="300" height="80" rx="20" fill="#ffffff" stroke="#0d746d" stroke-width="4" />
+    <rect x="20" y="0" width="260" height="140" rx="18" fill="#ffffff" stroke="#6ab7b2" stroke-width="4" />
+    <g fill="#0d746d" font-family="'Poppins', sans-serif" font-weight="600" font-size="26">
+      <text x="40" y="50">7 × 6 = 42</text>
+      <text x="40" y="88">16 ÷ 4 = 4</text>
+      <text x="40" y="126">Fractions &amp; Fun!</text>
+    </g>
+    <g transform="translate(44 144)">
+      <circle cx="36" cy="36" r="36" fill="#0d746d" opacity="0.12" />
+      <path d="M36 14c-12 0-22 10-22 22s10 22 22 22 22-10 22-22-10-22-22-22zm0 10a4 4 0 110 8 4 4 0 010-8zm0 36c-8 0-16-4-20-10 0-8 12-12 20-12s20 4 20 12c-4 6-12 10-20 10z" fill="#0d746d" />
+      <circle cx="156" cy="36" r="36" fill="#0d746d" opacity="0.12" />
+      <path d="M156 14c-12 0-22 10-22 22s10 22 22 22 22-10 22-22-10-22-22-22zm0 10a4 4 0 110 8 4 4 0 010-8zm0 36c-8 0-16-4-20-10 0-8 12-12 20-12s20 4 20 12c-4 6-12 10-20 10z" fill="#0d746d" />
+      <circle cx="96" cy="24" r="16" fill="#f9c354" />
+      <circle cx="216" cy="26" r="14" fill="#d9465f" />
+    </g>
+  </g>
+</svg>

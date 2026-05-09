@@ -1,0 +1,53 @@
+{
+  "title": "Kriana Tutoring Blog Thumbnail",
+  "size": {
+    "width": 1200,
+    "height": 675
+  },
+  "background": {
+    "type": "gradient",
+    "angle": 135,
+    "colors": ["{colorPrimary}", "{colorSecondary}"]
+  },
+  "overlays": [
+    {
+      "type": "shape",
+      "shape": "rounded-rectangle",
+      "position": { "x": 72, "y": 72 },
+      "size": { "width": 1056, "height": 531 },
+      "radius": 48,
+      "fill": "rgba(255, 255, 255, 0.9)",
+      "shadow": "0 24px 60px rgba(30, 41, 59, 0.18)"
+    },
+    {
+      "type": "emoji",
+      "content": "{emoji}",
+      "font": { "family": "Segoe UI Emoji", "size": 160 },
+      "position": { "x": 160, "y": 180 }
+    },
+    {
+      "type": "text",
+      "content": "{title}",
+      "font": {
+        "family": "Poppins",
+        "size": 72,
+        "weight": 700,
+        "color": "#1E293B"
+      },
+      "position": { "x": 320, "y": 220 },
+      "maxWidth": 780,
+      "lineHeight": 1.2
+    },
+    {
+      "type": "text",
+      "content": "Kriana Tutoring • {category}",
+      "font": {
+        "family": "Open Sans",
+        "size": 32,
+        "weight": 600,
+        "color": "#0EA5E9"
+      },
+      "position": { "x": 320, "y": 420 }
+    }
+  ]
+}

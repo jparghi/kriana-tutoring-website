@@ -1,0 +1,14 @@
+# Public marketing website for krianatutoring.com
+# This repo-root config builds the Next.js app in website/.
+[build]
+  command = "npm --prefix website ci && npm --prefix website run build"
+  publish = "website/.next"
+
+[build.environment]
+  NEXT_TELEMETRY_DISABLED = "1"
+  NODE_VERSION = "18.20.3"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+  [plugins.inputs]
+    appDir = "website"

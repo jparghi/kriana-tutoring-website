@@ -1,0 +1,12 @@
+{
+  "name": "kriana-tutoring-platform",
+  "private": true,
+  "scripts": {
+    "build": "npm --prefix website ci && npm --prefix website run build",
+    "dev": "npm --prefix website run dev",
+    "start": "npm --prefix website run start",
+    "lint": "npm --prefix website run lint",
+    "sanity": "./scripts/sanity-check.sh",
+    "deploy:netlify": "bash ./scripts/deploy-netlify.sh"
+  }
+}

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="675" viewBox="0 0 1200 675" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradvkttd8" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F6D6E0" />
+      <stop offset="100%" stop-color="#F1A7C1" />
+    </linearGradient>
+    <filter id="shadow2rr545" x="0" y="0" width="200%" height="200%">
+      <feOffset result="offOut" in="SourceGraphic" dx="0" dy="24" />
+      <feGaussianBlur result="blurOut" in="offOut" stdDeviation="24" />
+      <feColorMatrix
+        in="blurOut"
+        type="matrix"
+        values="0 0 0 0 0.118  0 0 0 0 0.161  0 0 0 0 0.231  0 0 0 0.18 0"
+      />
+      <feBlend in="SourceGraphic" in2="blurOut" mode="normal" />
+    </filter>
+  </defs>
+  <rect width="1200" height="675" fill="url(#gradvkttd8)" />
+  <g filter="url(#shadow2rr545)">
+    <rect x="72" y="72" width="1056" height="531" rx="48" fill="rgba(255,255,255,0.92)" />
+  </g>
+  <text x="180" y="240" font-family="'Segoe UI Emoji', 'Apple Color Emoji', sans-serif" font-size="160">🧘</text>
+  <text x="320" y="260" font-family="'Poppins', 'Segoe UI', sans-serif" font-weight="700" font-size="72" fill="#1E293B">
+    <tspan>Mindful Moments for Young Learners</tspan>
+  </text>
+  <text x="320" y="440" font-family="'Open Sans', 'Segoe UI', sans-serif" font-weight="600" font-size="32" fill="#0EA5E9">
+    Kriana Tutoring • Wellness
+  </text>
+</svg>

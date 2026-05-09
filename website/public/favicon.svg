@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Kriana Tutoring favicon">
+  <defs>
+    <linearGradient id="krianaGradient" x1="4" y1="6" x2="60" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4338ca" />
+      <stop offset="1" stop-color="#f97316" />
+    </linearGradient>
+  </defs>
+  <rect x="6" y="6" width="52" height="52" rx="16" fill="url(#krianaGradient)" />
+  <path
+    d="M23 18h6.5c8.284 0 15 6.716 15 15s-6.716 15-15 15H23V18zm6.5 23.5c3.59 0 6.5-2.91 6.5-6.5s-2.91-6.5-6.5-6.5H30v13h-0.5z"
+    fill="#ffffff"
+    fill-rule="evenodd"
+    clip-rule="evenodd"
+  />
+  <path d="M30 24h10l-10 10 10 10H30l-10-10 10-10z" fill="#fde68a" opacity="0.75" />
+</svg>

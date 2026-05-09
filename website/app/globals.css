@@ -1,0 +1,167 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  ::selection {
+    background: rgba(74, 144, 226, 0.2);
+    color: #0a2d5a;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #4a90e2, #00b8a9);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #3a7bc8, #009b8e);
+  }
+
+  body {
+    background-color: #f3f6fb;
+    color: #0f172a;
+    background-image:
+      radial-gradient(ellipse at 15% 20%, rgba(74, 144, 226, 0.22) 0%, transparent 55%),
+      radial-gradient(ellipse at 85% 10%, rgba(0, 184, 169, 0.16) 0%, transparent 55%),
+      radial-gradient(ellipse at 50% 95%, rgba(255, 209, 102, 0.22) 0%, transparent 60%);
+    background-attachment: fixed;
+    font-family: var(--font-body), "Open Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  a {
+    transition: color 200ms ease;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading), "Jost", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+}
+
+@layer components {
+  .section-title {
+    font-size: 1.875rem;
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  @media (min-width: 640px) {
+    .section-title {
+      font-size: 2.25rem;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .section-title {
+      font-size: 3rem;
+    }
+  }
+
+  .blog-content {
+    color: rgb(51 65 85);
+  }
+
+  .blog-content > * + * {
+    margin-top: 1.5rem;
+  }
+
+  .blog-content h2,
+  .blog-content h3 {
+    color: #0a2d5a;
+    font-family: var(--font-heading), "Jost", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .blog-content h2 {
+    margin-top: 2.5rem;
+    font-size: 1.875rem;
+  }
+
+  .blog-content h3 {
+    margin-top: 2rem;
+    font-size: 1.5rem;
+  }
+
+  .blog-content p,
+  .blog-content li {
+    font-size: 1.125rem;
+    line-height: 1.95;
+    color: rgb(51 65 85);
+  }
+
+  .blog-content strong {
+    color: #0a2d5a;
+    font-weight: 700;
+  }
+
+  .blog-content em {
+    font-style: italic;
+  }
+
+  .blog-content ul,
+  .blog-content ol {
+    padding-left: 1.5rem;
+  }
+
+  .blog-content ul {
+    list-style: disc;
+  }
+
+  .blog-content ol {
+    list-style: decimal;
+  }
+
+  .blog-content li::marker {
+    color: #4a90e2;
+    font-weight: 700;
+  }
+}
+
+@layer utilities {
+  .gradient-text {
+    background: linear-gradient(135deg, #4a90e2 0%, #00b8a9 50%, #4a90e2 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient-shift 5s ease-in-out infinite;
+  }
+
+  .gradient-text-warm {
+    background: linear-gradient(135deg, #ff8a65 0%, #ffd166 50%, #ff8a65 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient-shift 5s ease-in-out infinite;
+  }
+
+  .dot-grid {
+    background-image: radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0);
+    background-size: 24px 24px;
+  }
+}

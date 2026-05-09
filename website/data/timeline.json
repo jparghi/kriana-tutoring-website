@@ -1,0 +1,30 @@
+[
+  {
+    "title": "Spark the Curiosity",
+    "subtitle": "Discovery Call & Student Snapshot",
+    "description": "We learn about strengths, goals, and classroom experiences so the program mirrors each learner's world.",
+    "duration": "Week 0",
+    "icon": "compass"
+  },
+  {
+    "title": "Confidence Blueprint",
+    "subtitle": "Personalized Roadmap & Baseline Check",
+    "description": "Educators translate provincial standards into a playful action plan with checkpoints and at-home rituals.",
+    "duration": "Week 1",
+    "icon": "map"
+  },
+  {
+    "title": "Momentum Sessions",
+    "subtitle": "Live Tutoring + AI Copilot",
+    "description": "Weekly sessions weave educator-led coaching with AI nudges, voice explanations, and celebration moments.",
+    "duration": "Weeks 2-5",
+    "icon": "rocket"
+  },
+  {
+    "title": "Showcase & Celebrate",
+    "subtitle": "Progress Pulse & Parent Huddle",
+    "description": "We review growth, refresh goals, and send home highlight reels that keep motivation sky high.",
+    "duration": "Week 6",
+    "icon": "sparkles"
+  }
+]

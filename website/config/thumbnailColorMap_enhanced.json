@@ -1,0 +1,66 @@
+{
+  "Math": {
+    "emoji": "🧮",
+    "colors": {
+      "primary": "#83C5F7",
+      "secondary": "#5F99F7"
+    },
+    "hover": "shadow-[0_12px_40px_rgba(131,197,247,0.35)]"
+  },
+  "Reading": {
+    "emoji": "📚",
+    "colors": {
+      "primary": "#F9D29D",
+      "secondary": "#FDB99B"
+    },
+    "hover": "shadow-[0_12px_40px_rgba(249,210,157,0.35)]"
+  },
+  "Science": {
+    "emoji": "🔬",
+    "colors": {
+      "primary": "#A1E3D8",
+      "secondary": "#6DDCCF"
+    },
+    "hover": "shadow-[0_12px_40px_rgba(161,227,216,0.35)]"
+  },
+  "Creativity": {
+    "emoji": "🎨",
+    "colors": {
+      "primary": "#F7ACE6",
+      "secondary": "#C68AE3"
+    },
+    "hover": "shadow-[0_12px_40px_rgba(247,172,230,0.35)]"
+  },
+  "Executive Skills": {
+    "emoji": "🗂️",
+    "colors": {
+      "primary": "#9FA8DA",
+      "secondary": "#7986CB"
+    },
+    "hover": "shadow-[0_12px_40px_rgba(159,168,218,0.35)]"
+  },
+  "STEM": {
+    "emoji": "🤖",
+    "colors": {
+      "primary": "#7BD3EA",
+      "secondary": "#5AB2F7"
+    },
+    "hover": "shadow-[0_12px_40px_rgba(123,211,234,0.35)]"
+  },
+  "Wellness": {
+    "emoji": "🧘",
+    "colors": {
+      "primary": "#F6D6E0",
+      "secondary": "#F1A7C1"
+    },
+    "hover": "shadow-[0_12px_40px_rgba(246,214,224,0.35)]"
+  },
+  "Default": {
+    "emoji": "✨",
+    "colors": {
+      "primary": "#A5B4FC",
+      "secondary": "#6366F1"
+    },
+    "hover": "shadow-[0_12px_40px_rgba(99,102,241,0.35)]"
+  }
+}

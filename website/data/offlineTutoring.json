@@ -1,0 +1,226 @@
+[
+  {
+    "grade": "Grade 1",
+    "topic": "Counting & Addition",
+    "videos": [
+      {
+        "title": "Counting to 100",
+        "src": "https://www.youtube.com/embed/counting100",
+        "duration": "1:45",
+        "thumbnail": "/images/offline-tutoring/grade1-counting.jpg"
+      },
+      {
+        "title": "Addition with Number Lines",
+        "src": "https://www.youtube.com/embed/addition_lines",
+        "duration": "2:10",
+        "thumbnail": "/images/offline-tutoring/grade1-number-lines.jpg"
+      }
+    ],
+    "worksheet": "/worksheets/grade1/Grade1_Addition_Practice.pdf",
+    "plan": [
+      "Week 1 – Counting to 100",
+      "Week 2 – Adding within 20",
+      "Week 3 – Subtraction basics",
+      "Week 4 – Review worksheet"
+    ]
+  },
+  {
+    "grade": "Grade 2",
+    "topic": "Place Value & Word Problems",
+    "videos": [
+      {
+        "title": "Mastering Place Value",
+        "src": "https://www.youtube.com/embed/place_value_basics",
+        "duration": "2:05",
+        "thumbnail": "/images/offline-tutoring/grade2-place-value.jpg"
+      },
+      {
+        "title": "Solving One-Step Word Problems",
+        "src": "https://www.youtube.com/embed/word_problems_grade2",
+        "duration": "2:20",
+        "thumbnail": "/images/offline-tutoring/grade2-word-problems.jpg"
+      }
+    ],
+    "worksheet": "/worksheets/grade2/Grade2_PlaceValue_WordProblems.pdf",
+    "plan": [
+      "Week 1 – Hundreds, tens, ones",
+      "Week 2 – Expanded form practice",
+      "Week 3 – Word problems with addition",
+      "Week 4 – Mixed review & challenge"
+    ]
+  },
+  {
+    "grade": "Grade 3",
+    "topic": "Fractions & Division",
+    "videos": [
+      {
+        "title": "Understanding Fractions",
+        "src": "https://www.youtube.com/embed/fractions_example",
+        "duration": "2:10",
+        "thumbnail": "/images/offline-tutoring/grade3-fractions.jpg"
+      },
+      {
+        "title": "Division Made Easy",
+        "src": "https://www.youtube.com/embed/division_example",
+        "duration": "2:30",
+        "thumbnail": "/images/offline-tutoring/grade3-division.jpg"
+      },
+      {
+        "title": "Fraction Word Problems",
+        "src": "https://www.youtube.com/embed/fraction_word_problems",
+        "duration": "2:15",
+        "thumbnail": "/images/offline-tutoring/grade3-fraction-word-problems.jpg"
+      }
+    ],
+    "worksheet": "/worksheets/grade3/Grade3_Math_Fractions_Worksheet.pdf",
+    "plan": [
+      "Week 1 – Fractions basics",
+      "Week 2 – Comparing fractions",
+      "Week 3 – Division facts",
+      "Week 4 – Review & challenge"
+    ]
+  },
+  {
+    "grade": "Grade 4",
+    "topic": "Multiplication & Decimals",
+    "videos": [
+      {
+        "title": "Long Multiplication Strategies",
+        "src": "https://www.youtube.com/embed/long_multiplication",
+        "duration": "2:45",
+        "thumbnail": "/images/offline-tutoring/grade4-multiplication.jpg"
+      },
+      {
+        "title": "Intro to Decimals",
+        "src": "https://www.youtube.com/embed/decimal_intro",
+        "duration": "2:25",
+        "thumbnail": "/images/offline-tutoring/grade4-decimals.jpg"
+      },
+      {
+        "title": "Problem Solving with Decimals",
+        "src": "https://www.youtube.com/embed/decimal_problem_solving",
+        "duration": "2:35",
+        "thumbnail": "/images/offline-tutoring/grade4-decimal-problems.jpg"
+      }
+    ],
+    "worksheet": "/worksheets/grade4/Grade4_Multiplication_Decimals.pdf",
+    "plan": [
+      "Week 1 – Times tables fluency",
+      "Week 2 – Long multiplication",
+      "Week 3 – Understanding tenths & hundredths",
+      "Week 4 – Mixed problems with decimals"
+    ]
+  },
+  {
+    "grade": "Grade 5",
+    "topic": "Fractions, Decimals & Percents",
+    "videos": [
+      {
+        "title": "Converting Fractions to Decimals",
+        "src": "https://www.youtube.com/embed/fractions_to_decimals",
+        "duration": "2:40",
+        "thumbnail": "/images/offline-tutoring/grade5-fractions-decimals.jpg"
+      },
+      {
+        "title": "Percents in Real Life",
+        "src": "https://www.youtube.com/embed/percents_real_life",
+        "duration": "2:50",
+        "thumbnail": "/images/offline-tutoring/grade5-percents.jpg"
+      }
+    ],
+    "worksheet": "/worksheets/grade5/Grade5_Fractions_Decimals_Percents.pdf",
+    "plan": [
+      "Week 1 – Fraction review",
+      "Week 2 – Decimal operations",
+      "Week 3 – Percents and ratios",
+      "Week 4 – Applied problem solving"
+    ]
+  },
+  {
+    "grade": "Grade 6",
+    "topic": "Ratios & Algebra Readiness",
+    "videos": [
+      {
+        "title": "Understanding Ratios",
+        "src": "https://www.youtube.com/embed/ratio_basics",
+        "duration": "3:05",
+        "thumbnail": "/images/offline-tutoring/grade6-ratios.jpg"
+      },
+      {
+        "title": "Intro to Algebraic Expressions",
+        "src": "https://www.youtube.com/embed/algebraic_expressions_intro",
+        "duration": "2:55",
+        "thumbnail": "/images/offline-tutoring/grade6-algebra.jpg"
+      },
+      {
+        "title": "Ratio Word Problems",
+        "src": "https://www.youtube.com/embed/ratio_word_problems",
+        "duration": "3:10",
+        "thumbnail": "/images/offline-tutoring/grade6-ratio-problems.jpg"
+      }
+    ],
+    "worksheet": "/worksheets/grade6/Grade6_Ratios_Algebra.pdf",
+    "plan": [
+      "Week 1 – Ratio models",
+      "Week 2 – Equivalent ratios",
+      "Week 3 – Writing expressions",
+      "Week 4 – Algebra word problems"
+    ]
+  },
+  {
+    "grade": "Grade 7",
+    "topic": "Integers & Linear Relationships",
+    "videos": [
+      {
+        "title": "Working with Integers",
+        "src": "https://www.youtube.com/embed/integer_operations",
+        "duration": "3:20",
+        "thumbnail": "/images/offline-tutoring/grade7-integers.jpg"
+      },
+      {
+        "title": "Graphing Linear Relations",
+        "src": "https://www.youtube.com/embed/graphing_linear_relations",
+        "duration": "3:00",
+        "thumbnail": "/images/offline-tutoring/grade7-linear-relations.jpg"
+      }
+    ],
+    "worksheet": "/worksheets/grade7/Grade7_Integers_LinearRelations.pdf",
+    "plan": [
+      "Week 1 – Integer rules",
+      "Week 2 – Integer problem solving",
+      "Week 3 – Coordinate plane review",
+      "Week 4 – Graphing linear relations"
+    ]
+  },
+  {
+    "grade": "Grade 8",
+    "topic": "Exponents & Geometry",
+    "videos": [
+      {
+        "title": "Exploring Exponents",
+        "src": "https://www.youtube.com/embed/exponents_grade8",
+        "duration": "3:15",
+        "thumbnail": "/images/offline-tutoring/grade8-exponents.jpg"
+      },
+      {
+        "title": "Volume of Cylinders & Cones",
+        "src": "https://www.youtube.com/embed/geometry_volume",
+        "duration": "3:05",
+        "thumbnail": "/images/offline-tutoring/grade8-geometry-volume.jpg"
+      },
+      {
+        "title": "Pythagorean Theorem Applications",
+        "src": "https://www.youtube.com/embed/pythagorean_applications",
+        "duration": "3:25",
+        "thumbnail": "/images/offline-tutoring/grade8-pythagorean.jpg"
+      }
+    ],
+    "worksheet": "/worksheets/grade8/Grade8_Exponents_Geometry.pdf",
+    "plan": [
+      "Week 1 – Exponent laws",
+      "Week 2 – Scientific notation",
+      "Week 3 – Surface area & volume",
+      "Week 4 – Pythagorean challenge"
+    ]
+  }
+]
