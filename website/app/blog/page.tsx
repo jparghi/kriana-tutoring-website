@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { Footer } from "../../components/footer";
 import { CategoryFilter } from "./components/CategoryFilter";
-import { BlogList } from "./components/BlogList";
+import { BlogSearchSection } from "./components/BlogSearchSection";
 import { getBlogPosts } from "./data";
 
 type BlogListPageProps = {
@@ -59,7 +59,7 @@ export default function BlogListPage({ searchParams }: BlogListPageProps) {
               </div>
 
               {posts.length > 0 ? (
-                <BlogList posts={posts} />
+                <BlogSearchSection posts={posts} />
               ) : (
                 <div className="rounded-[1.5rem] border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center text-slate-600">
                   No posts found for that category yet.
