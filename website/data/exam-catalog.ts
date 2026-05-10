@@ -160,6 +160,22 @@ export const examCatalog: PracticeTest[] = [
     previewPalette: { from: "from-emerald-100", to: "to-slate-50", accent: "bg-emerald-500" },
     downloadUrl: "/worksheets/grade-6/gr6-math-assessment-term-checkin.pdf"
   },
+  {
+    id: "gr6-math-test-add-sub-mult-div-medium",
+    title: "Grade 6 Math Test – Addition, Subtraction, Multiplication & Division",
+    subject: "Mathematics",
+    gradeLevel: "Grade 6",
+    summary: "36-question math test covering 6-digit addition and subtraction, multiplication facts with larger numbers, and long-division setup practice.",
+    skills: ["6-Digit Addition", "6-Digit Subtraction", "Multiplication", "Long Division"],
+    topics: ["Ontario Grade 6 Math", "Number Sense", "Computation"],
+    duration: "55 min",
+    questionsCount: 36,
+    difficulty: "Medium",
+    type: "Test",
+    previewPalette: { from: "from-teal-100", to: "to-slate-50", accent: "bg-teal-500" },
+    downloadUrl: "/worksheets/exams/grade-6/gr6-math-test-add-sub-mult-div-medium.pdf",
+    answerKeyUrl: "/worksheets/exams/grade-6/gr6-math-test-add-sub-mult-div-medium-answerkey.pdf"
+  },
 
   // ── Grade 8 ─────────────────────────────────────────────────────────────────
   {
