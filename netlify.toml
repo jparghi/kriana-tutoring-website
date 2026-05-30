@@ -1,8 +1,8 @@
 # Public marketing website for krianatutoring.com
-# This repo-root config builds the Next.js app in website/.
 [build]
-  command = "npm --prefix website ci && npm --prefix website run build"
-  publish = "website/.next"
+  base = "website"
+  command = "npm ci && npm run build"
+  publish = ".next"
 
 [build.environment]
   NEXT_TELEMETRY_DISABLED = "1"
