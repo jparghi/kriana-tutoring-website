@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Footer } from "../../components/footer";
 import { HowWereDifferent } from "../../components/how-were-different";
 import { KrianaLearningMethod } from "../../components/kriana-learning-method";
-import { VideoStoryboard } from "../../components/video-storyboard";
 
 export const metadata: Metadata = {
   title: "Why Kriana? Our Approach to Personalized Learning | Kriana Tutoring",
@@ -60,8 +59,7 @@ export default function WhyKrianaPage() {
       {/* Full Traditional vs Personalized comparison + differentiator cards */}
       <HowWereDifferent />
 
-      {/* Animated video storyboard */}
-      <VideoStoryboard />
+      {/* Animated video storyboard — hidden, pending improvements (see docs/TODO.md) */}
 
       {/* Final CTA */}
       <section className="bg-gradient-to-br from-brand-sky/10 via-white to-brand-teal/10 py-20">
