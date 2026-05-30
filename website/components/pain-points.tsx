@@ -1,38 +1,48 @@
+import {
+  AlertCircleIcon,
+  BuildingIcon,
+  LayoutListIcon,
+  TrendingDownIcon,
+  UsersIcon,
+  ZapIcon,
+} from "./icons";
 import { SectionHeading } from "./section-heading";
 
-const painPoints = [
+type IconComponent = React.ComponentType<React.SVGProps<SVGSVGElement>>;
+
+const painPoints: { icon: IconComponent; title: string; description: string }[] = [
   {
-    emoji: "😔",
+    icon: AlertCircleIcon,
     title: "My child is falling behind",
     description:
       "Report cards show gaps and teacher comments are worrying. You want to act before the gap gets wider.",
   },
   {
-    emoji: "😤",
+    icon: ZapIcon,
     title: "Homework is a nightly battle",
     description:
       "Every evening ends in frustration — for your child and for you. Learning shouldn't feel like a fight.",
   },
   {
-    emoji: "📉",
+    icon: TrendingDownIcon,
     title: "Math or reading confidence is low",
     description:
       "Your child says \"I'm just not good at math\" or avoids reading altogether. That belief needs to change.",
   },
   {
-    emoji: "🏫",
+    icon: BuildingIcon,
     title: "School can't give one-on-one time",
     description:
       "With 25+ students in a classroom, your child's specific gaps don't always get addressed. That's where we come in.",
   },
   {
-    emoji: "📋",
+    icon: LayoutListIcon,
     title: "No structure outside of school",
     description:
       "Your child needs regular, consistent practice with a plan — not just random worksheets or YouTube videos.",
   },
   {
-    emoji: "🤝",
+    icon: UsersIcon,
     title: "You want a trusted learning partner",
     description:
       "You're looking for someone patient, caring, and experienced — not just a high schooler doing homework help.",
@@ -55,8 +65,8 @@ export function PainPoints() {
               key={point.title}
               className="group flex gap-4 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand-rose/20 hover:shadow-[0_12px_36px_rgba(255,138,101,0.1)]"
             >
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-amber/15 text-2xl transition-transform duration-300 group-hover:scale-110">
-                {point.emoji}
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-amber/15 transition-transform duration-300 group-hover:scale-110">
+                <point.icon className="h-6 w-6 text-amber-700" />
               </span>
               <div className="space-y-1.5">
                 <h3 className="font-bold text-slate-900">{point.title}</h3>

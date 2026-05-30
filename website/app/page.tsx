@@ -5,35 +5,35 @@ import { FeatureGrid } from "../components/feature-grid";
 import { Footer } from "../components/footer";
 import { HeroSplit } from "../components/hero-split";
 import { HowWeHelp } from "../components/how-we-help";
-import { HowWereDifferent } from "../components/how-were-different";
+import { KrianaMethodTeaser } from "../components/kriana-method-teaser";
 import { LocalAreas } from "../components/local-areas";
 import { PainPoints } from "../components/pain-points";
 import { TestimonialCarousel } from "../components/testimonial-carousel";
 
 export const metadata: Metadata = {
-  title: "Math & English Tutoring for Kids in Ottawa | Kriana Tutoring",
+  title: "Personalized Tutoring for Kids in Ottawa | Kriana Tutoring",
   description:
-    "Kriana Tutoring helps JK to Grade 8 students build confidence in math, reading, and writing through personalized and engaging learning in Ottawa. Book a free assessment today."
+    "Kriana Tutoring builds personalized learning plans for JK to Grade 8 students in Ottawa. Every child is assessed before we plan — and parents receive monthly progress updates. Book a free assessment today."
 };
 
 export default function HomePage() {
   return (
     <main className="flex min-h-screen flex-col">
-      {/* 1. Hero — value prop above the fold */}
+      {/* 1. Hero — Personalized Learning For Every Child */}
       <HeroSplit />
       {/* 2. Parent pain points — build empathy */}
       <PainPoints />
       {/* 3. How Kriana helps — solution narrative */}
       <HowWeHelp />
-      {/* 4. Local SEO signal */}
-      <LocalAreas />
-      {/* 4. How we're different — differentiation */}
-      <HowWereDifferent />
+      {/* 4. Method teaser — 4-step preview, links to /why-kriana for full detail */}
+      <KrianaMethodTeaser />
       {/* 5. Programs — what we offer */}
       <FeatureGrid />
-      {/* 6. Testimonials — social proof */}
+      {/* 6. Local SEO signal */}
+      <LocalAreas />
+      {/* 7. Testimonials — social proof */}
       <TestimonialCarousel />
-      {/* 7. Contact / final CTA */}
+      {/* 8. Contact / final CTA */}
       <ContactGrid />
       <Footer />
     </main>

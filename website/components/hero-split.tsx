@@ -4,20 +4,20 @@ import { GraduationCapIcon, MessageCircleIcon, SparkleIcon } from "./icons";
 
 const featureHighlights = [
   {
-    title: "Confidence-First Learning",
-    description: "Every lesson is designed to help children feel capable and proud of their progress",
+    title: "Personalized Learning Plans",
+    description: "Every child receives an individualized path based on their assessment — not a generic curriculum",
     icon: SparkleIcon,
     accent: "from-brand-amber/25 to-brand-rose/10 border-brand-amber/20 text-amber-600"
   },
   {
-    title: "Hands-On & Engaging",
-    description: "Structured worksheets and activities that make learning enjoyable, not stressful",
+    title: "Assessment-Based Start",
+    description: "We assess before we plan. No guessing — we know exactly where your child is and where they need to go",
     icon: GraduationCapIcon,
     accent: "from-brand-sky/20 to-brand-teal/10 border-brand-sky/20 text-brand-sky"
   },
   {
-    title: "Personalized Support",
-    description: "Small group attention tailored to your child's pace, grade, and learning style",
+    title: "Monthly Progress Reviews",
+    description: "Parents receive regular updates so you always know how your child is growing",
     icon: MessageCircleIcon,
     accent: "from-brand-teal/20 to-brand-sky/10 border-brand-teal/20 text-brand-teal"
   }
@@ -55,15 +55,15 @@ export function HeroSplit() {
                 <span className="absolute inline-flex h-full w-full animate-ping-slow rounded-full bg-brand-rose opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-rose" />
               </span>
-              JK to Grade 8 · Ottawa
+              JK to Grade 8 · Ottawa, ON
             </span>
           </div>
 
           {/* Headline */}
           <h1 className="text-balance text-[clamp(2.6rem,5.4vw,3.9rem)] font-bold leading-[1.06] text-slate-900">
-            Build Confidence.{" "}
+            Personalized Learning{" "}
             <span className="relative inline-block">
-              <span className="gradient-text">Strengthen Skills.</span>
+              <span className="gradient-text">For Every Child.</span>
               {/* Wavy underline */}
               <svg
                 className="absolute -bottom-2 left-0 w-full"
@@ -87,14 +87,13 @@ export function HeroSplit() {
                   </linearGradient>
                 </defs>
               </svg>
-            </span>{" "}
-            Make Learning Enjoyable.
+            </span>
           </h1>
 
           <p className="max-w-xl text-lg leading-relaxed text-slate-600">
-            Kriana Tutoring provides personalized tutoring in Ottawa for JK to Grade 8 students through structured
-            lessons, engaging worksheets, and hands-on learning activities. We help with math tutoring for kids,
-            reading help for grade 1-3 learners, and homework help for kids who need more confidence at school.
+            Every child learns differently. At Kriana Tutoring, we build a personalized plan for your child — based
+            on an individual assessment, not a one-size-fits-all worksheet. We help JK to Grade 8 students in Ottawa
+            build real confidence in math and English, with monthly progress updates so you always know how they&apos;re growing.
           </p>
 
           {/* CTA Buttons */}
@@ -185,7 +184,7 @@ export function HeroSplit() {
                   <span className="gradient-text">we build confident learners</span>
                 </h3>
                 <p className="mt-3 text-sm leading-relaxed text-slate-600">
-                  A warm, home-based learning environment where children discover that school is something they can do. Structured worksheets, hands-on activities, and patient teaching make the difference.
+                  Your child&apos;s learning plan starts with an assessment, not an assumption. We identify exactly where they are, build a plan around them, and track progress every month — because children deserve more than a generic curriculum.
                 </p>
 
                 <div className="mt-6 grid gap-4 sm:grid-cols-2">

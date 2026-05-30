@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 
 const navItems = [
   { label: "Home", href: "/" },
+  { label: "Why Kriana", href: "/why-kriana" },
   { label: "Services", href: "/services" },
   {
     label: "Resources",
@@ -170,19 +171,15 @@ export function NavigationBar() {
               })}
             </nav>
 
-            <div className="hidden items-center gap-2 xl:flex xl:pl-3">
+            <div className="hidden items-center xl:flex xl:pl-3">
               <Link
                 href={phoneHref}
-                className="inline-flex min-h-[4rem] min-w-[15rem] flex-col items-center justify-center rounded-full border border-[#5AC8FA]/40 bg-white/80 px-4 py-2.5 text-[#0A2D5A] transition-all duration-300 hover:border-[#5AC8FA] hover:bg-white"
+                className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-[#5AC8FA]/50 bg-white/90 px-5 py-2.5 text-[0.78rem] font-bold text-[#0A2D5A] shadow-sm transition-all duration-200 hover:border-[#5AC8FA] hover:bg-white hover:shadow-[0_4px_16px_rgba(74,144,226,0.2)]"
               >
-                <span className="text-[0.58rem] font-bold uppercase tracking-[0.14em] leading-none">Call or Text</span>
-                <span className="mt-1 text-[0.86rem] font-bold tracking-[0.12em] leading-none">{phoneCompactLabel}</span>
-              </Link>
-              <Link
-                href="/contact#consultation-form"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-full bg-gradient-to-r from-brand-sky to-brand-teal px-5 py-3 text-[0.72rem] font-bold uppercase tracking-[0.24em] text-white shadow-[0_4px_20px_rgba(74,144,226,0.4)] transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_6px_28px_rgba(74,144,226,0.55)] 2xl:px-6"
-              >
-                Book Free Session
+                <svg className="h-3.5 w-3.5 shrink-0 text-brand-sky" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.86 19.86 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.86 19.86 0 0 1 2.08 4.18 2 2 0 0 1 4.05 2h3a2 2 0 0 1 2 1.72c.14 1.05.47 2.06.96 3 .31.63.1 1.38-.44 1.79l-1.27.95a2 2 0 0 0-.57 2.57 13 13 0 0 0 6.1 6.1 2 2 0 0 0 2.57-.57l.95-1.27c.41-.54 1.16-.75 1.79-.44a12.84 12.84 0 0 0 3 1c.96.24 1.64 1.1 1.64 2.09Z" />
+                </svg>
+                {phoneCompactLabel}
               </Link>
             </div>
 
@@ -288,14 +285,7 @@ export function NavigationBar() {
               onClick={closeMobileMenu}
               className="mt-4 flex w-full items-center justify-center rounded-full border border-[#5AC8FA]/50 bg-white py-3 text-sm font-bold uppercase tracking-[0.22em] text-[#0A2D5A] shadow-[0_4px_20px_rgba(74,144,226,0.12)]"
             >
-              Call Now
-            </Link>
-            <Link
-              href="/contact#consultation-form"
-              onClick={closeMobileMenu}
-              className="mt-4 flex w-full items-center justify-center rounded-full bg-gradient-to-r from-brand-sky to-brand-teal py-3 text-sm font-bold uppercase tracking-[0.22em] text-white shadow-[0_4px_20px_rgba(74,144,226,0.4)]"
-            >
-              Book Free Session
+              Call or Text
             </Link>
           </div>
         </div>

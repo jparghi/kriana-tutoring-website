@@ -5,7 +5,17 @@
       "Bash(xargs kill -9)",
       "Bash(npm run *)",
       "Read(//tmp/**)",
-      "Bash(jobs)"
+      "Bash(jobs)",
+      "Bash(grep -E '\\\\.\\(tsx|ts|jsx|js|css|md\\)$')",
+      "Bash(git -C /Users/jigish/IdeaProjects/kriana-tutoring-website-ws/kriana-tutoring-website diff --stat HEAD)",
+      "Bash(git -C /Users/jigish/IdeaProjects/kriana-tutoring-website-ws/kriana-tutoring-website status --short)",
+      "Bash(echo \"PID $!\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3456/)",
+      "Bash(node -e ' *)",
+      "Bash(osascript)"
+    ],
+    "additionalDirectories": [
+      "/Users/jigish/IdeaProjects/kriana-technologies/clients/marc-appliance"
     ]
   }
 }
