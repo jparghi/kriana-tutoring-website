@@ -22,7 +22,13 @@ export const localBusinessSchema = {
     postalCode: "K2V 0C1",
     addressCountry: "CA"
   },
-  areaServed: ["Ottawa", "Kanata", "Stittsville"],
+  areaServed: [
+    { "@type": "City", name: "Ottawa" },
+    { "@type": "City", name: "Kanata" },
+    { "@type": "City", name: "Stittsville" },
+    { "@type": "City", name: "Nepean" },
+    { "@type": "City", name: "Barrhaven" }
+  ],
   openingHoursSpecification: [
     {
       "@type": "OpeningHoursSpecification",
@@ -43,3 +49,30 @@ export const localBusinessSchema = {
   ],
   priceRange: "$$"
 };
+
+export const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "@id": `${siteUrl}/#website`,
+  url: siteUrl,
+  name: "Kriana Tutoring",
+  publisher: { "@id": `${siteUrl}/#organization` },
+  potentialAction: {
+    "@type": "SearchAction",
+    target: { "@type": "EntryPoint", urlTemplate: `${siteUrl}/blog?q={search_term_string}` },
+    "query-input": "required name=search_term_string"
+  }
+};
+
+export function breadcrumbSchema(items: { name: string; url: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: item.url
+    }))
+  };
+}

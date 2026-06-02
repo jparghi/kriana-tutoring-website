@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Footer } from "../../../components/footer";
-import { localBusinessSchema, siteUrl, toJsonLd } from "../../../lib/seo";
+import { breadcrumbSchema, localBusinessSchema, siteUrl, toJsonLd } from "../../../lib/seo";
 import { getServicePageBySlug, servicePages } from "../data";
 
 type ServiceDetailPageProps = {
@@ -28,7 +28,8 @@ export function generateMetadata({ params }: ServiceDetailPageProps): Metadata {
 
   return {
     title: service.metaTitle,
-    description: service.metaDescription
+    description: service.metaDescription,
+    alternates: { canonical: `${siteUrl}/services/${service.slug}` }
   };
 }
 
@@ -38,6 +39,12 @@ export default function ServiceDetailPage({ params }: ServiceDetailPageProps) {
   if (!service) {
     notFound();
   }
+
+  const serviceBreadcrumb = breadcrumbSchema([
+    { name: "Home", url: siteUrl },
+    { name: "Services", url: `${siteUrl}/services` },
+    { name: service.shortTitle, url: `${siteUrl}/services/${service.slug}` }
+  ]);
 
   const serviceSchema = {
     "@context": "https://schema.org",
@@ -55,6 +62,10 @@ export default function ServiceDetailPage({ params }: ServiceDetailPageProps) {
   return (
     <>
       <main className="min-h-screen bg-white px-6 pb-20 pt-10 sm:px-10 lg:pt-14">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: toJsonLd(serviceBreadcrumb) }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: toJsonLd(serviceSchema) }}

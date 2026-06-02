@@ -7,7 +7,8 @@ import { servicePages } from "./data";
 export const metadata: Metadata = {
   title: "Tutoring Services in Ottawa for Math, Reading & Homework Help | Kriana Tutoring",
   description:
-    "Explore Kriana Tutoring services in Ottawa, including math tutoring for kids, reading help for grade 1-3 students, writing support, and homework help."
+    "Explore Kriana Tutoring services in Ottawa, including math tutoring for kids, reading help for grade 1-3 students, writing support, and homework help.",
+  alternates: { canonical: "https://www.krianatutoring.com/services" }
 };
 
 export default function ServicesPage() {

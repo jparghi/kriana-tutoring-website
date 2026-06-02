@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Footer } from "../../../components/footer";
-import { siteUrl, toJsonLd } from "../../../lib/seo";
+import { breadcrumbSchema, siteUrl, toJsonLd } from "../../../lib/seo";
 import { BlogDetail } from "../components/BlogDetail";
 import { blogPosts, getBlogPostBySlug } from "../data";
 
@@ -29,7 +29,8 @@ export function generateMetadata({ params }: BlogPostPageProps): Metadata {
 
   return {
     title: post.metaTitle ?? post.title,
-    description: post.metaDescription ?? post.excerpt
+    description: post.metaDescription ?? post.excerpt,
+    alternates: { canonical: `${siteUrl}/blog/${post.slug}` }
   };
 }
 
@@ -39,6 +40,12 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
   if (!post) {
     notFound();
   }
+
+  const postBreadcrumb = breadcrumbSchema([
+    { name: "Home", url: siteUrl },
+    { name: "Blog", url: `${siteUrl}/blog` },
+    { name: post.title, url: `${siteUrl}/blog/${post.slug}` }
+  ]);
 
   const blogPostingSchema = {
     "@context": "https://schema.org",
@@ -65,6 +72,10 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
   return (
     <>
       <main className="min-h-screen px-6 pb-20 pt-10 sm:px-10 lg:pt-14">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: toJsonLd(postBreadcrumb) }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: toJsonLd(blogPostingSchema) }}

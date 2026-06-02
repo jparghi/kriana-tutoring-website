@@ -3,9 +3,10 @@ import { ExamSearchExperience } from "../../components/exam-search-experience";
 import { examCatalog } from "../../data/exam-catalog";
 
 export const metadata: Metadata = {
-  title: "Practice Tests",
+  title: "Ontario Practice Tests & Assessments Grade 1–8 | Kriana",
   description:
-    "Browse Ontario-aligned practice tests and assessments from Grade 1 to Grade 8. Filter by type, difficulty, and grade level."
+    "Browse Ontario-aligned practice tests and assessments for Grade 1 to Grade 8. Filter by subject, difficulty, and grade level. Curated by Kriana Tutoring Ottawa.",
+  alternates: { canonical: "https://www.krianatutoring.com/practice-tests" }
 };
 
 export default function PracticeTestsPage() {

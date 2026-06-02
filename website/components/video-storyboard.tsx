@@ -303,7 +303,7 @@ function S4() {
         <ellipse cx="180" cy="32" rx="68" ry="7" fill="#0d2a1c" opacity=".9"/>
         <rect x="112" y="30" width="136" height="132" rx="4" fill="#0a1f14" stroke="#00B8A9" strokeWidth="1.4"/>
         <text x="180" y="52" fill="#00B8A9" fontSize="8.5" fontWeight="bold" textAnchor="middle" style={{animation:"sciFadeIn .3s ease .5s both"}}>Personalized Learning Plan</text>
-        <text x="180" y="64" fill="#64748b" fontSize="7" textAnchor="middle" style={{animation:"sciFadeIn .3s ease .7s both"}}>[Child's Name]</text>
+        <text x="180" y="64" fill="#64748b" fontSize="7" textAnchor="middle" style={{animation:"sciFadeIn .3s ease .7s both"}}>[Child&apos;s Name]</text>
       </g>
       {/* plan items */}
       {[

@@ -13,7 +13,8 @@ import { TestimonialCarousel } from "../components/testimonial-carousel";
 export const metadata: Metadata = {
   title: "Personalized Tutoring for Kids in Ottawa | Kriana Tutoring",
   description:
-    "Kriana Tutoring builds personalized learning plans for JK to Grade 8 students in Ottawa. Every child is assessed before we plan — and parents receive monthly progress updates. Book a free assessment today."
+    "Kriana Tutoring builds personalized learning plans for JK to Grade 8 students in Ottawa. Every child is assessed before we plan — and parents receive monthly progress updates. Book a free assessment today.",
+  alternates: { canonical: "https://www.krianatutoring.com" }
 };
 
 export default function HomePage() {

@@ -3,7 +3,7 @@ import { Jost, Open_Sans } from "next/font/google";
 import type { ReactNode } from "react";
 import { NavigationBar } from "../components/navigation-bar";
 import { ScrollToTopButton } from "../components/scroll-to-top-button";
-import { localBusinessSchema, toJsonLd } from "../lib/seo";
+import { localBusinessSchema, toJsonLd, websiteSchema } from "../lib/seo";
 import "./globals.css";
 
 const jost = Jost({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-heading" });
@@ -11,10 +11,11 @@ const openSans = Open_Sans({ subsets: ["latin"], weight: ["400", "500", "600"], 
 
 export const metadata: Metadata = {
   title: {
-    default: "Kriana Tutoring Center",
+    default: "Kriana Tutoring | Ottawa's Personalized Tutoring for Kids",
     template: "%s · Kriana Tutoring"
   },
-  description: "A modern, AI-ready tutoring experience inspired by The7 Online Courses demo.",
+  description:
+    "Personalized tutoring for kids JK–Grade 8 in Ottawa, Kanata & Stittsville. Math, reading, homework help — assessment-first, results-driven. Book a free consultation.",
   metadataBase: new URL("https://www.krianatutoring.com"),
   icons: {
     icon: [
@@ -26,17 +27,27 @@ export const metadata: Metadata = {
     apple: [{ url: "/images/kriana-logo-icon-large.png", sizes: "180x180" }]
   },
   openGraph: {
-    title: "Kriana Tutoring Center",
-    description: "A modern, AI-ready tutoring experience inspired by The7 Online Courses demo.",
+    title: "Kriana Tutoring | Ottawa's Personalized Tutoring for Kids",
+    description:
+      "Personalized tutoring for kids JK–Grade 8 in Ottawa, Kanata & Stittsville. Assessment-first math, reading & homework help. Book a free consultation.",
+    siteName: "Kriana Tutoring",
+    type: "website",
     url: "https://www.krianatutoring.com",
     images: [
       {
-        url: "/images/kriana-logo-icon-large.png",
-        width: 1024,
-        height: 1024,
-        alt: "Kriana Tutoring logo"
+        url: "/images/kriana-og-social.png",
+        width: 1200,
+        height: 630,
+        alt: "Kriana Tutoring – Ottawa's personalized tutoring for kids JK–Grade 8"
       }
     ]
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Kriana Tutoring | Ottawa's Personalized Tutoring for Kids",
+    description:
+      "Personalized tutoring for kids JK–Grade 8 in Ottawa. Math, reading & homework help. Book a free consultation.",
+    images: ["/images/kriana-og-social.png"]
   }
 };
 
@@ -47,6 +58,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: toJsonLd(localBusinessSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: toJsonLd(websiteSchema) }}
         />
         <NavigationBar />
         {children}

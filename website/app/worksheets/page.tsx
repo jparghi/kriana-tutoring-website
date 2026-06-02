@@ -3,9 +3,10 @@ import { WorksheetSearchExperience } from "../../components/worksheet-search-exp
 import { worksheetCatalog } from "../../data/worksheet-catalog";
 
 export const metadata: Metadata = {
-  title: "Worksheets",
+  title: "Free Ontario Math & Reading Worksheets JK–Grade 8 | Kriana",
   description:
-    "Discover Ontario-aligned worksheets from JK to Grade 8 with AI-powered search, filters, and grade-by-grade navigation."
+    "Download free Ontario-aligned math and reading worksheets for JK to Grade 8. Curated by Kriana Tutoring educators in Ottawa — filter by grade, subject, and skill.",
+  alternates: { canonical: "https://www.krianatutoring.com/worksheets" }
 };
 
 export default function WorksheetsPage() {

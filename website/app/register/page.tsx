@@ -11,9 +11,10 @@ const gradeLevels = [
 ];
 
 export const metadata: Metadata = {
-  title: "Register",
+  title: "Enroll Your Child | Kriana Tutoring Ottawa",
   description:
-    "Reserve a spot with Kriana Tutoring. Share your learner's details and our team will craft a personalised learning journey."
+    "Reserve a spot with Kriana Tutoring in Ottawa. Share your child's details and our team will craft a personalized learning plan for JK–Grade 8 students.",
+  alternates: { canonical: "https://www.krianatutoring.com/register" }
 };
 
 export default function RegisterPage() {

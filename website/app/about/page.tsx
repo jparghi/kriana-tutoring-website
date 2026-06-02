@@ -62,8 +62,10 @@ const highlights = [
 ];
 
 export const metadata: Metadata = {
-  title: "About Us",
-  description: "Discover the story, mission, and team behind Kriana Tutoring's modern learning experience."
+  title: "About Kriana Tutoring | Ottawa's Learning-with-Heart Tutors",
+  description:
+    "Meet the team behind Kriana Tutoring. Founded by educators in Ottawa, we deliver assessment-first, personalized learning for JK–Grade 8 students in Ottawa, Kanata & Stittsville.",
+  alternates: { canonical: "https://www.krianatutoring.com/about" }
 };
 
 export default function AboutPage() {
