@@ -119,6 +119,25 @@ Scene transitions from desaturated (matching Scene 02 tone) to vibrant full colo
 
 ---
 
+## Voiceover Handoff Table
+
+Use this table when giving the finished video to a voiceover agent or text-to-speech tool. Each row should be spoken during the matching scene timestamp.
+
+| Scene | Time Range | Cue | Speak This |
+|---|---:|---|---|
+| 01 | 0–10s | Every Child Learns Differently | Every child is different. They think differently. They learn differently. They grow differently. |
+| 02 | 10–25s | The Problem with One-Size-Fits-All | When every child gets the same plan, most children fall behind. Not because they can't learn, but because no one built a plan around how they learn. |
+| 03 | 25–40s | The Kriana Assessment | At Kriana, we start by getting to know your child. Before a single lesson, we run a thorough assessment to understand exactly where they are, and how they learn best. |
+| 04 | 40–55s | The Personalized Learning Plan | Then we build a plan made for your child, not for every child. A personalized learning path that starts where they are, and takes them where they need to go. |
+| 05 | 55–70s | Monthly Progress & Parent Updates | Every month, we review your child's progress. And you're always kept in the loop, because when parents and tutors work together, children thrive. |
+| 06 | 70–82s | Confidence & Academic Growth | The result? Children who believe in themselves. Who walk into class ready. Who stop saying, "I can't," and start saying, "I've got this." |
+| 07 | 82–90s | Call to Action | Kriana Tutoring. Personalized learning for every child. Book your free assessment today, and let's build a plan around your child. |
+
+**Voice Direction:**  
+Warm, friendly, clear, and reassuring. Speak at a natural pace, with slight pauses between sentences. Keep the delivery parent-focused and confident, not salesy.
+
+---
+
 ## Production Notes
 
 - **Voice talent:** Warm, friendly female voice. Canadian or neutral North American accent preferred.
