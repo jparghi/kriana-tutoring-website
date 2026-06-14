@@ -26,10 +26,18 @@ async function patchDoc(collection, id, fields) {
 
 async function incrementSessionCount(sessionId) {
   const res = await fetch(`${FS_BASE}/sessions/${sessionId}`)
-  if (!res.ok) return
+  if (!res.ok) {
+    console.error(`incrementSessionCount: failed to read session ${sessionId} — status ${res.status}`)
+    return
+  }
   const doc = await res.json()
   const current = parseInt(doc.fields?.confirmedCount?.integerValue ?? '0')
-  await patchDoc('sessions', sessionId, { confirmedCount: current + 1 })
+  const ok = await patchDoc('sessions', sessionId, { confirmedCount: current + 1 })
+  if (!ok) {
+    console.error(`incrementSessionCount: failed to patch session ${sessionId} — likely blocked by Firestore security rules`)
+  } else {
+    console.log(`incrementSessionCount: session ${sessionId} confirmedCount → ${current + 1}`)
+  }
 }
 
 async function sendConfirmationEmail(registrationId) {
