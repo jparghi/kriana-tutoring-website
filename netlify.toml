@@ -3,10 +3,18 @@
   base = "website"
   command = "npm ci && npm run build"
   publish = ".next"
+  functions = "netlify/functions"
 
 [build.environment]
   NEXT_TELEMETRY_DISABLED = "1"
   NODE_VERSION = "18.20.3"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Expire pending e-transfer holds every hour
+[functions."expire-etransfer-holds"]
+  schedule = "@hourly"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"

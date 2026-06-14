@@ -19,7 +19,8 @@ const navItems = [
     ]
   },
   { label: "About", href: "/about" },
-  { label: "Contact", href: "/contact#consultation-form" }
+  { label: "Contact", href: "/contact#consultation-form" },
+  { label: "Book a Program", href: "/booking" }
 ];
 
 const phoneHref = "tel:+16134006921";
