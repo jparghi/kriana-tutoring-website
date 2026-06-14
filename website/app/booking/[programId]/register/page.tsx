@@ -175,7 +175,7 @@ function RegisterForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          registrationId, sessionId,
+          registrationId, programId, sessionId,
           programTitle: program?.title ?? '', sessionTitle: session?.title ?? '',
           amountCents, parentEmail: form.parentEmail, parentName: form.parentName,
           childName: form.childName, isDepositOnly: program?.isDepositOnly ?? false,
