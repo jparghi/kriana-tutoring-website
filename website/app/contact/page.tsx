@@ -131,12 +131,6 @@ export default function ContactPage() {
           </div>
           <aside className="relative rounded-3xl border border-slate-200 bg-white/80 p-8 shadow-[0_24px_60px_rgba(15,23,42,0.12)] backdrop-blur">
             <div className="space-y-6">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-900">Visit our learning studio</h2>
-                <p className="mt-3 text-sm text-slate-600">
-                  205 Metric Circle, Stittsville, Ontario — inside the Kanata North Tech Park with ample parking and collaborative learning spaces.
-                </p>
-              </div>
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <p className="text-xs font-semibold uppercase tracking-[0.3em] text-brand-rose">Office Hours</p>
                 <dl className="mt-4 space-y-3 text-sm text-slate-700">
