@@ -81,7 +81,7 @@ export default function MyBookingsPage() {
                 <p className="font-semibold text-slate-700 mb-1">No bookings found</p>
                 <p className="text-sm text-slate-400">
                   No registrations found for <strong>{submitted}</strong>.
-                  Make sure you're using the same email you registered with.
+                  Make sure you&apos;re using the same email you registered with.
                 </p>
                 <Link href="/booking" className="mt-4 inline-block text-sm font-semibold text-[#0c6162] hover:underline">Browse programs →</Link>
               </div>

@@ -244,7 +244,7 @@ function RegisterForm() {
           <div className="space-y-4">
             <div className="mb-5">
               <h3 className="font-black text-slate-800 text-base">Your Information</h3>
-              <p className="text-sm text-slate-400 mt-0.5">We'll send booking details to this email.</p>
+              <p className="text-sm text-slate-400 mt-0.5">We&apos;ll send booking details to this email.</p>
             </div>
             <Field label="Full Name" required>
               <input required className={inputClass} value={form.parentName} onChange={e => set('parentName', e.target.value)} placeholder="Jane Smith" autoComplete="name" />
@@ -349,7 +349,7 @@ function RegisterForm() {
 
             {useWaitlist && (
               <div className="bg-orange-50 border border-orange-100 rounded-xl px-4 py-3 text-sm text-orange-700 font-medium">
-                This session is full. Joining the waitlist is free — you'll be emailed if a spot opens.
+                This session is full. Joining the waitlist is free — you&apos;ll be emailed if a spot opens.
               </div>
             )}
 

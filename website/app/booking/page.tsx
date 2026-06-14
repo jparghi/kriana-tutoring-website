@@ -124,7 +124,7 @@ export default function BookingPage() {
 
         <div className="mb-8">
           <h1 className="text-3xl font-black text-slate-800 mb-2">Programs & Activities</h1>
-          <p className="text-slate-500">Choose a program and book your child's spot online.</p>
+          <p className="text-slate-500">Choose a program and book your child&apos;s spot online.</p>
         </div>
 
         {!loading && categories.length > 1 && (

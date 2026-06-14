@@ -98,7 +98,7 @@ function SuccessContent() {
         <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: '#e6f4f4' }}>
           <svg viewBox="0 0 24 24" fill="none" stroke="#0c6162" strokeWidth={2.5} className="w-8 h-8"><polyline points="20 6 9 17 4 12" /></svg>
         </div>
-        <h1 className="text-2xl font-black text-slate-800 mb-2">You're registered!</h1>
+        <h1 className="text-2xl font-black text-slate-800 mb-2">You&apos;re registered!</h1>
         <p className="text-slate-500">
           A confirmation email has been sent to{' '}
           {data?.reg?.parentEmail ? <strong>{data.reg.parentEmail}</strong> : 'your email address'}.

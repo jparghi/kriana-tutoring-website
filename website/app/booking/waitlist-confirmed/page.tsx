@@ -17,12 +17,12 @@ function WaitlistContent() {
             <path d="M12 8v4M12 16h.01" />
           </svg>
         </div>
-        <h1 className="text-2xl font-black text-slate-800 mb-2">You're on the Waitlist!</h1>
+        <h1 className="text-2xl font-black text-slate-800 mb-2">You&apos;re on the Waitlist!</h1>
         <p className="text-slate-500 mb-3">
           {program ? <><strong>{program}</strong> is currently full.</> : 'This session is currently full.'}
         </p>
         <p className="text-slate-500 mb-8">
-          We've added you to the waitlist. If a spot opens up, we'll contact you by email to confirm your registration.
+          We&apos;ve added you to the waitlist. If a spot opens up, we&apos;ll contact you by email to confirm your registration.
         </p>
         <Link href="/booking" className="inline-flex items-center justify-center gap-2 text-sm font-semibold px-6 py-3 rounded-xl text-white" style={{ backgroundColor: '#0c6162' }}>
           Browse More Programs
