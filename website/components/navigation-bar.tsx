@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bars3Icon, ChevronDownIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import Image from "next/image";
 import Link from "next/link";
@@ -8,19 +8,23 @@ import { usePathname } from "next/navigation";
 
 const navItems = [
   { label: "Home", href: "/" },
-  { label: "Why Kriana", href: "/why-kriana" },
   { label: "Services", href: "/services" },
+  {
+    label: "About",
+    children: [
+      { label: "About Us", href: "/about" },
+      { label: "Why Kriana", href: "/why-kriana" },
+    ],
+  },
   {
     label: "Resources",
     children: [
       { label: "Blog", href: "/blog" },
       { label: "Worksheets", href: "/worksheets" },
-      { label: "Practice Tests", href: "/practice-tests" }
-    ]
+      { label: "Practice Tests", href: "/practice-tests" },
+    ],
   },
-  { label: "About", href: "/about" },
   { label: "Contact", href: "/contact#consultation-form" },
-  { label: "Book a Program", href: "/booking" }
 ];
 
 const phoneHref = "tel:+16134006921";
@@ -49,9 +53,11 @@ function isActivePath(pathname: string | null, href: string) {
 
 export function NavigationBar() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [mobileResourcesOpen, setMobileResourcesOpen] = useState(false);
+  const [mobileOpenGroup, setMobileOpenGroup] = useState<string | null>(null);
+  const [desktopOpenGroup, setDesktopOpenGroup] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
+  const navRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -60,10 +66,26 @@ export function NavigationBar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (navRef.current && !navRef.current.contains(e.target as Node)) {
+        setDesktopOpenGroup(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Close desktop dropdown on route change
+  useEffect(() => {
+    setDesktopOpenGroup(null);
+  }, [pathname]);
+
   const closeMobileMenu = () => {
     setIsMobileOpen(false);
-    setMobileResourcesOpen(false);
+    setMobileOpenGroup(null);
   };
+
   const isNavItemActive = (item: NavLinkItem | NavGroupItem) =>
     isNavGroupItem(item)
       ? item.children.some((child) => isActivePath(pathname, child.href))
@@ -106,49 +128,54 @@ export function NavigationBar() {
               </div>
             </Link>
 
-            <nav className="hidden min-w-0 items-center justify-center gap-0.5 xl:flex xl:w-full xl:px-3">
+            <nav ref={navRef} className="hidden min-w-0 items-center justify-center gap-0.5 xl:flex xl:w-full xl:px-3">
               {navItems.map((item) => {
                 const active = isNavItemActive(item);
 
                 if (isNavGroupItem(item)) {
+                  const isOpen = desktopOpenGroup === item.label;
                   return (
-                    <div key={item.label} className="group relative">
+                    <div key={item.label} className="relative">
                       <button
                         type="button"
+                        onClick={() => setDesktopOpenGroup(isOpen ? null : item.label)}
                         className={`relative inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-full px-3 py-3 text-[0.88rem] font-semibold transition-all duration-200 2xl:px-4 2xl:text-[0.95rem] ${
-                          active
+                          active || isOpen
                             ? "text-[#0A2D5A]"
                             : "text-[#003B73] hover:bg-[#5AC8FA]/16 hover:text-[#0A2D5A]"
                         }`}
                       >
                         <span>{item.label}</span>
-                        <ChevronDownIcon className="h-4 w-4 transition-transform duration-200 group-hover:rotate-180" />
+                        <ChevronDownIcon className={`h-4 w-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
                         {active ? (
                           <span className="absolute -bottom-0.5 left-1/2 h-0.5 w-8 -translate-x-1/2 rounded-full bg-gradient-to-r from-brand-sky to-brand-teal" />
                         ) : null}
                       </button>
 
-                      <div className="pointer-events-none absolute left-1/2 top-full z-30 mt-2 w-60 -translate-x-1/2 rounded-3xl border border-[#5AC8FA]/30 bg-white/95 p-3 opacity-0 shadow-[0_20px_50px_rgba(6,11,26,0.16)] ring-1 ring-[#5AC8FA]/10 backdrop-blur-xl transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
-                        <div className="space-y-1">
-                          {item.children.map((child) => {
-                            const childActive = isActivePath(pathname, child.href);
-                            return (
-                              <Link
-                                key={child.href}
-                                href={child.href}
-                                className={`flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-200 ${
-                                  childActive
-                                    ? "bg-gradient-to-r from-brand-sky/18 to-brand-teal/10 text-[#0A2D5A]"
-                                    : "text-[#003B73] hover:bg-[#E8F9FF] hover:text-[#0A2D5A]"
-                                }`}
-                              >
-                                <span>{child.label}</span>
-                                {childActive ? <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-brand-sky to-brand-teal" /> : null}
-                              </Link>
-                            );
-                          })}
+                      {isOpen ? (
+                        <div className="absolute left-1/2 top-full z-30 mt-1 w-52 -translate-x-1/2 rounded-3xl border border-[#5AC8FA]/30 bg-white/95 p-3 shadow-[0_20px_50px_rgba(6,11,26,0.16)] ring-1 ring-[#5AC8FA]/10 backdrop-blur-xl">
+                          <div className="space-y-1">
+                            {item.children.map((child) => {
+                              const childActive = isActivePath(pathname, child.href);
+                              return (
+                                <Link
+                                  key={child.href}
+                                  href={child.href}
+                                  onClick={() => setDesktopOpenGroup(null)}
+                                  className={`flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-200 ${
+                                    childActive
+                                      ? "bg-gradient-to-r from-brand-sky/18 to-brand-teal/10 text-[#0A2D5A]"
+                                      : "text-[#003B73] hover:bg-[#E8F9FF] hover:text-[#0A2D5A]"
+                                  }`}
+                                >
+                                  <span>{child.label}</span>
+                                  {childActive ? <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-brand-sky to-brand-teal" /> : null}
+                                </Link>
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
+                      ) : null}
                     </div>
                   );
                 }
@@ -172,7 +199,7 @@ export function NavigationBar() {
               })}
             </nav>
 
-            <div className="hidden items-center xl:flex xl:pl-3">
+            <div className="hidden items-center gap-2 xl:flex xl:pl-3">
               <Link
                 href={phoneHref}
                 className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-[#5AC8FA]/50 bg-white/90 px-5 py-2.5 text-[0.78rem] font-bold text-[#0A2D5A] shadow-sm transition-all duration-200 hover:border-[#5AC8FA] hover:bg-white hover:shadow-[0_4px_16px_rgba(74,144,226,0.2)]"
@@ -181,6 +208,15 @@ export function NavigationBar() {
                   <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.86 19.86 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.86 19.86 0 0 1 2.08 4.18 2 2 0 0 1 4.05 2h3a2 2 0 0 1 2 1.72c.14 1.05.47 2.06.96 3 .31.63.1 1.38-.44 1.79l-1.27.95a2 2 0 0 0-.57 2.57 13 13 0 0 0 6.1 6.1 2 2 0 0 0 2.57-.57l.95-1.27c.41-.54 1.16-.75 1.79-.44a12.84 12.84 0 0 0 3 1c.96.24 1.64 1.1 1.64 2.09Z" />
                 </svg>
                 {phoneCompactLabel}
+              </Link>
+              <Link
+                href="/booking"
+                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[#0c6162] px-5 py-2.5 text-[0.78rem] font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#0a5051] hover:shadow-[0_4px_16px_rgba(12,97,98,0.35)]"
+              >
+                Book a Program
+                <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
               </Link>
             </div>
 
@@ -225,6 +261,7 @@ export function NavigationBar() {
                 const active = isNavItemActive(item);
 
                 if (isNavGroupItem(item)) {
+                  const isGroupOpen = mobileOpenGroup === item.label;
                   return (
                     <div key={item.label} className="rounded-2xl bg-[#E8F9FF]">
                       <button
@@ -232,12 +269,12 @@ export function NavigationBar() {
                         className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition-all duration-200 ${
                           active ? "font-bold text-[#0A2D5A]" : "hover:bg-[#5AC8FA]/20"
                         }`}
-                        onClick={() => setMobileResourcesOpen((open) => !open)}
+                        onClick={() => setMobileOpenGroup(isGroupOpen ? null : item.label)}
                       >
                         <span>{item.label}</span>
-                        <ChevronDownIcon className={`h-5 w-5 transition-transform duration-200 ${mobileResourcesOpen ? "rotate-180" : ""}`} />
+                        <ChevronDownIcon className={`h-5 w-5 transition-transform duration-200 ${isGroupOpen ? "rotate-180" : ""}`} />
                       </button>
-                      {mobileResourcesOpen ? (
+                      {isGroupOpen ? (
                         <div className="space-y-1 px-2 pb-2">
                           {item.children.map((child) => {
                             const childActive = isActivePath(pathname, child.href);
@@ -281,13 +318,25 @@ export function NavigationBar() {
               })}
             </nav>
 
-            <Link
-              href={phoneHref}
-              onClick={closeMobileMenu}
-              className="mt-4 flex w-full items-center justify-center rounded-full border border-[#5AC8FA]/50 bg-white py-3 text-sm font-bold uppercase tracking-[0.22em] text-[#0A2D5A] shadow-[0_4px_20px_rgba(74,144,226,0.12)]"
-            >
-              Call or Text
-            </Link>
+            <div className="mt-4 flex flex-col gap-2">
+              <Link
+                href="/booking"
+                onClick={closeMobileMenu}
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-[#0c6162] py-3.5 text-sm font-bold text-white shadow-[0_4px_20px_rgba(12,97,98,0.3)]"
+              >
+                Book a Program
+                <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </Link>
+              <Link
+                href={phoneHref}
+                onClick={closeMobileMenu}
+                className="flex w-full items-center justify-center rounded-full border border-[#5AC8FA]/50 bg-white py-3 text-sm font-bold uppercase tracking-[0.22em] text-[#0A2D5A] shadow-[0_4px_20px_rgba(74,144,226,0.12)]"
+              >
+                Call or Text
+              </Link>
+            </div>
           </div>
         </div>
       ) : null}
