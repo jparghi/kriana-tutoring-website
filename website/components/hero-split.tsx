@@ -24,7 +24,7 @@ const floatingBadges = [
 
 export function HeroSplit() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-slate-50 via-white to-brand-sky/10 pb-20 pt-6 lg:pb-28 lg:pt-10">
+    <section className="relative overflow-hidden bg-gradient-to-br from-slate-50 via-white to-brand-sky/10 pb-10 pt-6 lg:pb-14 lg:pt-10">
       {/* Background layer */}
       <div className="absolute inset-0 -z-10">
         <div className="absolute -left-40 top-16 h-[600px] w-[600px] animate-float rounded-full bg-gradient-to-br from-brand-sky/30 to-brand-teal/15 blur-3xl" />

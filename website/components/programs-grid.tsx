@@ -63,7 +63,7 @@ const programs: {
 
 export function ProgramsGrid() {
   return (
-    <section className="bg-white py-24">
+    <section className="bg-white pb-10 pt-10">
       <div className="mx-auto max-w-6xl px-6 sm:px-10">
         <SectionHeading eyebrow="What we offer" title="Our Programs" align="center" />
         <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-5">
