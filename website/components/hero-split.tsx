@@ -52,41 +52,54 @@ export function HeroSplit() {
           </span>
 
           {/* Now offering: Robotics & Coding — powered by Young Engineers */}
-          <a
-            href={YOUNG_ENGINEERS_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="group inline-flex w-fit items-center gap-4 rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
-          >
-            <div className="max-w-[92px]">
-              <p className="text-[10px] font-semibold leading-tight text-slate-500">Now offering</p>
-              <p className="text-sm font-extrabold leading-tight text-slate-900">Robotics &amp; Coding</p>
-              <p className="text-[10px] leading-tight text-slate-500">
-                by{" "}
-                <span className="font-semibold text-brand-sky group-hover:underline">Young Engineers</span>
-              </p>
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Flashing "new" badge */}
+            <div className="relative w-fit">
+              <div className="absolute -inset-2 -z-10 rounded-full bg-gradient-to-r from-red-600 via-orange-600 to-red-600 opacity-70 blur-lg animate-pulse-glow" />
+              <a
+                href={YOUNG_ENGINEERS_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="group relative inline-flex w-fit items-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-red-600 via-orange-600 to-red-600 bg-[length:200%_auto] px-4 py-2 shadow-[0_8px_28px_rgba(194,65,12,0.55)] transition-transform duration-300 animate-gradient-shift hover:scale-[1.03]"
+              >
+                {/* shine sweep */}
+                <span className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/35 to-transparent bg-[length:200%_100%] animate-shimmer" />
+                <span className="relative flex h-2 w-2 shrink-0">
+                  <span className="absolute inline-flex h-full w-full animate-ping-slow rounded-full bg-white opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+                </span>
+                <span className="relative text-xs font-extrabold leading-tight text-white">
+                  Now Offering: Robotics &amp; Coding
+                  <span className="block font-semibold text-white/80">powered by Young Engineers</span>
+                </span>
+              </a>
             </div>
 
-            <div className="h-12 w-px shrink-0 bg-slate-200" />
-
-            <Image
-              src="/images/young-engineers/logo.png"
-              alt="Young Engineers"
-              width={180}
-              height={52}
-              className="h-12 w-auto shrink-0 object-contain"
-            />
-
-            <span className="flex h-20 w-20 shrink-0 items-center justify-center">
+            {/* Logo + robot badge (static) */}
+            <a
+              href={YOUNG_ENGINEERS_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex w-fit items-center gap-1 rounded-full transition-transform duration-300 hover:scale-[1.03]"
+            >
               <Image
-                src="/images/young-engineers/robowalk.png"
-                alt="Young Engineers robot build"
-                width={1526}
-                height={2034}
-                className="h-full w-full object-contain"
+                src="/images/young-engineers/logo.png"
+                alt="Young Engineers"
+                width={180}
+                height={52}
+                className="h-11 w-auto shrink-0 object-contain"
               />
-            </span>
-          </a>
+              <span className="flex h-16 w-16 shrink-0 items-center justify-center">
+                <Image
+                  src="/images/young-engineers/robowalk.png"
+                  alt="Young Engineers robot build"
+                  width={1526}
+                  height={2034}
+                  className="h-full w-full object-contain"
+                />
+              </span>
+            </a>
+          </div>
 
           <div className="flex flex-col gap-2">
             <h1 className="text-balance text-[clamp(2.6rem,5.4vw,3.9rem)] font-bold leading-[1.06] text-slate-900">
