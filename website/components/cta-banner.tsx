@@ -25,14 +25,14 @@ export function CtaBanner() {
               </div>
             </div>
 
-            <div className="flex flex-col items-center gap-2 lg:items-end">
+            <div className="flex flex-col items-center gap-2">
               <Link
                 href="/contact#consultation-form"
-                className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-brand-rose to-brand-amber px-8 py-3.5 text-sm font-bold uppercase tracking-[0.22em] text-white shadow-[0_8px_28px_rgba(255,138,101,0.4)] transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_12px_40px_rgba(255,138,101,0.6)]"
+                className="inline-flex items-center justify-center rounded-full bg-[#0c6162] px-8 py-3.5 text-sm font-bold uppercase tracking-[0.22em] text-white shadow-[0_8px_28px_rgba(12,97,98,0.4)] transition-all duration-300 hover:scale-[1.03] hover:bg-[#0a5051] hover:shadow-[0_12px_40px_rgba(12,97,98,0.6)]"
               >
                 Book Free Assessment
               </Link>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/60">
+              <p className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-white/60">
                 No Obligation. No Pressure.
               </p>
             </div>
