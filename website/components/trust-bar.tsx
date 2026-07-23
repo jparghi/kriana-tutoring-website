@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { GraduationCapIcon, HeartIcon, ShieldCheckIcon, UsersIcon } from "./icons";
 
 const trustPoints = [
@@ -28,14 +29,20 @@ export function TrustBar() {
             <span className="text-xs font-bold uppercase tracking-[0.25em] text-slate-500">
               Authorized Partner of
             </span>
-            <span className="flex items-center gap-2">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-brand-sky to-brand-teal text-[10px] font-black text-white">
-                YE
-              </span>
-              <span className="text-sm font-bold uppercase tracking-[0.1em] text-slate-900">
-                Young Engineers
-              </span>
-            </span>
+            <a
+              href="https://kanata.youngengineers.org/"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-2 transition-opacity duration-200 hover:opacity-80"
+            >
+              <Image
+                src="/images/young-engineers/logo.png"
+                alt="Young Engineers"
+                width={180}
+                height={52}
+                className="h-8 w-auto"
+              />
+            </a>
           </div>
 
           <div className="grid grid-cols-2 gap-x-8 gap-y-4 lg:flex lg:flex-1 lg:justify-end lg:gap-10">
