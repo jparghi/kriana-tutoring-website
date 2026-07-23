@@ -39,7 +39,7 @@ export function HeroSplit() {
         />
       </div>
 
-      <div className="mx-auto flex max-w-6xl flex-col gap-14 px-6 sm:px-10 lg:grid lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-12">
+      <div className="mx-auto flex max-w-6xl flex-col gap-14 px-6 sm:px-10 lg:grid lg:grid-cols-[0.75fr_1.20fr] lg:items-center lg:gap-0">
         {/* ── Left column ── */}
         <div className="flex flex-col gap-6">
           {/* Eyebrow badge */}
@@ -103,12 +103,14 @@ export function HeroSplit() {
             >
               Book Free Assessment
             </Link>
-            <Link
-              href="/booking"
+            <a
+              href={YOUNG_ENGINEERS_URL}
+              target="_blank"
+              rel="noreferrer"
               className="group inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white/80 px-6 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-700 shadow-sm backdrop-blur transition-all duration-300 hover:border-brand-sky hover:text-brand-sky"
             >
               Explore Robotics &amp; Coding
-            </Link>
+            </a>
           </div>
 
           {/* Mobile-only feature list (floating badges are desktop-only) */}
@@ -125,7 +127,7 @@ export function HeroSplit() {
         </div>
 
         {/* ── Right column ── */}
-        <div className="relative mx-auto flex items-center justify-center lg:mx-0 lg:justify-end">
+        <div className="relative mx-auto flex items-center justify-center lg:mx-0 lg:-my-10 lg:justify-end lg:overflow-visible">
           <div className="absolute -left-10 top-6 hidden h-40 w-40 animate-float rounded-full bg-brand-amber/30 blur-3xl lg:block" />
           <div className="absolute -bottom-8 right-12 hidden h-44 w-44 animate-float-delayed rounded-full bg-brand-sky/25 blur-3xl lg:block" />
 
@@ -138,7 +140,7 @@ export function HeroSplit() {
           <span aria-hidden className="absolute left-1/4 -bottom-10 hidden text-lg text-brand-rose animate-pulse-glow lg:block" style={{ animationDelay: "0.9s" }}>✦</span>
           <span aria-hidden className="absolute right-1/3 -top-10 hidden text-lg text-brand-sky animate-pulse-glow lg:block" style={{ animationDelay: "1.5s" }}>✧</span>
 
-          <div className="relative w-full max-w-[720px] overflow-hidden rounded-[42%_58%_54%_46%/52%_44%_56%_48%] border border-slate-200/60 shadow-[0_30px_70px_rgba(15,23,42,0.14)]">
+          <div className="relative w-full max-w-[880px] overflow-hidden rounded-[42%_58%_54%_46%/52%_44%_56%_48%] border border-slate-200/60 shadow-[0_30px_70px_rgba(15,23,42,0.14)] lg:w-[115%]">
             <Image
               src="/images/young-engineers/hero.png"
               alt="Student learning at Kriana Tutoring"
