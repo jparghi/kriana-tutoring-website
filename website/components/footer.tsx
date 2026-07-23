@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { NewsletterForm } from "./newsletter-form";
 
 const footerLinks = [
   {
@@ -120,6 +121,15 @@ export function Footer() {
               </ul>
             </div>
           ))}
+        </div>
+
+        {/* Newsletter */}
+        <div className="max-w-sm space-y-4">
+          <p className="text-xs font-black uppercase tracking-[0.3em] text-brand-sky">Newsletter</p>
+          <p className="text-sm font-semibold leading-relaxed text-white/85">
+            Tips, updates &amp; special offers straight to your inbox.
+          </p>
+          <NewsletterForm />
         </div>
       </div>
 
