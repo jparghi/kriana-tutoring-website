@@ -47,17 +47,14 @@ export function Footer() {
       <div className="relative mx-auto flex max-w-6xl flex-col gap-12 px-6 sm:px-10 lg:flex-row lg:justify-between">
         {/* Brand column */}
         <div className="max-w-sm space-y-5">
-          <Link href="/" className="inline-flex items-center gap-3" aria-label="Kriana Tutoring home">
-            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brand-sky/20 to-brand-teal/20">
-              <Image
-                src="/images/kriana-logo-icon-large.png"
-                alt="Kriana Tutoring Logo"
-                width={40}
-                height={40}
-                className="h-9 w-9 object-contain"
-              />
-            </div>
-            <span className="font-bold text-base uppercase tracking-[0.28em] text-white">Kriana Tutoring</span>
+          <Link href="/" className="inline-flex items-center" aria-label="Kriana Tutoring home">
+            <Image
+              src="/images/kriana-tutoring-logo-horizontal-5.png"
+              alt="Kriana Tutoring"
+              width={1266}
+              height={294}
+              className="h-10 w-auto object-contain brightness-0 invert"
+            />
           </Link>
           <p className="text-sm font-semibold leading-relaxed text-white/85">
             Personalized learning for every child with caring tutors who celebrate curiosity and confidence.
