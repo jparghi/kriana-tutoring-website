@@ -111,10 +111,10 @@ export function NavigationBar() {
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 xl:grid-cols-[auto_minmax(0,1fr)_auto] xl:gap-5">
             <Link href="/" className="flex min-w-0 items-center py-1.5 pr-2" aria-label="Kriana Tutoring home">
               <Image
-                src="/images/kriana-tutoring-logo-horizontal-5.png"
+                src="/images/kriana-tutoring-logo-horizontal-6.png"
                 alt="Kriana Tutoring"
-                width={1266}
-                height={294}
+                width={1355}
+                height={242}
                 priority
                 className="h-7 w-auto flex-shrink-0 object-contain sm:h-9"
               />
