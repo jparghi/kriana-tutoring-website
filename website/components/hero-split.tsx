@@ -108,7 +108,7 @@ export function HeroSplit() {
             </h1>
 
             <p className="max-w-xl text-lg leading-relaxed text-slate-600">
-              Math, English, Reading &amp; More for JK to Grade 8
+              Math, English, Robotics &amp; Coding — and So Much More.
             </p>
           </div>
 
