@@ -28,6 +28,13 @@ export const metadata: Metadata = {
   },
 };
 
+// Young Engineers' own brand palette (pulled from their site's theme CSS),
+// used here as accent colors so the page reads as a joint Kriana + YE effort.
+const YE_BLUE = "#0083CB";
+const YE_RED = "#ED174B";
+const YE_AMBER = "#F2A100";
+const YE_PALETTE = [YE_BLUE, YE_RED, YE_AMBER];
+
 const whatKidsLearn = [
   "Engineering thinking",
   "Problem-solving",
@@ -43,16 +50,19 @@ const additionalOfferings = [
     title: "Camps & PA Days",
     description: "STEM-filled camps and PA day workshops for school breaks.",
     href: SUMMER_CAMP_BOOKING_URL,
+    accent: YE_BLUE,
   },
   {
     title: "Birthday Parties",
     description: "LEGO robotics birthday parties that keep every guest building.",
     href: BIRTHDAY_PARTY_BOOKING_URL,
+    accent: YE_RED,
   },
   {
     title: "School Programs",
     description: "After-school robotics programs and workshops for your school.",
     href: SCHOOL_PROGRAM_BOOKING_URL,
+    accent: YE_AMBER,
   },
 ];
 
@@ -129,7 +139,10 @@ export default function RoboticsPage() {
         {/* Hero */}
         <section className="bg-gradient-to-br from-white via-brand-sky/10 to-brand-amber/10 px-6 pb-16 pt-8 sm:px-10 lg:pt-12">
           <div className="mx-auto max-w-6xl">
-            <p className="inline-flex items-center gap-2 rounded-full border border-brand-sky/30 bg-white/90 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-brand-sky">
+            <p
+              className="inline-flex items-center gap-2 rounded-full border bg-white/90 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em]"
+              style={{ borderColor: `${YE_BLUE}4D`, color: YE_BLUE }}
+            >
               <MapPinIcon className="h-3.5 w-3.5" />
               Serving Kanata &amp; Stittsville
             </p>
@@ -193,14 +206,20 @@ export default function RoboticsPage() {
           <div className="mx-auto max-w-6xl">
             <h2 className="text-2xl font-semibold text-[#0A2D5A] sm:text-3xl">What Children Learn</h2>
             <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {whatKidsLearn.map((item) => (
-                <div key={item} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-teal/10 text-brand-teal">
-                    <CheckIcon className="h-4 w-4" />
-                  </span>
-                  <p className="text-sm font-semibold text-slate-700">{item}</p>
-                </div>
-              ))}
+              {whatKidsLearn.map((item, i) => {
+                const color = YE_PALETTE[i % YE_PALETTE.length];
+                return (
+                  <div key={item} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+                    <span
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+                      style={{ backgroundColor: `${color}1A`, color }}
+                    >
+                      <CheckIcon className="h-4 w-4" />
+                    </span>
+                    <p className="text-sm font-semibold text-slate-700">{item}</p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </section>
@@ -217,7 +236,10 @@ export default function RoboticsPage() {
                 "Receive confirmation",
               ].map((step, i) => (
                 <div key={step} className="rounded-2xl border border-slate-200 bg-white p-5">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0c6162] text-sm font-bold text-white">
+                  <span
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white"
+                    style={{ backgroundColor: YE_BLUE }}
+                  >
                     {i + 1}
                   </span>
                   <p className="mt-3 text-sm font-semibold text-slate-700">{step}</p>
@@ -229,7 +251,10 @@ export default function RoboticsPage() {
 
         {/* Young Engineers credibility */}
         <section className="px-6 py-16 sm:px-10">
-          <div className="mx-auto flex max-w-6xl flex-col gap-6 rounded-3xl border border-slate-200 bg-white p-8 lg:flex-row lg:items-center lg:justify-between">
+          <div
+            className="mx-auto flex max-w-6xl flex-col gap-6 rounded-3xl border border-slate-200 border-t-4 bg-white p-8 lg:flex-row lg:items-center lg:justify-between"
+            style={{ borderTopColor: YE_RED }}
+          >
             <div className="flex items-center gap-4">
               <Image
                 src="/images/young-engineers/logo.png"
@@ -248,7 +273,7 @@ export default function RoboticsPage() {
               href={YOUNG_ENGINEERS_URL}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-slate-500 transition-colors hover:text-brand-sky"
+              className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-slate-500 transition-colors hover:text-[#0083CB]"
             >
               Learn About Young Engineers
               <span aria-hidden="true">↗</span>
@@ -265,11 +290,15 @@ export default function RoboticsPage() {
                 <Link
                   key={offering.title}
                   href={offering.href}
-                  className="group flex flex-col rounded-2xl border border-slate-200 bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(15,23,42,0.1)]"
+                  className="group flex flex-col rounded-2xl border border-slate-200 border-t-4 bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(15,23,42,0.1)]"
+                  style={{ borderTopColor: offering.accent }}
                 >
                   <h3 className="text-lg font-bold text-slate-900">{offering.title}</h3>
                   <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600">{offering.description}</p>
-                  <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[#0c6162]">
+                  <span
+                    className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold"
+                    style={{ color: offering.accent }}
+                  >
                     Learn more
                     <span aria-hidden="true" className="transition-transform duration-200 group-hover:translate-x-1">
                       →
@@ -290,7 +319,10 @@ export default function RoboticsPage() {
                 <details key={faq.q} className="group rounded-2xl border border-slate-200 bg-white p-5">
                   <summary className="flex cursor-pointer items-center justify-between gap-4 text-sm font-bold text-slate-800 marker:content-none">
                     {faq.q}
-                    <span aria-hidden="true" className="text-slate-400 transition-transform duration-200 group-open:rotate-45">
+                    <span
+                      aria-hidden="true"
+                      className="text-slate-400 transition-all duration-200 group-open:rotate-45 group-open:text-[#ED174B]"
+                    >
                       +
                     </span>
                   </summary>
