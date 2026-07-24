@@ -116,7 +116,7 @@ export function NavigationBar() {
                 width={1355}
                 height={242}
                 priority
-                className="h-7 w-auto flex-shrink-0 object-contain sm:h-9"
+                className="h-7 w-auto flex-shrink-0 object-contain sm:h-7"
               />
             </Link>
 
