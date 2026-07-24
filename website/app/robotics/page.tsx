@@ -4,46 +4,32 @@ import Link from "next/link";
 
 import { Footer } from "../../components/footer";
 import { RoboticsPrograms } from "../../components/robotics/robotics-programs";
-import { CheckIcon, MapPinIcon } from "../../components/icons";
+import { RoboticsCtaButtons } from "../../components/robotics/robotics-cta-buttons";
+import { LearningJourney } from "../../components/robotics/learning-journey";
+import { SkillsSection } from "../../components/robotics/skills-section";
+import { MapPinIcon } from "../../components/icons";
 import {
   BIRTHDAY_PARTY_BOOKING_URL,
-  ROBOTICS_BOOKING_URL,
   SCHOOL_PROGRAM_BOOKING_URL,
   SUMMER_CAMP_BOOKING_URL,
   YOUNG_ENGINEERS_URL,
 } from "../../lib/site-links";
+import { YE_AMBER, YE_BLUE, YE_RED } from "../../lib/robotics-content";
 import { breadcrumbSchema, localBusinessSchema, siteUrl, toJsonLd } from "../../lib/seo";
 
 export const metadata: Metadata = {
   title: "Robotics & Coding Classes in Kanata | Young Engineers at Kriana",
   description:
-    "Explore hands-on Young Engineers robotics, engineering and coding programs offered locally by Kriana Tutoring in Kanata and Stittsville.",
+    "Explore hands-on robotics, engineering and coding programs for children in Kanata and Stittsville, offered locally by Kriana Tutoring.",
   alternates: { canonical: `${siteUrl}/robotics` },
   openGraph: {
     title: "Robotics & Coding Classes in Kanata | Young Engineers at Kriana",
     description:
-      "Hands-on Young Engineers robotics, engineering and coding programs offered locally by Kriana Tutoring in Kanata and Stittsville.",
+      "Explore hands-on robotics, engineering and coding programs for children in Kanata and Stittsville, offered locally by Kriana Tutoring.",
     url: `${siteUrl}/robotics`,
     type: "website",
   },
 };
-
-// Young Engineers' own brand palette (pulled from their site's theme CSS),
-// used here as accent colors so the page reads as a joint Kriana + YE effort.
-const YE_BLUE = "#0083CB";
-const YE_RED = "#ED174B";
-const YE_AMBER = "#F2A100";
-const YE_PALETTE = [YE_BLUE, YE_RED, YE_AMBER];
-
-const whatKidsLearn = [
-  "Engineering thinking",
-  "Problem-solving",
-  "Creativity",
-  "Teamwork",
-  "Mechanical understanding",
-  "Coding concepts",
-  "Confidence through building and experimentation",
-];
 
 const additionalOfferings = [
   {
@@ -51,18 +37,21 @@ const additionalOfferings = [
     description: "STEM-filled camps and PA day workshops for school breaks.",
     href: SUMMER_CAMP_BOOKING_URL,
     accent: YE_BLUE,
+    image: "/images/young-engineers/summer-camps.png",
   },
   {
     title: "Birthday Parties",
     description: "LEGO robotics birthday parties that keep every guest building.",
     href: BIRTHDAY_PARTY_BOOKING_URL,
     accent: YE_RED,
+    image: "/images/young-engineers/birthday-party.png",
   },
   {
     title: "School Programs",
     description: "After-school robotics programs and workshops for your school.",
     href: SCHOOL_PROGRAM_BOOKING_URL,
     accent: YE_AMBER,
+    image: "/images/young-engineers/school-programs.png",
   },
 ];
 
@@ -136,49 +125,76 @@ export default function RoboticsPage() {
           </nav>
         </div>
 
-        {/* Hero */}
-        <section className="bg-gradient-to-br from-white via-brand-sky/10 to-brand-amber/10 px-6 pb-16 pt-8 sm:px-10 lg:pt-12">
-          <div className="mx-auto max-w-6xl">
-            <p
-              className="inline-flex items-center gap-2 rounded-full border bg-white/90 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em]"
-              style={{ borderColor: `${YE_BLUE}4D`, color: YE_BLUE }}
+        {/* 1. Immersive hero */}
+        <section className="relative overflow-hidden bg-gradient-to-br from-white via-brand-sky/10 to-white px-6 pb-16 pt-8 sm:px-10 lg:pt-12">
+          {/* Subtle blueprint grid + soft radial + gear outlines — decorative, kept behind content */}
+          <div className="pointer-events-none absolute inset-0 -z-10">
+            <div
+              className="absolute inset-0 opacity-[0.05]"
+              style={{
+                backgroundImage:
+                  "linear-gradient(rgba(0,131,203,0.7) 1px,transparent 1px),linear-gradient(90deg,rgba(0,131,203,0.7) 1px,transparent 1px)",
+                backgroundSize: "44px 44px",
+              }}
+            />
+            <div className="absolute -left-32 top-0 h-[420px] w-[420px] rounded-full bg-brand-sky/15 blur-3xl" />
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-[#ED174B]/40 to-transparent" />
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 100 100"
+              className="absolute -right-6 top-10 hidden h-28 w-28 text-[#0083CB]/10 lg:block"
             >
-              <MapPinIcon className="h-3.5 w-3.5" />
-              Serving Kanata &amp; Stittsville
-            </p>
-            <h1 className="mt-5 max-w-4xl text-4xl font-semibold leading-tight sm:text-5xl">
-              Young Engineers Robotics &amp; Coding in Kanata and Stittsville
-            </h1>
-            <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">
-              Hands-on engineering, building and age-appropriate coding programs that help children develop
-              creativity, problem-solving skills and confidence.
-            </p>
-            <p className="mt-3 text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
-              Robotics programs powered by Young Engineers
-            </p>
+              <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" strokeWidth="6" />
+              <circle cx="50" cy="50" r="8" fill="none" stroke="currentColor" strokeWidth="6" />
+            </svg>
+          </div>
 
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <a
-                href="#programs"
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0c6162] px-7 py-3.5 text-sm font-bold uppercase tracking-[0.18em] text-white shadow-[0_8px_32px_rgba(12,97,98,0.45)] transition-all duration-300 hover:scale-[1.03] hover:bg-[#0a5051]"
+          <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+            <div>
+              <p
+                className="inline-flex items-center gap-2 rounded-full border bg-white/90 px-4 py-1 text-xs font-black uppercase tracking-[0.3em]"
+                style={{ borderColor: `${YE_BLUE}4D`, color: YE_BLUE }}
               >
-                View Upcoming Programs
-              </a>
-              <Link
-                href={ROBOTICS_BOOKING_URL}
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white/80 px-7 py-3.5 text-sm font-semibold uppercase tracking-[0.18em] text-slate-700 shadow-sm backdrop-blur transition-all duration-300 hover:border-brand-sky hover:text-brand-sky"
-              >
-                Register Now
-              </Link>
+                Young Engineers at Kriana
+              </p>
+              <h1 className="mt-5 max-w-xl text-balance text-4xl font-bold leading-[1.08] text-slate-900 sm:text-5xl">
+                Build. Code. Create Something Amazing.
+              </h1>
+              <p className="mt-5 max-w-lg text-lg leading-relaxed text-slate-600">
+                Hands-on robotics, engineering and coding programs where children learn by building, testing and
+                bringing their ideas to life.
+              </p>
+              <p className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+                <MapPinIcon className="h-3.5 w-3.5 shrink-0 text-[#ED174B]" />
+                Serving Kanata and Stittsville
+              </p>
+
+              <div className="mt-8">
+                <RoboticsCtaButtons variant="light" />
+              </div>
+            </div>
+
+            <div className="relative">
+              <div className="absolute -inset-3 -z-10 rounded-[2rem] border-2 border-dashed border-[#0083CB]/25" />
+              <div className="relative overflow-hidden rounded-[1.75rem] border border-slate-200/70 shadow-[0_30px_70px_rgba(15,23,42,0.14)]">
+                <Image
+                  src="/images/robotics/robotics-hero.png"
+                  alt="Three children building a LEGO robotics model together from a blueprint"
+                  width={1672}
+                  height={941}
+                  className="h-full w-full object-cover"
+                  priority
+                />
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Program introduction */}
+        {/* 2. Short hands-on learning introduction */}
         <section className="px-6 py-16 sm:px-10">
-          <div className="mx-auto max-w-4xl text-center">
+          <div className="mx-auto max-w-3xl text-center">
             <h2 className="text-2xl font-semibold text-[#0A2D5A] sm:text-3xl">
-              Learning by building, engineering and coding
+              Learning by Building, Engineering and Coding
             </h2>
             <p className="mt-4 text-base leading-8 text-slate-600">
               Children learn through hands-on building, engineering challenges and coding activities — working with
@@ -187,13 +203,32 @@ export default function RoboticsPage() {
           </div>
         </section>
 
-        {/* Program options */}
+        {/* 3. Imagine -> Build -> Test -> Improve -> Code journey */}
+        <section className="relative overflow-hidden bg-brand-sky/5 px-6 py-16 sm:px-10">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 opacity-[0.04]"
+            style={{
+              backgroundImage:
+                "linear-gradient(rgba(0,131,203,0.7) 1px,transparent 1px),linear-gradient(90deg,rgba(0,131,203,0.7) 1px,transparent 1px)",
+              backgroundSize: "36px 36px",
+            }}
+          />
+          <div className="relative mx-auto max-w-6xl text-center">
+            <h2 className="text-2xl font-semibold text-[#0A2D5A] sm:text-3xl">The Engineering Journey</h2>
+            <p className="mx-auto mt-3 max-w-2xl text-base text-slate-600">
+              Every program follows the same hands-on process real engineers use.
+            </p>
+            <LearningJourney />
+          </div>
+        </section>
+
+        {/* 4. Program cards + upcoming classes / launch list */}
         <section id="programs" className="bg-slate-50 px-6 py-16 sm:px-10">
           <div className="mx-auto max-w-6xl">
-            <h2 className="text-2xl font-semibold text-[#0A2D5A] sm:text-3xl">Upcoming Programs</h2>
+            <h2 className="text-2xl font-semibold text-[#0A2D5A] sm:text-3xl">Find the Right Engineering Challenge</h2>
             <p className="mt-3 max-w-2xl text-base text-slate-600">
-              Every session below is confirmed and open for registration — choose a program to see full details,
-              dates and pricing.
+              Explore hands-on programs designed for different ages, interests and experience levels.
             </p>
             <div className="mt-10">
               <RoboticsPrograms />
@@ -201,49 +236,77 @@ export default function RoboticsPage() {
           </div>
         </section>
 
-        {/* What children learn */}
+        {/* 5. Large visual engineering story */}
         <section className="px-6 py-16 sm:px-10">
-          <div className="mx-auto max-w-6xl">
-            <h2 className="text-2xl font-semibold text-[#0A2D5A] sm:text-3xl">What Children Learn</h2>
-            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {whatKidsLearn.map((item, i) => {
-                const color = YE_PALETTE[i % YE_PALETTE.length];
-                return (
-                  <div key={item} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4">
-                    <span
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
-                      style={{ backgroundColor: `${color}1A`, color }}
-                    >
-                      <CheckIcon className="h-4 w-4" />
-                    </span>
-                    <p className="text-sm font-semibold text-slate-700">{item}</p>
-                  </div>
-                );
-              })}
+          <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-2">
+            <div className="relative overflow-hidden rounded-[1.75rem] border border-slate-200/70 shadow-[0_24px_60px_rgba(15,23,42,0.12)]">
+              <Image
+                src="/images/robotics/build-test-improve.png"
+                alt="Two children closely examining gears and motors on a mechanical build"
+                width={1536}
+                height={1024}
+                className="h-full w-full object-cover"
+              />
+            </div>
+            <div>
+              <h2 className="text-2xl font-semibold text-[#0A2D5A] sm:text-3xl">
+                Real Tools. Real Mechanisms. Real Confidence.
+              </h2>
+              <p className="mt-4 text-base leading-8 text-slate-600">
+                From gears and motors to sensors and structures, children work with real mechanical components —
+                studying blueprints, wiring builds and adjusting their designs until they work exactly as planned.
+              </p>
+              <p className="mt-4 text-base leading-8 text-slate-600">
+                Every challenge is designed to be attempted, tested and improved — building the kind of patience and
+                problem-solving that carries far beyond the classroom.
+              </p>
             </div>
           </div>
         </section>
 
-        {/* How registration works */}
+        {/* 6. Dark, high-contrast skills section */}
+        <SkillsSection />
+
+        {/* 8. Additional offerings */}
         <section className="bg-slate-50 px-6 py-16 sm:px-10">
           <div className="mx-auto max-w-6xl">
-            <h2 className="text-2xl font-semibold text-[#0A2D5A] sm:text-3xl">How Registration Works</h2>
-            <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {[
-                "Choose a program",
-                "Enter parent and child information",
-                "Complete payment or reservation",
-                "Receive confirmation",
-              ].map((step, i) => (
-                <div key={step} className="rounded-2xl border border-slate-200 bg-white p-5">
-                  <span
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white"
-                    style={{ backgroundColor: YE_BLUE }}
-                  >
-                    {i + 1}
-                  </span>
-                  <p className="mt-3 text-sm font-semibold text-slate-700">{step}</p>
-                </div>
+            <h2 className="text-2xl font-semibold text-[#0A2D5A] sm:text-3xl">More Robotics Experiences</h2>
+            <p className="mt-3 max-w-2xl text-base text-slate-600">
+              STEM fun beyond the classroom — for camps, celebrations and schools.
+            </p>
+            <div className="mt-8 grid gap-6 sm:grid-cols-3">
+              {additionalOfferings.map((offering) => (
+                <Link
+                  key={offering.title}
+                  href={offering.href}
+                  className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(15,23,42,0.1)]"
+                >
+                  <div className="relative h-32 w-full overflow-hidden bg-slate-100">
+                    <Image
+                      src={offering.image}
+                      alt={offering.title}
+                      fill
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div
+                      className="absolute inset-x-0 top-0 h-1"
+                      style={{ backgroundColor: offering.accent }}
+                    />
+                  </div>
+                  <div className="flex flex-1 flex-col p-5">
+                    <h3 className="text-base font-bold text-slate-900">{offering.title}</h3>
+                    <p className="mt-1.5 flex-1 text-sm leading-relaxed text-slate-600">{offering.description}</p>
+                    <span
+                      className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold"
+                      style={{ color: offering.accent }}
+                    >
+                      Learn more
+                      <span aria-hidden="true" className="transition-transform duration-200 group-hover:translate-x-1">
+                        →
+                      </span>
+                    </span>
+                  </div>
+                </Link>
               ))}
             </div>
           </div>
@@ -264,9 +327,8 @@ export default function RoboticsPage() {
                 className="h-10 w-auto"
               />
               <p className="max-w-xl text-sm leading-relaxed text-slate-600">
-                Kriana Tutoring is proud to offer official Young Engineers robotics and coding programs locally in
-                Kanata and Stittsville, combining a proven international curriculum with the same caring instructors
-                families already trust for tutoring.
+                Young Engineers Robotics &amp; Coding — offered locally by Kriana Tutoring, combining a proven
+                international curriculum with the same caring instructors families already trust for tutoring.
               </p>
             </div>
             <a
@@ -281,37 +343,8 @@ export default function RoboticsPage() {
           </div>
         </section>
 
-        {/* Additional offerings */}
+        {/* 9. FAQ */}
         <section className="bg-slate-50 px-6 py-16 sm:px-10">
-          <div className="mx-auto max-w-6xl">
-            <h2 className="text-2xl font-semibold text-[#0A2D5A] sm:text-3xl">More STEM Offerings</h2>
-            <div className="mt-8 grid gap-6 sm:grid-cols-3">
-              {additionalOfferings.map((offering) => (
-                <Link
-                  key={offering.title}
-                  href={offering.href}
-                  className="group flex flex-col rounded-2xl border border-slate-200 border-t-4 bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(15,23,42,0.1)]"
-                  style={{ borderTopColor: offering.accent }}
-                >
-                  <h3 className="text-lg font-bold text-slate-900">{offering.title}</h3>
-                  <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600">{offering.description}</p>
-                  <span
-                    className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold"
-                    style={{ color: offering.accent }}
-                  >
-                    Learn more
-                    <span aria-hidden="true" className="transition-transform duration-200 group-hover:translate-x-1">
-                      →
-                    </span>
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* FAQ */}
-        <section className="px-6 py-16 sm:px-10">
           <div className="mx-auto max-w-3xl">
             <h2 className="text-2xl font-semibold text-[#0A2D5A] sm:text-3xl">Frequently Asked Questions</h2>
             <div className="mt-8 space-y-3">
@@ -333,20 +366,29 @@ export default function RoboticsPage() {
           </div>
         </section>
 
-        {/* Final CTA */}
-        <section className="px-6 pb-20 sm:px-10">
-          <div className="mx-auto max-w-6xl rounded-3xl bg-[#0A2D5A] px-8 py-12 text-center sm:px-12">
-            <h2 className="text-2xl font-bold text-white sm:text-3xl">Find the Right Robotics Program</h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm text-white/75">
-              Serving families in Kanata and Stittsville — spots are limited each session.
-            </p>
-            <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-              <Link
-                href={ROBOTICS_BOOKING_URL}
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0c6162] px-8 py-3.5 text-sm font-bold uppercase tracking-[0.22em] text-white shadow-[0_8px_28px_rgba(12,97,98,0.4)] transition-all duration-300 hover:scale-[1.03] hover:bg-[#0a5051]"
-              >
-                Register Now
-              </Link>
+        {/* 10. Strong final registration CTA */}
+        <section className="relative overflow-hidden px-6 py-20 sm:px-10">
+          <div className="mx-auto max-w-6xl overflow-hidden rounded-3xl">
+            <div className="relative">
+              <Image
+                src="/images/robotics/robotics-success-banner.png"
+                alt="A group of excited children and their instructor celebrating around their finished robotics builds"
+                width={1915}
+                height={821}
+                className="h-[420px] w-full object-cover sm:h-[380px]"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#0A2D5A]/10 via-[#0A2D5A]/60 to-[#0A2D5A]/95" />
+              <div className="absolute inset-0 flex items-center justify-end">
+                <div className="max-w-md px-8 text-right sm:px-12">
+                  <h2 className="text-2xl font-bold text-white sm:text-3xl">Ready to Build Their Next Big Idea?</h2>
+                  <p className="mt-3 text-sm leading-relaxed text-white/80">
+                    Explore upcoming robotics programs or join the launch list for Kanata and Stittsville.
+                  </p>
+                  <div className="mt-7 flex flex-wrap items-center justify-end gap-3">
+                    <RoboticsCtaButtons variant="dark" />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
