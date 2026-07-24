@@ -32,11 +32,7 @@ export function RoboticsCtaButtons({ variant = "light" }: { variant?: "light" | 
         <Link href={ROBOTICS_BOOKING_URL} className={styles.secondary}>
           Register Now
         </Link>
-      ) : (
-        <Link href="/contact#consultation-form" className={styles.secondary}>
-          Join the Launch List
-        </Link>
-      )}
+      ) : null}
     </div>
   );
 }

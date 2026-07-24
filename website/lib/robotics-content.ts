@@ -1,14 +1,4 @@
-import {
-  BrainCircuitIcon,
-  CodeIcon,
-  CompassIcon,
-  FlaskIcon,
-  GearIcon,
-  SlidersIcon,
-  SparkleIcon,
-  TargetIcon,
-  UsersIcon,
-} from "../components/icons";
+import { BrainCircuitIcon, CompassIcon, GearIcon, SparkleIcon, TargetIcon, UsersIcon } from "../components/icons";
 
 // Young Engineers' own brand palette (pulled from their site's theme CSS),
 // used as accent color so the page reads as a joint Kriana + YE effort.
@@ -49,12 +39,72 @@ export function skillTagsForCategory(category?: string) {
 // no price/schedule/location yet). Shown as placeholder cards until each is
 // created for real in Firestore via the separate program-management portal.
 export const licensedRoboticsPrograms = [
-  { id: "smartivo", title: "Smartivo", ageRange: "4-6", durationMin: 45 },
-  { id: "bricks-challenge", title: "Bricks Challenge", ageRange: "6-10", durationMin: 75 },
-  { id: "galileo-technic", title: "Galileo Technic", ageRange: "7-10", durationMin: 75 },
-  { id: "algo-play", title: "Algo Play", ageRange: "6-10", durationMin: 75 },
-  { id: "robo-toys", title: "Robo Toys", ageRange: "9-12", durationMin: 75 },
-  { id: "algoc", title: "AlgoC", ageRange: "13-18", durationMin: 90 },
+  {
+    id: "smartivo",
+    title: "Smartivo",
+    ageRange: "4-6",
+    durationMin: 45,
+    description:
+      "Smartivo is an early coding program where young children explore the basics of programming through playful, story-based missions. Using either tangible coding blocks or GoAlgo App, kids bring robots to life-making them move, light up, and react to their commands. Each session combines logic and fun to build confidence and foundational coding skills like command sequencing, conditions, loops and multithreading in an age-appropriate way.",
+    learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/smartivo-enrichment-program/",
+    image: "/images/robotics/programs/smartivo.png",
+    logo: "/images/robotics/programs/smartivo-logo.png",
+  },
+  {
+    id: "bricks-challenge",
+    title: "Bricks Challenge",
+    ageRange: "6-10",
+    durationMin: 75,
+    description:
+      "An educational program that introduces children to the principles of STEM and basic subjects of classical mechanics through the use of building blocks and mechanical parts.",
+    learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/bricks-challenge-enrichment-program/",
+    image: "/images/robotics/programs/bricks-challenge.png",
+    logo: "/images/robotics/programs/bricks-challenge-logo.png",
+  },
+  {
+    id: "galileo-technic",
+    title: "Galileo Technic",
+    ageRange: "7-10",
+    durationMin: 75,
+    description:
+      "An advanced program that delves deep into comprehensive mechanical engineering principles, allowing students to explore new engineering terms through building complex models.",
+    learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/galileo-technic-enrichment-program/",
+    image: "/images/robotics/programs/galileo-technic.png",
+    logo: "/images/robotics/programs/galileo-technic-logo.png",
+  },
+  {
+    id: "algo-play",
+    title: "Algo Play",
+    ageRange: "6-10",
+    durationMin: 75,
+    description:
+      "A program designed to introduce children to essential coding fundamentals such as conditioning, loops, multithreading, debugging and more through tangible or screen GoAlgo coding application.",
+    learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/algoplay-enrichment-program/",
+    image: "/images/robotics/programs/algo-play.png",
+    logo: "/images/robotics/programs/algo-play-logo.png",
+  },
+  {
+    id: "robo-toys",
+    title: "Robo Toys",
+    ageRange: "9-12",
+    durationMin: 75,
+    description:
+      "A program designed to provide children with the basic skills to become proficient robotic makers and introduce them robotic-mechanical planning while using programming subjects.",
+    learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/robotoys-program/",
+    image: "/images/robotics/programs/robo-toys.png",
+    logo: "/images/robotics/programs/robo-toys-logo.png",
+  },
+  {
+    id: "algoc",
+    title: "AlgoC",
+    ageRange: "13-18",
+    durationMin: 90,
+    description:
+      "AlgoC is a hands-on learning experience designed to equip students with essential coding, robotics, coding with AI, and problem-solving skills. This program focuses on C programming, the foundational language used in robotics, automation, and embedded systems. Through real-world challenges and interactive lessons, children will build, code, and innovate—preparing for a technology-driven future.",
+    learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/algoc-enrichment-program/",
+    image: "/images/robotics/programs/algoc.png",
+    logo: "/images/robotics/programs/algoc-logo.png",
+  },
 ];
 
 const PLACEHOLDER_IMAGES = [
@@ -66,34 +116,6 @@ const PLACEHOLDER_IMAGES = [
 export function placeholderImageForIndex(i: number) {
   return PLACEHOLDER_IMAGES[i % PLACEHOLDER_IMAGES.length];
 }
-
-export const learningJourney = [
-  {
-    step: "Imagine",
-    icon: SparkleIcon,
-    description: "Turn an idea or challenge into a possible design.",
-  },
-  {
-    step: "Build",
-    icon: GearIcon,
-    description: "Construct a working mechanical or robotic model.",
-  },
-  {
-    step: "Test",
-    icon: FlaskIcon,
-    description: "Observe how the model moves and responds.",
-  },
-  {
-    step: "Improve",
-    icon: SlidersIcon,
-    description: "Adjust gears, structures or code to make it work better.",
-  },
-  {
-    step: "Code",
-    icon: CodeIcon,
-    description: "Use age-appropriate programming to control the creation.",
-  },
-];
 
 export const skillsBuilt = [
   {

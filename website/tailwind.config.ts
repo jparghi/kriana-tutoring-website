@@ -66,6 +66,13 @@ const config: Config = {
         },
         "ping-slow": {
           "75%, 100%": { transform: "scale(1.8)", opacity: "0" }
+        },
+        "brick-drift": {
+          "0%": { transform: "translate(0, 0) rotate(var(--brick-r0, 0deg))" },
+          "25%": { transform: "translate(var(--brick-x1, 40px), var(--brick-y1, -30px)) rotate(var(--brick-r1, 12deg))" },
+          "50%": { transform: "translate(var(--brick-x2, -30px), var(--brick-y2, 40px)) rotate(var(--brick-r2, -10deg))" },
+          "75%": { transform: "translate(var(--brick-x3, 30px), var(--brick-y3, 30px)) rotate(var(--brick-r3, 8deg))" },
+          "100%": { transform: "translate(0, 0) rotate(var(--brick-r0, 0deg))" }
         }
       },
       animation: {
@@ -76,7 +83,8 @@ const config: Config = {
         "gradient-shift": "gradient-shift 5s ease-in-out infinite",
         shimmer: "shimmer 2.5s linear infinite",
         "pulse-glow": "pulse-glow 3s ease-in-out infinite",
-        "ping-slow": "ping-slow 2s cubic-bezier(0, 0, 0.2, 1) infinite"
+        "ping-slow": "ping-slow 2s cubic-bezier(0, 0, 0.2, 1) infinite",
+        "brick-drift": "brick-drift 22s linear infinite"
       }
     }
   },

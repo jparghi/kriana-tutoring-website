@@ -5,8 +5,8 @@ import Link from "next/link";
 import { Footer } from "../../components/footer";
 import { RoboticsPrograms } from "../../components/robotics/robotics-programs";
 import { RoboticsCtaButtons } from "../../components/robotics/robotics-cta-buttons";
-import { LearningJourney } from "../../components/robotics/learning-journey";
 import { SkillsSection } from "../../components/robotics/skills-section";
+import { FloatingBricks, scatterBricks } from "../../components/robotics/floating-bricks";
 import { MapPinIcon } from "../../components/icons";
 import {
   BIRTHDAY_PARTY_BOOKING_URL,
@@ -41,7 +41,7 @@ const additionalOfferings = [
   },
   {
     title: "Birthday Parties",
-    description: "LEGO robotics birthday parties that keep every guest building.",
+    description: "Hands-on robotics birthday parties that keep every guest building.",
     href: BIRTHDAY_PARTY_BOOKING_URL,
     accent: YE_RED,
     image: "/images/young-engineers/birthday-party.png",
@@ -66,7 +66,7 @@ const faqs = [
   },
   {
     q: "Are all building materials provided?",
-    a: "Yes, all LEGO and robotics building materials are provided as part of the program.",
+    a: "Yes, all robotics building materials are provided as part of the program.",
   },
   {
     q: "Does my child need to bring a tablet?",
@@ -151,6 +151,30 @@ export default function RoboticsPage() {
 
           <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
             <div>
+              <a
+                href={YOUNG_ENGINEERS_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="group mb-4 flex w-fit items-center gap-2.5 rounded-full border border-slate-200/80 bg-white/90 py-1.5 pl-2.5 pr-4 shadow-sm backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <Image
+                  src="/images/young-engineers/logo.png"
+                  alt="Young Engineers"
+                  width={180}
+                  height={52}
+                  className="h-5 w-auto"
+                />
+                <span className="h-3.5 w-px bg-slate-200" />
+                <span className="text-xs font-semibold text-slate-600 transition-colors group-hover:text-[#0083CB]">
+                  Official Program Partner
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="text-[10px] text-slate-400 transition-colors group-hover:text-[#0083CB]"
+                >
+                  ↗
+                </span>
+              </a>
               <p
                 className="inline-flex items-center gap-2 rounded-full border bg-white/90 px-4 py-1 text-xs font-black uppercase tracking-[0.3em]"
                 style={{ borderColor: `${YE_BLUE}4D`, color: YE_BLUE }}
@@ -179,7 +203,7 @@ export default function RoboticsPage() {
               <div className="relative overflow-hidden rounded-[1.75rem] border border-slate-200/70 shadow-[0_30px_70px_rgba(15,23,42,0.14)]">
                 <Image
                   src="/images/robotics/robotics-hero.png"
-                  alt="Three children building a LEGO robotics model together from a blueprint"
+                  alt="Three children building a robotics model together from a blueprint"
                   width={1672}
                   height={941}
                   className="h-full w-full object-cover"
@@ -190,42 +214,9 @@ export default function RoboticsPage() {
           </div>
         </section>
 
-        {/* 2. Short hands-on learning introduction */}
-        <section className="px-6 py-16 sm:px-10">
-          <div className="mx-auto max-w-3xl text-center">
-            <h2 className="text-2xl font-semibold text-[#0A2D5A] sm:text-3xl">
-              Learning by Building, Engineering and Coding
-            </h2>
-            <p className="mt-4 text-base leading-8 text-slate-600">
-              Children learn through hands-on building, engineering challenges and coding activities — working with
-              real LEGO models and age-appropriate coding tools to bring their ideas to life, one program at a time.
-            </p>
-          </div>
-        </section>
-
-        {/* 3. Imagine -> Build -> Test -> Improve -> Code journey */}
-        <section className="relative overflow-hidden bg-brand-sky/5 px-6 py-16 sm:px-10">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 opacity-[0.04]"
-            style={{
-              backgroundImage:
-                "linear-gradient(rgba(0,131,203,0.7) 1px,transparent 1px),linear-gradient(90deg,rgba(0,131,203,0.7) 1px,transparent 1px)",
-              backgroundSize: "36px 36px",
-            }}
-          />
-          <div className="relative mx-auto max-w-6xl text-center">
-            <h2 className="text-2xl font-semibold text-[#0A2D5A] sm:text-3xl">The Engineering Journey</h2>
-            <p className="mx-auto mt-3 max-w-2xl text-base text-slate-600">
-              Every program follows the same hands-on process real engineers use.
-            </p>
-            <LearningJourney />
-          </div>
-        </section>
-
         {/* 4. Program cards + upcoming classes / launch list */}
-        <section id="programs" className="bg-slate-50 px-6 py-16 sm:px-10">
-          <div className="mx-auto max-w-6xl">
+        <section id="programs" className="relative overflow-hidden bg-slate-50 px-6 py-16 sm:px-10">
+          <div className="relative mx-auto max-w-6xl">
             <h2 className="text-2xl font-semibold text-[#0A2D5A] sm:text-3xl">Find the Right Engineering Challenge</h2>
             <p className="mt-3 max-w-2xl text-base text-slate-600">
               Explore hands-on programs designed for different ages, interests and experience levels.
@@ -237,8 +228,8 @@ export default function RoboticsPage() {
         </section>
 
         {/* 5. Large visual engineering story */}
-        <section className="px-6 py-16 sm:px-10">
-          <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-2">
+        <section className="relative overflow-hidden px-6 py-16 sm:px-10">
+          <div className="relative mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-2">
             <div className="relative overflow-hidden rounded-[1.75rem] border border-slate-200/70 shadow-[0_24px_60px_rgba(15,23,42,0.12)]">
               <Image
                 src="/images/robotics/build-test-improve.png"
@@ -268,8 +259,8 @@ export default function RoboticsPage() {
         <SkillsSection />
 
         {/* 8. Additional offerings */}
-        <section className="bg-slate-50 px-6 py-16 sm:px-10">
-          <div className="mx-auto max-w-6xl">
+        <section className="relative overflow-hidden bg-slate-50 px-6 py-16 sm:px-10">
+          <div className="relative mx-auto max-w-6xl">
             <h2 className="text-2xl font-semibold text-[#0A2D5A] sm:text-3xl">More Robotics Experiences</h2>
             <p className="mt-3 max-w-2xl text-base text-slate-600">
               STEM fun beyond the classroom — for camps, celebrations and schools.
@@ -312,37 +303,6 @@ export default function RoboticsPage() {
           </div>
         </section>
 
-        {/* Young Engineers credibility */}
-        <section className="px-6 py-16 sm:px-10">
-          <div
-            className="mx-auto flex max-w-6xl flex-col gap-6 rounded-3xl border border-slate-200 border-t-4 bg-white p-8 lg:flex-row lg:items-center lg:justify-between"
-            style={{ borderTopColor: YE_RED }}
-          >
-            <div className="flex items-center gap-4">
-              <Image
-                src="/images/young-engineers/logo.png"
-                alt="Young Engineers"
-                width={180}
-                height={52}
-                className="h-10 w-auto"
-              />
-              <p className="max-w-xl text-sm leading-relaxed text-slate-600">
-                Young Engineers Robotics &amp; Coding — offered locally by Kriana Tutoring, combining a proven
-                international curriculum with the same caring instructors families already trust for tutoring.
-              </p>
-            </div>
-            <a
-              href={YOUNG_ENGINEERS_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-slate-500 transition-colors hover:text-[#0083CB]"
-            >
-              Learn About Young Engineers
-              <span aria-hidden="true">↗</span>
-            </a>
-          </div>
-        </section>
-
         {/* 9. FAQ */}
         <section className="bg-slate-50 px-6 py-16 sm:px-10">
           <div className="mx-auto max-w-3xl">
@@ -382,7 +342,7 @@ export default function RoboticsPage() {
                 <div className="max-w-md px-8 text-right sm:px-12">
                   <h2 className="text-2xl font-bold text-white sm:text-3xl">Ready to Build Their Next Big Idea?</h2>
                   <p className="mt-3 text-sm leading-relaxed text-white/80">
-                    Explore upcoming robotics programs or join the launch list for Kanata and Stittsville.
+                    Explore upcoming robotics programs for Kanata and Stittsville.
                   </p>
                   <div className="mt-7 flex flex-wrap items-center justify-end gap-3">
                     <RoboticsCtaButtons variant="dark" />

@@ -46,7 +46,7 @@ const programs: {
     icon: CalendarStarIcon,
     image: "/images/young-engineers/birthday-party.png",
     title: "Birthday Parties",
-    description: "Make birthdays unforgettable with LEGO robotics & STEM fun!",
+    description: "Make birthdays unforgettable with hands-on robotics & STEM fun!",
     href: "/booking",
     iconBg: "bg-brand-rose/15",
     iconColor: "text-brand-rose",
