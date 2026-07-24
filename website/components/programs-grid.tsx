@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { BookOpenIcon, BuildingIcon, CalendarStarIcon, RocketIcon, SparkleIcon } from "./icons";
 import { SectionHeading } from "./section-heading";
+import { ROBOTICS_PATH } from "../lib/site-links";
 
 type IconComponent = React.ComponentType<React.SVGProps<SVGSVGElement>>;
 
@@ -28,7 +29,7 @@ const programs: {
     image: "/images/young-engineers/robotics-and-coding.png",
     title: "Robotics & Coding",
     description: "STEM programs that build creativity, logic & future-ready skills.",
-    href: "/booking",
+    href: ROBOTICS_PATH,
     iconBg: "bg-brand-sky/15",
     iconColor: "text-brand-sky",
   },

@@ -8,6 +8,7 @@ const footerLinks = [
     links: [
       { label: "Home", href: "/" },
       { label: "Services", href: "/services" },
+      { label: "Robotics & Coding", href: "/robotics" },
       { label: "About", href: "/about" },
       { label: "Blog", href: "/blog" },
       { label: "Worksheets", href: "/worksheets" }

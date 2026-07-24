@@ -99,6 +99,9 @@ export default function BookingPage() {
   const [selectedCategory, setSelectedCategory] = useState('All')
 
   useEffect(() => {
+    const categoryParam = new URLSearchParams(window.location.search).get('category')
+    if (categoryParam) setSelectedCategory(categoryParam)
+
     async function load() {
       try {
         const progs = await getPrograms({ activeOnly: true })
