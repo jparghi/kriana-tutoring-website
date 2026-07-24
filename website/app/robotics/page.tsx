@@ -227,34 +227,6 @@ export default function RoboticsPage() {
           </div>
         </section>
 
-        {/* 5. Large visual engineering story */}
-        <section className="relative overflow-hidden px-6 py-16 sm:px-10">
-          <div className="relative mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-2">
-            <div className="relative overflow-hidden rounded-[1.75rem] border border-slate-200/70 shadow-[0_24px_60px_rgba(15,23,42,0.12)]">
-              <Image
-                src="/images/robotics/build-test-improve.png"
-                alt="Two children closely examining gears and motors on a mechanical build"
-                width={1536}
-                height={1024}
-                className="h-full w-full object-cover"
-              />
-            </div>
-            <div>
-              <h2 className="text-2xl font-semibold text-[#0A2D5A] sm:text-3xl">
-                Real Tools. Real Mechanisms. Real Confidence.
-              </h2>
-              <p className="mt-4 text-base leading-8 text-slate-600">
-                From gears and motors to sensors and structures, children work with real mechanical components —
-                studying blueprints, wiring builds and adjusting their designs until they work exactly as planned.
-              </p>
-              <p className="mt-4 text-base leading-8 text-slate-600">
-                Every challenge is designed to be attempted, tested and improved — building the kind of patience and
-                problem-solving that carries far beyond the classroom.
-              </p>
-            </div>
-          </div>
-        </section>
-
         {/* 6. Dark, high-contrast skills section */}
         <SkillsSection />
 
