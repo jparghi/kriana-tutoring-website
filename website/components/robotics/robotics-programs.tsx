@@ -67,7 +67,7 @@ function ProgramCard({
 
   return (
     <div
-      className="group grid overflow-hidden rounded-[24px] border border-slate-200 border-l-4 bg-white shadow-sm transition-all duration-300 hover:-translate-x-0.5 hover:shadow-[0_16px_44px_rgba(15,23,42,0.1)] lg:grid-cols-[18rem_minmax(0,1fr)_11rem]"
+      className="group grid overflow-hidden rounded-[24px] border border-slate-200 border-l-4 bg-white shadow-sm transition-all duration-300 hover:-translate-x-0.5 hover:shadow-[0_16px_44px_rgba(15,23,42,0.1)] lg:grid-cols-[18rem_minmax(0,1fr)_14rem]"
       style={{ borderLeftColor: accent }}
     >
       <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-50 lg:aspect-auto lg:min-h-[18rem]">
@@ -156,26 +156,39 @@ function ProgramCard({
             )}
           </div>
         ) : (
-          <Link
-            href={`/booking/${program.id}`}
-            className="group/cta mt-auto inline-flex w-fit items-center justify-center gap-1.5 rounded-full bg-[#0c6162] px-5 py-2 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#0a5051]"
-          >
-            Register for This Program
-            <span aria-hidden="true" className="transition-transform duration-200 group-hover/cta:translate-x-1">
-              →
-            </span>
-          </Link>
+          <div className="mt-auto flex flex-wrap gap-3 pt-2">
+            <Link
+              href={`/booking/${program.id}`}
+              className="group/cta inline-flex items-center justify-center gap-1.5 rounded-full bg-[#0c6162] px-5 py-2 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#0a5051]"
+            >
+              Register for This Program
+              <span aria-hidden="true" className="transition-transform duration-200 group-hover/cta:translate-x-1">
+                →
+              </span>
+            </Link>
+            {program.learnMoreUrl && (
+              <a
+                href={program.learnMoreUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center gap-1 rounded-full border border-slate-200 px-5 py-2 text-sm font-bold text-slate-700 transition-all duration-200 hover:border-brand-sky hover:text-brand-sky"
+              >
+                Learn More
+                <span aria-hidden="true">↗</span>
+              </a>
+            )}
+          </div>
         )}
       </div>
 
       {program.logo && (
-        <div className="flex min-h-32 items-center justify-center border-t border-slate-100 bg-white px-8 py-6 lg:min-h-0 lg:border-l lg:border-t-0">
+        <div className="flex min-h-40 items-center justify-center border-t border-slate-100 bg-white px-8 py-8 lg:min-h-0 lg:border-l lg:border-t-0">
           <Image
             src={program.logo}
             alt={`${program.title} logo`}
-            width={140}
-            height={110}
-            className="max-h-28 w-auto max-w-full object-contain"
+            width={190}
+            height={150}
+            className="max-h-36 w-auto max-w-full object-contain"
           />
         </div>
       )}
