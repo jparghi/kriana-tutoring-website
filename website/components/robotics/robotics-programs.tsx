@@ -20,7 +20,7 @@ function normalizeProgramName(value?: string) {
   return (value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
-function withLicensedProgramAssets(program: Program) {
+function withLicensedProgramAssets(program: Program): Program {
   const id = normalizeProgramName(program.id);
   const title = normalizeProgramName(program.title);
   const licensedProgram = licensedRoboticsPrograms.find(
@@ -196,22 +196,6 @@ function ProgramCard({
   );
 }
 
-function LaunchListPanel() {
-  return (
-    <div className="flex flex-col gap-5">
-      {licensedRoboticsPrograms.map((program, i) => (
-        <ProgramCard
-          key={program.id}
-          program={{ ...program, category: "Robotics" }}
-          sessions={[]}
-          isPlaceholder
-          image={program.image ?? placeholderImageForIndex(i)}
-        />
-      ))}
-    </div>
-  );
-}
-
 export function RoboticsPrograms() {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [sessionsByProgram, setSessionsByProgram] = useState<Record<string, Session[]>>({});
@@ -247,19 +231,28 @@ export function RoboticsPrograms() {
     );
   }
 
-  if (programs.length === 0) {
-    return <LaunchListPanel />;
-  }
-
   return (
     <div className="flex flex-col gap-5">
-      {programs.map((program) => (
-        <ProgramCard
-          key={program.id}
-          program={withLicensedProgramAssets(program)}
-          sessions={sessionsByProgram[program.id] ?? []}
-        />
-      ))}
+      {licensedRoboticsPrograms.map((licensedProgram, i) => {
+        const savedProgram = programs.find(
+          (program) =>
+            normalizeProgramName(program.id) === normalizeProgramName(licensedProgram.id) ||
+            normalizeProgramName(program.title) === normalizeProgramName(licensedProgram.title)
+        );
+        const displayProgram: Program = savedProgram
+          ? { ...withLicensedProgramAssets(savedProgram), title: licensedProgram.title }
+          : { ...licensedProgram, category: ROBOTICS_CATEGORY };
+
+        return (
+          <ProgramCard
+            key={licensedProgram.id}
+            program={displayProgram}
+            sessions={savedProgram ? sessionsByProgram[savedProgram.id] ?? [] : []}
+            isPlaceholder={!savedProgram}
+            image={displayProgram.image ?? placeholderImageForIndex(i)}
+          />
+        );
+      })}
     </div>
   );
 }
