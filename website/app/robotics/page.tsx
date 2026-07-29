@@ -6,7 +6,6 @@ import { Footer } from "../../components/footer";
 import { RoboticsPrograms } from "../../components/robotics/robotics-programs";
 import { RoboticsCtaButtons } from "../../components/robotics/robotics-cta-buttons";
 import { SkillsSection } from "../../components/robotics/skills-section";
-import { FloatingBricks, scatterBricks } from "../../components/robotics/floating-bricks";
 import { MapPinIcon } from "../../components/icons";
 import {
   BIRTHDAY_PARTY_BOOKING_URL,
@@ -125,113 +124,86 @@ export default function RoboticsPage() {
           </nav>
         </div>
 
-        {/* 1. Immersive hero */}
-        <section className="relative overflow-hidden bg-gradient-to-br from-white via-brand-sky/10 to-white px-6 pb-16 pt-8 sm:px-10 lg:pt-12">
-          {/* Subtle blueprint grid + soft radial + gear outlines — decorative, kept behind content */}
-          <div className="pointer-events-none absolute inset-0 -z-10">
-            <div
-              className="absolute inset-0 opacity-[0.05]"
-              style={{
-                backgroundImage:
-                  "linear-gradient(rgba(0,131,203,0.7) 1px,transparent 1px),linear-gradient(90deg,rgba(0,131,203,0.7) 1px,transparent 1px)",
-                backgroundSize: "44px 44px",
-              }}
-            />
-            <div className="absolute -left-32 top-0 h-[420px] w-[420px] rounded-full bg-brand-sky/15 blur-3xl" />
-            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-[#ED174B]/40 to-transparent" />
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 100 100"
-              className="absolute -right-6 top-10 hidden h-28 w-28 text-[#0083CB]/10 lg:block"
-            >
-              <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" strokeWidth="6" />
-              <circle cx="50" cy="50" r="8" fill="none" stroke="currentColor" strokeWidth="6" />
-            </svg>
-          </div>
+        {/* 1. Young Engineers-inspired hero */}
+        <section className="relative isolate min-h-[620px] overflow-hidden">
+          <Image
+            src="/images/robotics/young-engineers-cover.png"
+            alt="A colorful Young Engineers mechanical model built from bricks and gears"
+            fill
+            priority
+            className="object-cover object-[62%_center]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 to-white/5 lg:via-white/75 lg:to-transparent" />
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.07]"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at center, rgba(0,131,203,0.8) 1.5px, transparent 1.5px)",
+              backgroundSize: "22px 22px",
+            }}
+          />
 
-          <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
-            <div>
-              <div className="mb-5 flex items-center gap-4">
-                <div className="flex flex-col items-start gap-3">
-                  {/* Flashing "new" badge */}
-                  <div className="relative w-fit">
-                    <div className="absolute -inset-2 -z-10 rounded-full bg-gradient-to-r from-red-600 via-orange-600 to-red-600 opacity-70 blur-lg animate-pulse-glow" />
-                    <a
-                      href={YOUNG_ENGINEERS_URL}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="group relative inline-flex w-fit items-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-red-600 via-orange-600 to-red-600 bg-[length:200%_auto] px-4 py-2 shadow-[0_8px_28px_rgba(194,65,12,0.55)] transition-transform duration-300 animate-gradient-shift hover:scale-[1.03]"
-                    >
-                      {/* shine sweep */}
-                      <span className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/35 to-transparent bg-[length:200%_100%] animate-shimmer" />
-                      <span className="relative flex h-2 w-2 shrink-0">
-                        <span className="absolute inline-flex h-full w-full animate-ping-slow rounded-full bg-white opacity-75" />
-                        <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
-                      </span>
-                      <span className="relative text-xs font-extrabold leading-tight text-white">
-                        Now Offering: Robotics &amp; Coding
-                        <span className="block font-semibold text-white/80">powered by Young Engineers</span>
-                      </span>
-                    </a>
-                  </div>
+          <div className="relative mx-auto flex min-h-[620px] max-w-6xl items-center px-6 py-16 sm:px-10">
+            <div className="max-w-xl rounded-[2rem] border border-white/80 bg-white/88 p-7 shadow-[0_26px_70px_rgba(10,45,90,0.15)] backdrop-blur-md sm:p-10">
+              <a
+                href={YOUNG_ENGINEERS_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex rounded-2xl bg-white px-4 py-3 shadow-sm transition-transform hover:scale-[1.02]"
+              >
+                <Image
+                  src="/images/young-engineers/logo.png"
+                  alt="Young Engineers"
+                  width={220}
+                  height={64}
+                  className="h-14 w-auto object-contain"
+                />
+              </a>
 
-                  {/* Logo (static) */}
-                  <a
-                    href={YOUNG_ENGINEERS_URL}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex w-fit items-center transition-transform duration-300 hover:scale-[1.03]"
-                  >
-                    <Image
-                      src="/images/young-engineers/logo.png"
-                      alt="Young Engineers"
-                      width={180}
-                      height={52}
-                      className="h-[55px] w-auto shrink-0 object-contain"
-                    />
-                  </a>
-                </div>
-
-                {/* Robot model (static) — sized to match the badge + logo stack */}
-                <a
-                  href={YOUNG_ENGINEERS_URL}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex shrink-0 items-center justify-center transition-transform duration-300 hover:scale-[1.03]"
-                >
-                  <Image
-                    src="/images/young-engineers/robowalk.png"
-                    alt="Young Engineers robot build"
-                    width={1526}
-                    height={2034}
-                    className="h-[124px] w-[124px] object-contain"
-                  />
-                </a>
-              </div>
-              <h1 className="mt-5 max-w-xl text-balance text-4xl font-bold leading-[1.08] text-slate-900 sm:text-5xl">
-                Build. Code. Create Something Amazing.
+              <p className="mt-6 text-xs font-black uppercase tracking-[0.28em] text-[#0083CB]">
+                Now in Kanata &amp; Stittsville
+              </p>
+              <h1 className="mt-3 text-balance text-4xl font-black leading-[1.03] text-[#ED174B] sm:text-5xl">
+                Young Engineers Enrichment Programs
               </h1>
-              <p className="mt-5 max-w-lg text-lg leading-relaxed text-slate-600">
-                Hands-on robotics, engineering and coding programs where children learn by building, testing and
-                bringing their ideas to life.
+              <p className="mt-5 max-w-lg text-base leading-7 text-slate-700 sm:text-lg">
+                Interactive robotics, engineering and coding programs that turn science and mathematics into an
+                exciting, hands-on adventure.
               </p>
-              <p className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-slate-500">
-                <span className="relative flex h-2 w-2 shrink-0">
-                  <span className="absolute inline-flex h-full w-full animate-ping-slow rounded-full bg-[#ED174B] opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-[#ED174B]" />
-                </span>
-                <MapPinIcon className="h-3.5 w-3.5 shrink-0 text-[#ED174B]" />
-                Serving Kanata and Stittsville
+              <p className="mt-4 flex items-center gap-2 text-sm font-bold text-[#0A2D5A]">
+                <MapPinIcon className="h-4 w-4 shrink-0 text-[#ED174B]" />
+                Offered locally by Kriana Tutoring
               </p>
-
-              <div className="mt-8">
+              <div className="mt-7">
                 <RoboticsCtaButtons variant="light" />
               </div>
             </div>
+          </div>
+        </section>
 
-            <div className="relative">
+        {/* Young Engineers mission band */}
+        <section className="bg-[#0083CB] px-6 py-10 text-white sm:px-10">
+          <div className="mx-auto max-w-3xl text-center">
+            <p className="text-lg font-semibold leading-8 sm:text-xl">
+              Children learn engineering and technology by building exclusive models, testing their ideas and solving
+              real challenges—developing confidence and practical skills they can carry into everyday life.
+            </p>
+          </div>
+        </section>
+
+        {/* Keep the program video directly below the new hero */}
+        <section className="bg-white px-6 py-16 sm:px-10">
+          <div className="mx-auto max-w-5xl">
+            <div className="mx-auto max-w-2xl text-center">
+              <p className="text-xs font-black uppercase tracking-[0.28em] text-[#ED174B]">Hands-on learning</p>
+              <h2 className="mt-3 text-3xl font-bold text-[#0A2D5A] sm:text-4xl">See Young Engineers in Action</h2>
+              <p className="mt-3 text-base leading-7 text-slate-600">
+                Watch students build, test and improve their creations through collaborative engineering challenges.
+              </p>
+            </div>
+            <div className="relative mx-auto mt-9 max-w-4xl">
               <div className="absolute -inset-3 -z-10 rounded-[2rem] border-2 border-dashed border-[#0083CB]/25" />
-              <div className="relative aspect-video w-full overflow-hidden rounded-[1.75rem] border border-slate-200/70 shadow-[0_30px_70px_rgba(15,23,42,0.14)]">
+              <div className="relative aspect-video overflow-hidden rounded-[1.75rem] border border-slate-200/70 shadow-[0_30px_70px_rgba(15,23,42,0.14)]">
                 <video
                   className="h-full w-full object-cover"
                   poster="/images/robotics/robotics-video-poster.jpg"
