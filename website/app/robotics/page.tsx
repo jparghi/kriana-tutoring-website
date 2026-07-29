@@ -241,6 +241,31 @@ export default function RoboticsPage() {
           </div>
         </section>
 
+        {/* 2. Video showcase */}
+        <section className="relative overflow-hidden bg-white px-6 py-16 sm:px-10">
+          <div className="mx-auto max-w-5xl">
+            <div className="text-center">
+              <h2 className="text-2xl font-semibold text-[#0A2D5A] sm:text-3xl">See a Session in Action</h2>
+              <p className="mt-3 text-base text-slate-600">
+                A quick look at the hands-on building, coding and teamwork happening in every class.
+              </p>
+            </div>
+            <div className="relative mt-10 overflow-hidden rounded-[1.75rem] border border-slate-200/70 shadow-[0_30px_70px_rgba(15,23,42,0.14)]">
+              <video
+                className="h-full w-full object-cover"
+                poster="/images/robotics/robotics-video-poster.jpg"
+                controls
+                muted
+                loop
+                playsInline
+                preload="none"
+              >
+                <source src="/videos/robotics-highlight.mp4" type="video/mp4" />
+              </video>
+            </div>
+          </div>
+        </section>
+
         {/* 4. Program cards + upcoming classes / launch list */}
         <section id="programs" className="relative overflow-hidden bg-slate-50 px-6 py-16 sm:px-10">
           <div className="relative mx-auto max-w-6xl">

@@ -2,3 +2,4 @@ node_modules
 .next
 website/.next
 docs/stripe-keys.md
+docs/**/*.mp4
