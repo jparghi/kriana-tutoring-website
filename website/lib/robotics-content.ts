@@ -94,17 +94,18 @@ export const licensedRoboticsPrograms = [
     image: "/images/robotics/programs/robo-toys.png",
     logo: "/images/robotics/programs/robo-toys-logo.png",
   },
-  {
-    id: "algoc",
-    title: "AlgoC",
-    ageRange: "13-18",
-    durationMin: 90,
-    description:
-      "AlgoC is a hands-on learning experience designed to equip students with essential coding, robotics, coding with AI, and problem-solving skills. This program focuses on C programming, the foundational language used in robotics, automation, and embedded systems. Through real-world challenges and interactive lessons, children will build, code, and innovate—preparing for a technology-driven future.",
-    learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/algoc-enrichment-program/",
-    image: "/images/robotics/programs/algoc.png",
-    logo: "/images/robotics/programs/algoc-logo.png",
-  },
+  // Hidden for now — re-enable when ready to launch.
+  // {
+  //   id: "algoc",
+  //   title: "AlgoC",
+  //   ageRange: "13-18",
+  //   durationMin: 90,
+  //   description:
+  //     "AlgoC is a hands-on learning experience designed to equip students with essential coding, robotics, coding with AI, and problem-solving skills. This program focuses on C programming, the foundational language used in robotics, automation, and embedded systems. Through real-world challenges and interactive lessons, children will build, code, and innovate—preparing for a technology-driven future.",
+  //   learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/algoc-enrichment-program/",
+  //   image: "/images/robotics/programs/algoc.png",
+  //   logo: "/images/robotics/programs/algoc-logo.png",
+  // },
 ];
 
 const PLACEHOLDER_IMAGES = [
