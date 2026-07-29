@@ -151,36 +151,63 @@ export default function RoboticsPage() {
 
           <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
             <div>
-              <a
-                href={YOUNG_ENGINEERS_URL}
-                target="_blank"
-                rel="noreferrer"
-                className="group mb-4 flex w-fit items-center gap-2.5 rounded-full border border-slate-200/80 bg-white/90 py-1.5 pl-2.5 pr-4 shadow-sm backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
-              >
-                <Image
-                  src="/images/young-engineers/logo.png"
-                  alt="Young Engineers"
-                  width={180}
-                  height={52}
-                  className="h-5 w-auto"
-                />
-                <span className="h-3.5 w-px bg-slate-200" />
-                <span className="text-xs font-semibold text-slate-600 transition-colors group-hover:text-[#0083CB]">
-                  Official Program Partner
-                </span>
-                <span
-                  aria-hidden="true"
-                  className="text-[10px] text-slate-400 transition-colors group-hover:text-[#0083CB]"
+              <div className="mb-5 flex items-center gap-4">
+                <div className="flex flex-col items-start gap-3">
+                  {/* Flashing "new" badge */}
+                  <div className="relative w-fit">
+                    <div className="absolute -inset-2 -z-10 rounded-full bg-gradient-to-r from-red-600 via-orange-600 to-red-600 opacity-70 blur-lg animate-pulse-glow" />
+                    <a
+                      href={YOUNG_ENGINEERS_URL}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="group relative inline-flex w-fit items-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-red-600 via-orange-600 to-red-600 bg-[length:200%_auto] px-4 py-2 shadow-[0_8px_28px_rgba(194,65,12,0.55)] transition-transform duration-300 animate-gradient-shift hover:scale-[1.03]"
+                    >
+                      {/* shine sweep */}
+                      <span className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/35 to-transparent bg-[length:200%_100%] animate-shimmer" />
+                      <span className="relative flex h-2 w-2 shrink-0">
+                        <span className="absolute inline-flex h-full w-full animate-ping-slow rounded-full bg-white opacity-75" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+                      </span>
+                      <span className="relative text-xs font-extrabold leading-tight text-white">
+                        Now Offering: Robotics &amp; Coding
+                        <span className="block font-semibold text-white/80">powered by Young Engineers</span>
+                      </span>
+                    </a>
+                  </div>
+
+                  {/* Logo (static) */}
+                  <a
+                    href={YOUNG_ENGINEERS_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex w-fit items-center transition-transform duration-300 hover:scale-[1.03]"
+                  >
+                    <Image
+                      src="/images/young-engineers/logo.png"
+                      alt="Young Engineers"
+                      width={180}
+                      height={52}
+                      className="h-[55px] w-auto shrink-0 object-contain"
+                    />
+                  </a>
+                </div>
+
+                {/* Robot model (static) — sized to match the badge + logo stack */}
+                <a
+                  href={YOUNG_ENGINEERS_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex shrink-0 items-center justify-center transition-transform duration-300 hover:scale-[1.03]"
                 >
-                  ↗
-                </span>
-              </a>
-              <p
-                className="inline-flex items-center gap-2 rounded-full border bg-white/90 px-4 py-1 text-xs font-black uppercase tracking-[0.3em]"
-                style={{ borderColor: `${YE_BLUE}4D`, color: YE_BLUE }}
-              >
-                Young Engineers at Kriana
-              </p>
+                  <Image
+                    src="/images/young-engineers/robowalk.png"
+                    alt="Young Engineers robot build"
+                    width={1526}
+                    height={2034}
+                    className="h-[124px] w-[124px] object-contain"
+                  />
+                </a>
+              </div>
               <h1 className="mt-5 max-w-xl text-balance text-4xl font-bold leading-[1.08] text-slate-900 sm:text-5xl">
                 Build. Code. Create Something Amazing.
               </h1>
