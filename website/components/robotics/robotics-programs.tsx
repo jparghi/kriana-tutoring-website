@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { getActiveSessions, getPrograms, SESSION_STATUS, formatDate } from "../../lib/booking";
-import { ROBOTICS_CATEGORY } from "../../lib/site-links";
+import { ROBOTICS_BOOKING_URL, ROBOTICS_CATEGORY } from "../../lib/site-links";
 import {
   imageForCategory,
   licensedRoboticsPrograms,
@@ -15,6 +15,27 @@ import {
 
 type Program = Record<string, any>;
 type Session = Record<string, any>;
+
+function normalizeProgramName(value?: string) {
+  return (value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function withLicensedProgramAssets(program: Program) {
+  const id = normalizeProgramName(program.id);
+  const title = normalizeProgramName(program.title);
+  const licensedProgram = licensedRoboticsPrograms.find(
+    (item) => normalizeProgramName(item.id) === id || normalizeProgramName(item.title) === title
+  );
+
+  if (!licensedProgram) return program;
+
+  return {
+    ...licensedProgram,
+    ...program,
+    image: program.image || licensedProgram.image,
+    logo: program.logo || licensedProgram.logo,
+  };
+}
 
 function ProgramCard({
   program,
@@ -46,15 +67,15 @@ function ProgramCard({
 
   return (
     <div
-      className="group flex flex-col overflow-hidden rounded-[24px] border border-slate-200 border-l-4 bg-white shadow-sm transition-all duration-300 hover:-translate-x-0.5 hover:shadow-[0_16px_44px_rgba(15,23,42,0.1)] sm:flex-row"
+      className="group grid overflow-hidden rounded-[24px] border border-slate-200 border-l-4 bg-white shadow-sm transition-all duration-300 hover:-translate-x-0.5 hover:shadow-[0_16px_44px_rgba(15,23,42,0.1)] lg:grid-cols-[18rem_minmax(0,1fr)_11rem]"
       style={{ borderLeftColor: accent }}
     >
-      <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden bg-slate-50 p-4 sm:aspect-auto sm:h-auto sm:w-[30rem]">
+      <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-50 lg:aspect-auto lg:min-h-[18rem]">
         <Image
           src={cardImage}
           alt={`${program.title} — Young Engineers program at Kriana Tutoring`}
           fill
-          className="object-contain p-2 transition-transform duration-500 group-hover:scale-[1.03]"
+          className="object-contain p-4 transition-transform duration-500 group-hover:scale-[1.03]"
         />
         <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/55 to-transparent sm:hidden" />
         <span
@@ -117,10 +138,10 @@ function ProgramCard({
         {isPlaceholder ? (
           <div className="mt-auto flex flex-wrap gap-3 pt-2">
             <Link
-              href="/contact#consultation-form"
+              href={ROBOTICS_BOOKING_URL}
               className="inline-flex items-center justify-center rounded-full bg-[#0c6162] px-5 py-2 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#0a5051]"
             >
-              Register
+              Register for This Program
             </Link>
             {program.learnMoreUrl && (
               <a
@@ -137,9 +158,9 @@ function ProgramCard({
         ) : (
           <Link
             href={`/booking/${program.id}`}
-            className="group/cta mt-auto inline-flex items-center gap-1.5 pt-2 text-sm font-bold text-[#0c6162]"
+            className="group/cta mt-auto inline-flex w-fit items-center justify-center gap-1.5 rounded-full bg-[#0c6162] px-5 py-2 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#0a5051]"
           >
-            View Program Details
+            Register for This Program
             <span aria-hidden="true" className="transition-transform duration-200 group-hover/cta:translate-x-1">
               →
             </span>
@@ -148,13 +169,13 @@ function ProgramCard({
       </div>
 
       {program.logo && (
-        <div className="hidden shrink-0 items-center justify-center border-l border-slate-100 px-6 sm:flex sm:w-40">
+        <div className="flex min-h-32 items-center justify-center border-t border-slate-100 bg-white px-8 py-6 lg:min-h-0 lg:border-l lg:border-t-0">
           <Image
             src={program.logo}
             alt={`${program.title} logo`}
-            width={120}
-            height={100}
-            className="h-auto w-full object-contain"
+            width={140}
+            height={110}
+            className="max-h-28 w-auto max-w-full object-contain"
           />
         </div>
       )}
@@ -220,7 +241,11 @@ export function RoboticsPrograms() {
   return (
     <div className="flex flex-col gap-5">
       {programs.map((program) => (
-        <ProgramCard key={program.id} program={program} sessions={sessionsByProgram[program.id] ?? []} />
+        <ProgramCard
+          key={program.id}
+          program={withLicensedProgramAssets(program)}
+          sessions={sessionsByProgram[program.id] ?? []}
+        />
       ))}
     </div>
   );

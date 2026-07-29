@@ -28,11 +28,9 @@ export function RoboticsCtaButtons({ variant = "light" }: { variant?: "light" | 
       <a href="#programs" className={styles.primary}>
         {loading ? "Explore Programs" : hasOpenRegistration ? "View Upcoming Classes" : "Explore Programs"}
       </a>
-      {!loading && hasOpenRegistration ? (
-        <Link href={ROBOTICS_BOOKING_URL} className={styles.secondary}>
-          Register Now
-        </Link>
-      ) : null}
+      <Link href={ROBOTICS_BOOKING_URL} className={styles.secondary}>
+        Register Now
+      </Link>
     </div>
   );
 }
