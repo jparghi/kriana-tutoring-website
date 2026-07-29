@@ -216,6 +216,10 @@ export default function RoboticsPage() {
                 bringing their ideas to life.
               </p>
               <p className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+                <span className="relative flex h-2 w-2 shrink-0">
+                  <span className="absolute inline-flex h-full w-full animate-ping-slow rounded-full bg-[#ED174B] opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-[#ED174B]" />
+                </span>
                 <MapPinIcon className="h-3.5 w-3.5 shrink-0 text-[#ED174B]" />
                 Serving Kanata and Stittsville
               </p>
@@ -329,32 +333,6 @@ export default function RoboticsPage() {
           </div>
         </section>
 
-        {/* 10. Strong final registration CTA */}
-        <section className="relative overflow-hidden px-6 py-20 sm:px-10">
-          <div className="mx-auto max-w-6xl overflow-hidden rounded-3xl">
-            <div className="relative">
-              <Image
-                src="/images/robotics/robotics-success-banner.png"
-                alt="A group of excited children and their instructor celebrating around their finished robotics builds"
-                width={1915}
-                height={821}
-                className="h-[420px] w-full object-cover sm:h-[380px]"
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#0A2D5A]/10 via-[#0A2D5A]/60 to-[#0A2D5A]/95" />
-              <div className="absolute inset-0 flex items-center justify-end">
-                <div className="max-w-md px-8 text-right sm:px-12">
-                  <h2 className="text-2xl font-bold text-white sm:text-3xl">Ready to Build Their Next Big Idea?</h2>
-                  <p className="mt-3 text-sm leading-relaxed text-white/80">
-                    Explore upcoming robotics programs for Kanata and Stittsville.
-                  </p>
-                  <div className="mt-7 flex flex-wrap items-center justify-end gap-3">
-                    <RoboticsCtaButtons variant="dark" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
       </main>
 
       <Footer />
