@@ -149,7 +149,7 @@ export default function RoboticsPage() {
             </svg>
           </div>
 
-          <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+          <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
             <div>
               <div className="mb-5 flex items-center gap-4">
                 <div className="flex flex-col items-start gap-3">
@@ -227,41 +227,20 @@ export default function RoboticsPage() {
 
             <div className="relative">
               <div className="absolute -inset-3 -z-10 rounded-[2rem] border-2 border-dashed border-[#0083CB]/25" />
-              <div className="relative overflow-hidden rounded-[1.75rem] border border-slate-200/70 shadow-[0_30px_70px_rgba(15,23,42,0.14)]">
-                <Image
-                  src="/images/robotics/robotics-hero.png"
-                  alt="Three children building a robotics model together from a blueprint"
-                  width={1672}
-                  height={941}
+              <div className="relative aspect-video w-full overflow-hidden rounded-[1.75rem] border border-slate-200/70 shadow-[0_30px_70px_rgba(15,23,42,0.14)]">
+                <video
                   className="h-full w-full object-cover"
-                  priority
-                />
+                  poster="/images/robotics/robotics-video-poster.jpg"
+                  controls
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="auto"
+                >
+                  <source src="/videos/robotics-highlight.mp4" type="video/mp4" />
+                </video>
               </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 2. Video showcase */}
-        <section className="relative overflow-hidden bg-white px-6 py-16 sm:px-10">
-          <div className="mx-auto max-w-5xl">
-            <div className="text-center">
-              <h2 className="text-2xl font-semibold text-[#0A2D5A] sm:text-3xl">See a Session in Action</h2>
-              <p className="mt-3 text-base text-slate-600">
-                A quick look at the hands-on building, coding and teamwork happening in every class.
-              </p>
-            </div>
-            <div className="relative mt-10 overflow-hidden rounded-[1.75rem] border border-slate-200/70 shadow-[0_30px_70px_rgba(15,23,42,0.14)]">
-              <video
-                className="h-full w-full object-cover"
-                poster="/images/robotics/robotics-video-poster.jpg"
-                controls
-                muted
-                loop
-                playsInline
-                preload="none"
-              >
-                <source src="/videos/robotics-highlight.mp4" type="video/mp4" />
-              </video>
             </div>
           </div>
         </section>
