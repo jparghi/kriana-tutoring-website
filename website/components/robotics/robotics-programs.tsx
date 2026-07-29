@@ -56,6 +56,17 @@ function ProgramCard({
   const isOpen = activeSessions.length > 0 && !allSoldOut;
   const accent = themeColorForCategory(program.category);
   const cardImage = image ?? program.image ?? imageForCategory(program.category);
+  const programId = normalizeProgramName(program.id);
+  const programTitle = normalizeProgramName(program.title);
+  const shouldContainImage =
+    programId === "smartivo" ||
+    programTitle === "smartivo" ||
+    programId === "brickschallenge" ||
+    programTitle === "brickschallenge" ||
+    programId === "galileotechnic" ||
+    programTitle === "galileotechnic" ||
+    programId === "robotoys" ||
+    programTitle === "robotoys";
   const skills = skillTagsForCategory(program.category);
 
   const availabilityLabel = allSoldOut ? "Sold Out" : isOpen ? "Registration Open" : "Coming Soon";
@@ -67,7 +78,7 @@ function ProgramCard({
 
   return (
     <div
-      className="group grid overflow-hidden rounded-[24px] border border-slate-200 border-l-4 bg-white shadow-sm transition-all duration-300 hover:-translate-x-0.5 hover:shadow-[0_16px_44px_rgba(15,23,42,0.1)] lg:grid-cols-[18rem_minmax(0,1fr)_14rem]"
+      className="group grid overflow-hidden rounded-[24px] border border-slate-200 border-l-4 bg-white shadow-sm transition-all duration-300 hover:-translate-x-0.5 hover:shadow-[0_16px_44px_rgba(15,23,42,0.1)] lg:grid-cols-[23rem_minmax(0,1fr)_13rem]"
       style={{ borderLeftColor: accent }}
     >
       <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-50 lg:aspect-auto lg:min-h-[18rem]">
@@ -75,7 +86,9 @@ function ProgramCard({
           src={cardImage}
           alt={`${program.title} — Young Engineers program at Kriana Tutoring`}
           fill
-          className="object-contain p-4 transition-transform duration-500 group-hover:scale-[1.03]"
+          className={`transition-transform duration-500 group-hover:scale-[1.04] ${
+            shouldContainImage ? "object-contain p-2" : "object-cover"
+          }`}
         />
         <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/55 to-transparent sm:hidden" />
         <span
