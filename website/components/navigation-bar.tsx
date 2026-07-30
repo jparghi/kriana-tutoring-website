@@ -7,16 +7,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const navItems = [
-  { label: "Home", href: "/" },
-  { label: "Services", href: "/services" },
+  { label: "Tutoring", href: "/services" },
   { label: "Robotics & Coding", href: "/robotics" },
-  {
-    label: "About",
-    children: [
-      { label: "About Us", href: "/about" },
-      { label: "Why Kriana", href: "/why-kriana" },
-    ],
-  },
   {
     label: "Resources",
     children: [
@@ -25,7 +17,14 @@ const navItems = [
       { label: "Practice Tests", href: "/practice-tests" },
     ],
   },
-  { label: "Contact", href: "/contact#consultation-form" },
+  {
+    label: "About",
+    children: [
+      { label: "About Us", href: "/about" },
+      { label: "Why Kriana", href: "/why-kriana" },
+      { label: "Contact", href: "/contact#consultation-form" },
+    ],
+  },
 ];
 
 const phoneHref = "tel:+16134006921";

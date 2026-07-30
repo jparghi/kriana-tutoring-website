@@ -36,21 +36,21 @@ const additionalOfferings = [
     description: "STEM-filled camps and PA day workshops for school breaks.",
     href: SUMMER_CAMP_BOOKING_URL,
     accent: YE_BLUE,
-    image: "/images/young-engineers/summer-camps.png",
+    image: "/images/young-engineers/summer-camps-v2.png",
   },
   {
     title: "Birthday Parties",
     description: "Hands-on robotics birthday parties that keep every guest building.",
     href: BIRTHDAY_PARTY_BOOKING_URL,
     accent: YE_RED,
-    image: "/images/young-engineers/birthday-party.png",
+    image: "/images/young-engineers/birthday-party-v2.png",
   },
   {
     title: "School Programs",
     description: "After-school robotics programs and workshops for your school.",
     href: SCHOOL_PROGRAM_BOOKING_URL,
     accent: YE_AMBER,
-    image: "/images/young-engineers/school-programs.png",
+    image: "/images/young-engineers/school-programs-v2.png",
   },
 ];
 
