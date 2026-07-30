@@ -7,6 +7,16 @@ const nextConfig = {
   async redirects() {
     return [
       {
+        source: "/tutoring/homework-help-for-kids-ottawa",
+        destination: "/tutoring/science-tutoring-for-kids-ottawa",
+        permanent: true
+      },
+      {
+        source: "/services/homework-help-for-kids-ottawa",
+        destination: "/tutoring/science-tutoring-for-kids-ottawa",
+        permanent: true
+      },
+      {
         source: "/services",
         destination: "/tutoring",
         permanent: true

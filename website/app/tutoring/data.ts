@@ -81,34 +81,34 @@ export const servicePages: ServicePage[] = [
     ]
   },
   {
-    slug: "homework-help-for-kids-ottawa",
-    title: "Homework Help for Kids in Ottawa",
-    shortTitle: "Homework help for kids",
+    slug: "science-tutoring-for-kids-ottawa",
+    title: "Science Tutoring for Kids in Ottawa",
+    shortTitle: "Science tutoring for kids",
     description:
-      "Structured homework sessions that reduce after-school stress, improve organization, and help students finish work with less frustration.",
-    image: "/images/services/homework-help-realistic.png",
-    imageAlt: "A tutor helping a student organize assignments and build a clear homework plan",
+      "Engaging science support that helps students understand key concepts, strengthen problem-solving skills, and build confidence through curiosity and real-world examples.",
+    image: "/images/services/science-tutoring-realistic.png",
+    imageAlt: "A tutor and student examining a leaf during a hands-on science lesson",
     accent: "#FF8A65",
-    metaTitle: "Homework Help for Kids in Ottawa | Kriana Tutoring",
+    metaTitle: "Science Tutoring for Kids in Ottawa | Kriana Tutoring",
     metaDescription:
-      "Kriana Tutoring offers homework help for kids in Ottawa with structured academic support, study habits, and confidence-building routines.",
+      "Kriana Tutoring offers personalized science tutoring for kids in Ottawa, Kanata, and Stittsville with clear explanations and hands-on learning.",
     intro:
-      "Our homework help for kids turns stressful evenings into structured progress with guided support, stronger routines, and clearer expectations.",
+      "Our science tutoring helps children connect classroom concepts to the world around them through clear explanations, observation, and guided problem-solving.",
     sections: [
       {
-        title: "After-school structure",
+        title: "Stronger science foundations",
         description:
-          "We help students plan assignments, break work into smaller steps, and finish with less overwhelm."
+          "We make life science, physical science, Earth science, and classroom vocabulary easier to understand through patient, age-appropriate instruction."
       },
       {
-        title: "Independent learning habits",
+        title: "Curiosity-led problem-solving",
         description:
-          "The goal is not just completion. We help children build the organization and focus needed to work more independently over time."
+          "Students learn to observe, ask useful questions, interpret information, and explain their reasoning instead of memorizing isolated facts."
       },
       {
-        title: "Built for Ottawa families",
+        title: "Support for Ottawa-area learners",
         description:
-          "Families across Ottawa, Kanata, and Stittsville choose Kriana when homework time has become a recurring source of stress."
+          "We support students in Ottawa, Kanata, and Stittsville who want stronger science understanding and greater confidence in class."
       }
     ]
   }

@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     template: "%s · Kriana Tutoring"
   },
   description:
-    "Personalized tutoring for kids JK–Grade 8 in Ottawa, Kanata & Stittsville. Math, reading, homework help — assessment-first, results-driven. Book a free consultation.",
+    "Personalized tutoring for kids JK–Grade 8 in Ottawa, Kanata & Stittsville. Math, reading, and science support — assessment-first and results-driven.",
   metadataBase: new URL("https://www.krianatutoring.com"),
   icons: {
     icon: [
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Kriana Tutoring | Ottawa's Personalized Tutoring for Kids",
     description:
-      "Personalized tutoring for kids JK–Grade 8 in Ottawa, Kanata & Stittsville. Assessment-first math, reading & homework help. Book a free consultation.",
+      "Personalized tutoring for kids JK–Grade 8 in Ottawa, Kanata & Stittsville. Assessment-first math, reading, and science support.",
     siteName: "Kriana Tutoring",
     type: "website",
     url: "https://www.krianatutoring.com",
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Kriana Tutoring | Ottawa's Personalized Tutoring for Kids",
     description:
-      "Personalized tutoring for kids JK–Grade 8 in Ottawa. Math, reading & homework help. Book a free consultation.",
+      "Personalized tutoring for kids JK–Grade 8 in Ottawa. Math, reading, and science support. Book a free consultation.",
     images: ["/images/kriana-og-social.png"]
   }
 };

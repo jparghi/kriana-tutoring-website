@@ -13,7 +13,7 @@ export function LocalAreas() {
           </h2>
           <p className="mt-4 max-w-3xl text-base leading-8 text-slate-600">
             We proudly serve families in Ottawa, Kanata, Stittsville, and surrounding areas. Whether your child needs
-            math tutoring for kids, reading help for grade 1-3 learners, or consistent homework help for kids, Kriana
+            math tutoring, reading help for grade 1-3 learners, or personalized science support, Kriana
             Tutoring builds a personalized plan that fits your child&apos;s pace.
           </p>
           <div className="mt-8 grid gap-6 lg:grid-cols-3">
@@ -32,10 +32,10 @@ export function LocalAreas() {
               </p>
             </article>
             <article className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
-              <h3 className="text-lg font-bold text-slate-900">Homework help for kids</h3>
+              <h3 className="text-lg font-bold text-slate-900">Science tutoring for kids</h3>
               <p className="mt-3 text-sm leading-7 text-slate-600">
-                We turn after-school stress into structured progress with guided homework support and stronger study
-                habits.
+                We connect science concepts to clear explanations, observation, and real-world examples that make
+                learning memorable.
               </p>
             </article>
           </div>

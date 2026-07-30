@@ -6,9 +6,9 @@ import { Footer } from "../../components/footer";
 import { servicePages } from "./data";
 
 export const metadata: Metadata = {
-  title: "Tutoring Services in Ottawa for Math, Reading & Homework Help | Kriana Tutoring",
+  title: "Tutoring Services in Ottawa for Math, Reading & Science | Kriana Tutoring",
   description:
-    "Explore Kriana Tutoring services in Ottawa, including math tutoring for kids, reading help for grade 1-3 students, writing support, and homework help.",
+    "Explore personalized math, reading, and science tutoring for JK to Grade 8 students in Ottawa, Kanata, and Stittsville.",
   alternates: { canonical: "https://www.krianatutoring.com/tutoring" }
 };
 
