@@ -41,10 +41,10 @@ export function LocalAreas() {
           </div>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link
-              href="/services"
+              href="/tutoring"
               className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-brand-sky to-brand-teal px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-white"
             >
-              Explore Services
+              Explore Tutoring
             </Link>
             <Link
               href="/contact#consultation-form"

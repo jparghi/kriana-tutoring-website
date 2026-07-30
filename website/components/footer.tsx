@@ -7,7 +7,7 @@ const footerLinks = [
     title: "Explore",
     links: [
       { label: "Home", href: "/" },
-      { label: "Services", href: "/services" },
+      { label: "Tutoring", href: "/tutoring" },
       { label: "Robotics & Coding", href: "/robotics" },
       { label: "About", href: "/about" },
       { label: "Blog", href: "/blog" },

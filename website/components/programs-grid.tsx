@@ -20,7 +20,7 @@ const programs: {
     image: "/images/math-magicians.jpg",
     title: "Academic Tutoring",
     description: "JK to Grade 8 Math, English, Reading & Writing.",
-    href: "/services",
+    href: "/tutoring",
     iconBg: "bg-brand-teal/15",
     iconColor: "text-brand-teal",
   },

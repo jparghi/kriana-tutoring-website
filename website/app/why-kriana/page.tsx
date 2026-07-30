@@ -44,7 +44,7 @@ export default function WhyKrianaPage() {
               </svg>
             </Link>
             <Link
-              href="/services"
+              href="/tutoring"
               className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-8 py-3.5 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-300 hover:border-brand-sky/40 hover:text-brand-sky"
             >
               View Our Programs

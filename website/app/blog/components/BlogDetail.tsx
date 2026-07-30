@@ -58,7 +58,7 @@ export function BlogDetail({ post }: BlogDetailProps) {
             Visit Homepage
           </Link>
           <Link
-            href="/services"
+            href="/tutoring"
             className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700"
           >
             View Tutoring Services

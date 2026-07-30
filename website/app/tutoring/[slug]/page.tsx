@@ -30,7 +30,7 @@ export function generateMetadata({ params }: ServiceDetailPageProps): Metadata {
   return {
     title: service.metaTitle,
     description: service.metaDescription,
-    alternates: { canonical: `${siteUrl}/services/${service.slug}` }
+    alternates: { canonical: `${siteUrl}/tutoring/${service.slug}` }
   };
 }
 
@@ -43,8 +43,8 @@ export default function ServiceDetailPage({ params }: ServiceDetailPageProps) {
 
   const serviceBreadcrumb = breadcrumbSchema([
     { name: "Home", url: siteUrl },
-    { name: "Services", url: `${siteUrl}/services` },
-    { name: service.shortTitle, url: `${siteUrl}/services/${service.slug}` }
+    { name: "Tutoring", url: `${siteUrl}/tutoring` },
+    { name: service.shortTitle, url: `${siteUrl}/tutoring/${service.slug}` }
   ]);
 
   const serviceSchema = {
@@ -57,7 +57,7 @@ export default function ServiceDetailPage({ params }: ServiceDetailPageProps) {
     },
     areaServed: ["Ottawa", "Kanata", "Stittsville"],
     serviceType: service.shortTitle,
-    url: `${siteUrl}/services/${service.slug}`
+    url: `${siteUrl}/tutoring/${service.slug}`
   };
 
   return (
@@ -73,10 +73,10 @@ export default function ServiceDetailPage({ params }: ServiceDetailPageProps) {
         />
         <div className="mx-auto max-w-6xl">
           <Link
-            href="/services"
+            href="/tutoring"
             className="inline-flex items-center text-sm font-semibold uppercase tracking-[0.18em] text-[#0A5B8C] hover:text-[#0A2D5A]"
           >
-            ← Back to Services
+            ← Back to Tutoring
           </Link>
 
           <section className="mt-6 overflow-hidden rounded-[2rem] bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(232,249,255,0.92),rgba(255,247,237,0.9))] shadow-[0_20px_60px_rgba(6,11,26,0.08)]">

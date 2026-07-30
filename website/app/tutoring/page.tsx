@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   title: "Tutoring Services in Ottawa for Math, Reading & Homework Help | Kriana Tutoring",
   description:
     "Explore Kriana Tutoring services in Ottawa, including math tutoring for kids, reading help for grade 1-3 students, writing support, and homework help.",
-  alternates: { canonical: "https://www.krianatutoring.com/services" }
+  alternates: { canonical: "https://www.krianatutoring.com/tutoring" }
 };
 
 export default function ServicesPage() {
@@ -134,7 +134,7 @@ export default function ServicesPage() {
                   <h3 className="text-2xl font-semibold text-[#0A2D5A]">{service.shortTitle}</h3>
                   <p className="mt-4 text-base leading-7 text-slate-600">{service.description}</p>
                   <Link
-                    href={`/services/${service.slug}`}
+                    href={`/tutoring/${service.slug}`}
                     className="mt-auto inline-flex items-center gap-2 pt-6 text-sm font-bold transition hover:gap-3"
                     style={{ color: service.accent }}
                   >
