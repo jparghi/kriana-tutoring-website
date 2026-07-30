@@ -3,6 +3,9 @@ export type ServicePage = {
   title: string;
   shortTitle: string;
   description: string;
+  image: string;
+  imageAlt: string;
+  accent: string;
   metaTitle: string;
   metaDescription: string;
   intro: string;
@@ -19,6 +22,9 @@ export const servicePages: ServicePage[] = [
     shortTitle: "Math tutoring for kids",
     description:
       "Personalized math tutoring in Ottawa for JK to Grade 8 students who need stronger fundamentals, clearer strategies, and confidence with daily schoolwork.",
+    image: "/images/services/math-tutoring-realistic.png",
+    imageAlt: "A tutor helping a student understand fractions with colorful hands-on learning tools",
+    accent: "#4A90E2",
     metaTitle: "Math Tutoring for Kids in Ottawa | Kriana Tutoring",
     metaDescription:
       "Kriana Tutoring offers math tutoring for kids in Ottawa, Kanata, and Stittsville with confidence-building support for JK to Grade 8 learners.",
@@ -48,6 +54,9 @@ export const servicePages: ServicePage[] = [
     shortTitle: "Reading help for grade 1-3",
     description:
       "Foundational literacy support for young learners who need phonics, fluency, vocabulary, and comprehension practice in a patient setting.",
+    image: "/images/services/reading-help-realistic.png",
+    imageAlt: "A tutor encouraging a young student as they read an illustrated book together",
+    accent: "#00A99D",
     metaTitle: "Reading Help for Grade 1-3 in Ottawa | Kriana Tutoring",
     metaDescription:
       "Get reading help for grade 1-3 students in Ottawa with phonics, fluency, comprehension, and confidence-building literacy support.",
@@ -77,6 +86,9 @@ export const servicePages: ServicePage[] = [
     shortTitle: "Homework help for kids",
     description:
       "Structured homework sessions that reduce after-school stress, improve organization, and help students finish work with less frustration.",
+    image: "/images/services/homework-help-realistic.png",
+    imageAlt: "A tutor helping a student organize assignments and build a clear homework plan",
+    accent: "#FF8A65",
     metaTitle: "Homework Help for Kids in Ottawa | Kriana Tutoring",
     metaDescription:
       "Kriana Tutoring offers homework help for kids in Ottawa with structured academic support, study habits, and confidence-building routines.",

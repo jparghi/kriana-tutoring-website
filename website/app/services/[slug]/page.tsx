@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -78,14 +79,28 @@ export default function ServiceDetailPage({ params }: ServiceDetailPageProps) {
             ← Back to Services
           </Link>
 
-          <section className="mt-6 rounded-[2rem] bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(232,249,255,0.92),rgba(255,247,237,0.9))] px-8 py-10 shadow-[0_20px_60px_rgba(6,11,26,0.08)]">
-            <p className="inline-flex rounded-full bg-white/90 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-[#0A5B8C] ring-1 ring-[#D3E8F5]">
-              Kriana Tutoring Service
-            </p>
-            <h1 className="mt-5 max-w-4xl text-4xl font-semibold leading-tight text-[#0A2D5A] sm:text-5xl">
-              {service.title}
-            </h1>
-            <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">{service.intro}</p>
+          <section className="mt-6 overflow-hidden rounded-[2rem] bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(232,249,255,0.92),rgba(255,247,237,0.9))] shadow-[0_20px_60px_rgba(6,11,26,0.08)]">
+            <div className="grid items-center lg:grid-cols-[1fr_0.9fr]">
+              <div className="px-8 py-10 lg:px-12 lg:py-14">
+                <p className="inline-flex rounded-full bg-white/90 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-[#0A5B8C] ring-1 ring-[#D3E8F5]">
+                  Personalized JK–Grade 8 Support
+                </p>
+                <h1 className="mt-5 max-w-4xl text-4xl font-semibold leading-tight text-[#0A2D5A] sm:text-5xl">
+                  {service.title}
+                </h1>
+                <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">{service.intro}</p>
+                <Link
+                  href="/contact#consultation-form"
+                  className="mt-7 inline-flex items-center justify-center rounded-full bg-[#0c6162] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#0a5051]"
+                >
+                  Book a Free Assessment
+                </Link>
+              </div>
+              <div className="relative aspect-[16/10] min-h-72 overflow-hidden bg-white lg:h-full lg:min-h-[430px]">
+                <Image src={service.image} alt={service.imageAlt} fill priority className="object-cover" />
+                <span className="absolute inset-y-0 left-0 hidden w-1 lg:block" style={{ backgroundColor: service.accent }} />
+              </div>
+            </div>
           </section>
 
           <section className="mt-10 grid gap-6 md:grid-cols-3">

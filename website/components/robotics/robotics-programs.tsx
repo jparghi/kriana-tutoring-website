@@ -3,13 +3,12 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { getActiveSessions, getPrograms, SESSION_STATUS, formatDate } from "../../lib/booking";
+import { getActiveSessions, getPrograms, SESSION_STATUS } from "../../lib/booking";
 import { ROBOTICS_BOOKING_URL, ROBOTICS_CATEGORY } from "../../lib/site-links";
 import {
   imageForCategory,
   licensedRoboticsPrograms,
   placeholderImageForIndex,
-  skillTagsForCategory,
   themeColorForCategory,
 } from "../../lib/robotics-content";
 
@@ -67,7 +66,6 @@ function ProgramCard({
     programTitle === "galileotechnic" ||
     programId === "robotoys" ||
     programTitle === "robotoys";
-  const skills = skillTagsForCategory(program.category);
 
   const availabilityLabel = allSoldOut ? "Sold Out" : isOpen ? "Registration Open" : "Coming Soon";
   const availabilityClasses = allSoldOut
@@ -92,13 +90,22 @@ function ProgramCard({
             shouldContainImage ? "object-contain p-2" : "object-cover"
           }`}
         />
-        <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/55 to-transparent sm:hidden" />
-        <span
-          className="absolute left-4 top-4 rounded-full px-3 py-1 text-xs font-bold text-white shadow-sm"
-          style={{ backgroundColor: accent }}
-        >
-          {program.category ?? "Robotics"}
-        </span>
+        <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/55 to-transparent" />
+        <div className="absolute bottom-4 left-4 flex flex-col items-start gap-2">
+          {program.ageRange && (
+            <span
+              className="rounded-full px-3 py-1 text-xs font-bold text-white shadow-sm"
+              style={{ backgroundColor: accent }}
+            >
+              Ages {program.ageRange}
+            </span>
+          )}
+          {(nextSession?.durationMin ?? program.durationMin) && (
+            <span className="rounded-full bg-amber-500 px-3 py-1 text-xs font-bold text-white shadow-sm">
+              {nextSession?.durationMin ?? program.durationMin} min
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-1 flex-col gap-3 p-6">
@@ -131,55 +138,28 @@ function ProgramCard({
           </div>
         )}
 
-        <div className="flex flex-wrap gap-2">
-          {program.ageRange && (
-            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
-              Ages {program.ageRange}
-            </span>
-          )}
-          {program.gradeRange && (
+        {program.gradeRange && (
+          <div className="flex flex-wrap gap-2">
             <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
               Grades {program.gradeRange}
             </span>
-          )}
-          {(nextSession?.durationMin ?? program.durationMin) && (
-            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
-              {nextSession?.durationMin ?? program.durationMin} min
-            </span>
-          )}
-          {nextSession?.location && (
-            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
-              {nextSession.location}
-            </span>
-          )}
-        </div>
-
-        <div className="flex flex-wrap gap-1.5">
-          {skills.map((skill) => (
-            <span key={skill} className="text-xs font-semibold" style={{ color: accent }}>
-              #{skill.replace(/\s+/g, "")}
-            </span>
-          ))}
-        </div>
-
-        {nextSession?.startDateTime && (
-          <p className="text-xs font-semibold text-slate-400">Next session: {formatDate(nextSession.startDateTime)}</p>
+          </div>
         )}
 
         {isPlaceholder ? (
-          <div className="mt-auto flex flex-wrap gap-3 pt-2">
+          <div className="mt-auto flex gap-3 pt-2">
             <Link
               href={ROBOTICS_BOOKING_URL}
-              className="inline-flex items-center justify-center rounded-full bg-[#0c6162] px-5 py-2 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#0a5051]"
+              className="inline-flex flex-1 items-center justify-center rounded-full bg-[#0c6162] px-5 py-2 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#0a5051]"
             >
-              Register for This Program
+              Register
             </Link>
             {program.learnMoreUrl && (
               <a
                 href={program.learnMoreUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center justify-center gap-1 rounded-full border border-slate-200 px-5 py-2 text-sm font-bold text-slate-700 transition-all duration-200 hover:border-brand-sky hover:text-brand-sky"
+                className="inline-flex flex-1 items-center justify-center gap-1 rounded-full border border-slate-200 px-5 py-2 text-sm font-bold text-slate-700 transition-all duration-200 hover:border-brand-sky hover:text-brand-sky"
               >
                 Learn More
                 <span aria-hidden="true">↗</span>
@@ -187,12 +167,12 @@ function ProgramCard({
             )}
           </div>
         ) : (
-          <div className="mt-auto flex flex-wrap gap-3 pt-2">
+          <div className="mt-auto flex gap-3 pt-2">
             <Link
               href={`/booking/${program.id}`}
-              className="group/cta inline-flex items-center justify-center gap-1.5 rounded-full bg-[#0c6162] px-5 py-2 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#0a5051]"
+              className="group/cta inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[#0c6162] px-5 py-2 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#0a5051]"
             >
-              Register for This Program
+              Register
               <span aria-hidden="true" className="transition-transform duration-200 group-hover/cta:translate-x-1">
                 →
               </span>
@@ -202,7 +182,7 @@ function ProgramCard({
                 href={program.learnMoreUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center justify-center gap-1 rounded-full border border-slate-200 px-5 py-2 text-sm font-bold text-slate-700 transition-all duration-200 hover:border-brand-sky hover:text-brand-sky"
+                className="inline-flex flex-1 items-center justify-center gap-1 rounded-full border border-slate-200 px-5 py-2 text-sm font-bold text-slate-700 transition-all duration-200 hover:border-brand-sky hover:text-brand-sky"
               >
                 Learn More
                 <span aria-hidden="true">↗</span>
