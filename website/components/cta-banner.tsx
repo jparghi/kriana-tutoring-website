@@ -27,7 +27,7 @@ export function CtaBanner() {
 
             <div className="flex flex-col items-center gap-2">
               <Link
-                href="/contact#consultation-form"
+                href="/booking/VQNj7NfFGCI5oun5PXQE"
                 className="inline-flex items-center justify-center rounded-full bg-[#0c6162] px-8 py-3.5 text-sm font-bold uppercase tracking-[0.22em] text-white shadow-[0_8px_28px_rgba(12,97,98,0.4)] transition-all duration-300 hover:scale-[1.03] hover:bg-[#0a5051] hover:shadow-[0_12px_40px_rgba(12,97,98,0.6)]"
               >
                 Book Free Assessment

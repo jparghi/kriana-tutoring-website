@@ -32,7 +32,7 @@ export default function ServicesPage() {
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link
-                  href="/contact#consultation-form"
+                  href="/booking/VQNj7NfFGCI5oun5PXQE"
                   className="inline-flex items-center justify-center rounded-full bg-[#0c6162] px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#0a5051]"
                 >
                   Book a Free Assessment
@@ -156,7 +156,7 @@ export default function ServicesPage() {
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Link
-                href="/contact#consultation-form"
+                href="/booking/VQNj7NfFGCI5oun5PXQE"
                 className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-[#0A2D5A]"
               >
                 Book a Free Assessment

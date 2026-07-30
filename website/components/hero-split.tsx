@@ -117,7 +117,7 @@ export function HeroSplit() {
           {/* CTA Buttons */}
           <div className="flex flex-wrap items-center justify-start gap-3">
             <Link
-              href="/contact#consultation-form"
+              href="/booking/VQNj7NfFGCI5oun5PXQE"
               className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-full bg-[#0c6162] px-6 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-white shadow-[0_8px_32px_rgba(12,97,98,0.45)] transition-all duration-300 hover:scale-[1.03] hover:bg-[#0a5051] hover:shadow-[0_14px_44px_rgba(12,97,98,0.6)]"
             >
               Book Free Assessment

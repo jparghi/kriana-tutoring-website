@@ -449,7 +449,7 @@ function S7() {
           Personalized Learning For Every Child.
         </p>
         <div style={{animation:"sciFadeUp .4s ease 1.3s both"}}>
-          <Link href="/contact#consultation-form"
+          <Link href="/booking/VQNj7NfFGCI5oun5PXQE"
             className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-brand-sky to-brand-teal px-6 py-2.5 text-xs font-bold uppercase tracking-[0.2em] text-white"
             style={{animation:"sciCtaPulse 2s ease-in-out 1.8s infinite"}}>
             Book a Free Assessment
@@ -684,7 +684,7 @@ export function VideoStoryboard() {
               </div>
             </div>
 
-            <Link href="/contact#consultation-form"
+            <Link href="/booking/VQNj7NfFGCI5oun5PXQE"
               className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-brand-sky to-brand-teal px-4 py-2 text-[11px] font-bold uppercase tracking-[0.2em] text-white shadow-[0_4px_16px_rgba(74,144,226,0.4)] transition-all hover:scale-[1.03]">
               Book Free Assessment
             </Link>
