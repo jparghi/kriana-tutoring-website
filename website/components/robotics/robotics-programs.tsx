@@ -76,12 +76,14 @@ function ProgramCard({
       ? "bg-emerald-50 text-emerald-700"
       : "bg-slate-100 text-slate-600";
 
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+
   return (
     <div
-      className="group grid overflow-hidden rounded-[24px] border border-slate-200 border-l-4 bg-white shadow-sm transition-all duration-300 hover:-translate-x-0.5 hover:shadow-[0_16px_44px_rgba(15,23,42,0.1)] lg:grid-cols-[23rem_minmax(0,1fr)_13rem]"
+      className="group flex h-full flex-col overflow-hidden rounded-[24px] border border-slate-200 border-l-4 bg-white shadow-sm transition-all duration-300 hover:-translate-x-0.5 hover:shadow-[0_16px_44px_rgba(15,23,42,0.1)]"
       style={{ borderLeftColor: accent }}
     >
-      <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-50 lg:aspect-auto lg:min-h-[18rem]">
+      <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-50">
         <Image
           src={cardImage}
           alt={`${program.title} — Young Engineers program at Kriana Tutoring`}
@@ -110,7 +112,23 @@ function ProgramCard({
         </div>
 
         {program.description && (
-          <p className="text-sm leading-relaxed text-slate-600">{program.description}</p>
+          <div>
+            <p
+              className={`text-sm leading-relaxed text-slate-600 ${
+                descriptionExpanded ? "" : "line-clamp-3"
+              }`}
+            >
+              {program.description}
+            </p>
+            <button
+              type="button"
+              onClick={() => setDescriptionExpanded((prev) => !prev)}
+              className="mt-1 text-xs font-bold"
+              style={{ color: accent }}
+            >
+              {descriptionExpanded ? "Show less" : "Read more"}
+            </button>
+          </div>
         )}
 
         <div className="flex flex-wrap gap-2">
@@ -193,18 +211,6 @@ function ProgramCard({
           </div>
         )}
       </div>
-
-      {program.logo && (
-        <div className="flex min-h-40 items-center justify-center border-t border-slate-100 bg-white px-8 py-8 lg:min-h-0 lg:border-l lg:border-t-0">
-          <Image
-            src={program.logo}
-            alt={`${program.title} logo`}
-            width={190}
-            height={150}
-            className="max-h-36 w-auto max-w-full object-contain"
-          />
-        </div>
-      )}
     </div>
   );
 }
@@ -236,16 +242,16 @@ export function RoboticsPrograms() {
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-5">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-48 animate-pulse rounded-[24px] border border-slate-100 bg-slate-50" />
+          <div key={i} className="h-80 animate-pulse rounded-[24px] border border-slate-100 bg-slate-50" />
         ))}
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {licensedRoboticsPrograms.map((licensedProgram, i) => {
         const savedProgram = programs.find(
           (program) =>
