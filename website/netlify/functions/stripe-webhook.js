@@ -54,6 +54,10 @@ export const handler = async (event) => {
     return { statusCode: 405, body: 'Method Not Allowed' }
   }
 
+  if (process.env.ENABLE_AUTOMATED_STRIPE_PAYMENTS !== 'true') {
+    return { statusCode: 200, body: 'disabled' }
+  }
+
   if (!process.env.STRIPE_WEBHOOK_SECRET) {
     return { statusCode: 500, body: 'STRIPE_WEBHOOK_SECRET not set' }
   }

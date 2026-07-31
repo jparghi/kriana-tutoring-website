@@ -5,6 +5,10 @@ export const handler = async (event) => {
     return { statusCode: 405, body: 'Method Not Allowed' }
   }
 
+  if (process.env.ENABLE_AUTOMATED_STRIPE_PAYMENTS !== 'true') {
+    return { statusCode: 403, body: JSON.stringify({ error: 'Automated Stripe checkout is disabled — programs use Stripe Payment Links instead.' }) }
+  }
+
   let body
   try {
     body = JSON.parse(event.body)

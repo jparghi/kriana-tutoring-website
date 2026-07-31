@@ -35,6 +35,16 @@ function ProgramCard({ program, sessions }: { program: any; sessions: any[] }) {
   return (
     <div className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(15,23,42,0.1)]">
       <div className="h-1.5 w-full shrink-0" style={{ backgroundColor: accent.bar }} />
+      {program.imageUrl && (
+        <div className="h-40 w-full shrink-0 overflow-hidden bg-slate-50">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={program.imageUrl}
+            alt={program.title}
+            className="h-full w-full object-contain p-4 transition-transform duration-300 group-hover:scale-105"
+          />
+        </div>
+      )}
       <div className="p-6 flex-1">
         <div className="flex items-start justify-between gap-3 mb-3">
           <CategoryBadge category={program.category} />
