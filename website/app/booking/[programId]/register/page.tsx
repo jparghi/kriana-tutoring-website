@@ -6,6 +6,7 @@ import Link from 'next/link'
 import {
   getProgram, getSession, getAvailableSeats, formatDateTime,
   createRegistration, updateRegistration, addToWaitlist,
+  generateRegistrationNumber, registrationPrefixForProgram,
   PAYMENT_METHOD, REGISTRATION_STATUS, SESSION_STATUS,
 } from '../../../../lib/booking'
 import BookingLayout from '../../../../components/booking/BookingLayout'
@@ -154,8 +155,9 @@ function RegisterForm() {
       }
 
       const amountCents = program?.isDepositOnly ? program.depositAmount : program?.price
+      const registrationNumber = await generateRegistrationNumber(registrationPrefixForProgram(program))
       const registrationId = await createRegistration({
-        programId, sessionId,
+        programId, sessionId, registrationNumber,
         parentName: form.parentName, parentEmail: form.parentEmail, parentPhone: form.parentPhone,
         childName: form.childName, childAge: form.childAge, childGrade: form.childGrade,
         medicalNotes: form.medicalNotes, emergencyContact: form.emergencyContact,
@@ -171,19 +173,7 @@ function RegisterForm() {
         return
       }
 
-      const res = await fetch('/.netlify/functions/create-checkout-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          registrationId, programId, sessionId,
-          programTitle: program?.title ?? '', sessionTitle: session?.title ?? '',
-          amountCents, parentEmail: form.parentEmail, parentName: form.parentName,
-          childName: form.childName, isDepositOnly: program?.isDepositOnly ?? false,
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Failed to create checkout session')
-      window.location.href = data.url
+      router.push(`/booking/pay/${registrationId}`)
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.')
       setSubmitting(false)
@@ -336,13 +326,22 @@ function RegisterForm() {
                       <p className="text-xs text-slate-500 mt-0.5">Send to <span className="font-mono font-semibold">{ETRANSFER_EMAIL}</span>. Spot held 24 hours.</p>
                     </div>
                   </label>
-                  <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${form.paymentMethod === PAYMENT_METHOD.STRIPE ? 'border-[#0c6162] bg-[#e6f4f4]' : 'border-slate-200 hover:border-slate-300'}`}>
-                    <input type="radio" name="paymentMethod" value={PAYMENT_METHOD.STRIPE} checked={form.paymentMethod === PAYMENT_METHOD.STRIPE} onChange={() => set('paymentMethod', PAYMENT_METHOD.STRIPE)} className="mt-0.5 accent-[#0c6162]" />
-                    <div>
-                      <p className="font-bold text-slate-800 text-sm">Pay Online — Credit / Debit</p>
-                      <p className="text-xs text-slate-500 mt-0.5">Secure checkout via Stripe. Spot confirmed instantly.</p>
+                  {program.stripePaymentLinkEnabled && program.stripePaymentLinkUrl ? (
+                    <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${form.paymentMethod === PAYMENT_METHOD.STRIPE ? 'border-[#0c6162] bg-[#e6f4f4]' : 'border-slate-200 hover:border-slate-300'}`}>
+                      <input type="radio" name="paymentMethod" value={PAYMENT_METHOD.STRIPE} checked={form.paymentMethod === PAYMENT_METHOD.STRIPE} onChange={() => set('paymentMethod', PAYMENT_METHOD.STRIPE)} className="mt-0.5 accent-[#0c6162]" />
+                      <div>
+                        <p className="font-bold text-slate-800 text-sm">Pay Online — Credit / Debit</p>
+                        <p className="text-xs text-slate-500 mt-0.5">Secure checkout via Stripe.</p>
+                      </div>
+                    </label>
+                  ) : (
+                    <div className="flex items-start gap-3 p-4 rounded-xl border border-slate-100 bg-slate-50 opacity-60">
+                      <div>
+                        <p className="font-bold text-slate-500 text-sm">Pay Online — Credit / Debit</p>
+                        <p className="text-xs text-slate-400 mt-0.5">Card payment isn't set up for this program yet. Please use E-Transfer.</p>
+                      </div>
                     </div>
-                  </label>
+                  )}
                 </div>
               </div>
             )}

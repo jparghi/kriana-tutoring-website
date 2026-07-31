@@ -163,6 +163,12 @@ export default function ProgramDetailPage() {
 
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-8">
         <div className="h-1.5 w-full" style={{ background: 'linear-gradient(90deg, #0c6162, #0d9e9f)' }} />
+        {program.imageUrl && (
+          <div className="h-56 w-full shrink-0 overflow-hidden bg-slate-50">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={program.imageUrl} alt={program.title} className="h-full w-full object-contain p-6" />
+          </div>
+        )}
         <div className="p-6 md:p-8">
           <div className="flex flex-wrap items-center gap-2 mb-4">
             {program.category && (

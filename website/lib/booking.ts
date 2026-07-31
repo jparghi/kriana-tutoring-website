@@ -1,6 +1,6 @@
 import {
   collection, doc, getDoc, getDocs, addDoc, updateDoc,
-  query, where, serverTimestamp, limit, orderBy,
+  query, where, serverTimestamp, limit, orderBy, runTransaction,
 } from 'firebase/firestore'
 import { db } from './firebase'
 
@@ -92,6 +92,24 @@ export async function getSession(sessionId: string) {
 
 export function getAvailableSeats(session: any) {
   return Math.max(0, (session.capacity ?? 0) - (session.confirmedCount ?? 0))
+}
+
+// ─── Registration numbers ──────────────────────────────────────────────────────
+
+export function registrationPrefixForProgram(program: any) {
+  return program?.partnerName ? 'YE' : 'KT'
+}
+
+export async function generateRegistrationNumber(prefix: string) {
+  const year = new Date().getFullYear()
+  const counterRef = doc(db, 'counters', `${prefix}-${year}`)
+  const seq = await runTransaction(db, async (tx) => {
+    const snap = await tx.get(counterRef)
+    const next = (snap.exists() ? snap.data().seq ?? 0 : 0) + 1
+    tx.set(counterRef, { seq: next }, { merge: true })
+    return next
+  })
+  return `${prefix}-${year}-${String(seq).padStart(4, '0')}`
 }
 
 // ─── Registrations ────────────────────────────────────────────────────────────
