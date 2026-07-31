@@ -4,7 +4,7 @@ import {
   publicProgram,
   publicOffering,
   publicLegacySession,
-} from './get-public-catalog.js'
+} from '../netlify/functions/get-public-catalog.js'
 
 function document(id, data, exists = true) {
   return { id, exists, data: () => data }
