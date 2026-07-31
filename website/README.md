@@ -11,6 +11,28 @@ npm run dev
 
 Visit `http://localhost:3000` to view the landing page.
 
+## Local Development With Netlify Functions
+
+Plain `npm run dev` only runs Next.js — any page that calls `/.netlify/functions/*`
+(e.g. `/booking`, which calls `get-public-catalog`) will 404 on those requests
+because there's no function runtime behind it.
+
+To test those pages locally, run the Netlify CLI instead so functions are served
+too. Requires the [Netlify CLI](https://docs.netlify.com/cli/get-started/)
+(`npm install -g netlify-cli`) and this site linked (`netlify link`):
+
+```bash
+npm run dev:functions
+```
+
+This keeps the site on the familiar `http://localhost:3000` URL — Next.js itself
+runs internally on port 3500, but you never need to visit that port directly.
+(Netlify's dev proxy refuses to share a single port between itself and the
+framework it wraps, which is why the internal port has to differ.)
+
+Function calls read credentials from `.env.local` (Firebase Admin, SMTP, Stripe,
+etc.) — see below.
+
 ## Environment Variables
 
 Copy `.env.example` to `.env.local` and fill in the public Firebase values needed for local development. Keep the enrollment flow fail-closed:

@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "scripts": {
     "dev": "next dev",
+    "dev:functions": "netlify dev --port 3000 --target-port 3500 --command \"npx next dev -p 3500\"",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
