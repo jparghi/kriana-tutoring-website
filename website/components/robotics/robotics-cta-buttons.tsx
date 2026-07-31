@@ -20,16 +20,24 @@ const VARIANTS = {
 };
 
 export function RoboticsCtaButtons({ variant = "light" }: { variant?: "light" | "dark" }) {
-  const { hasOpenRegistration, loading } = useRoboticsAvailability();
+  const { hasPublishedSchedule, hasOpenRequests, hasOpenWaitlist, loading } = useRoboticsAvailability();
   const styles = VARIANTS[variant];
 
   return (
     <div className="flex flex-wrap items-center gap-3">
       <a href="#programs" className={styles.primary}>
-        {loading ? "Explore Programs" : hasOpenRegistration ? "View Upcoming Classes" : "Explore Programs"}
+        {loading ? "Explore Programs" : hasPublishedSchedule ? "View Weekly Programs" : "Explore Programs"}
       </a>
-      <Link href={ROBOTICS_BOOKING_URL} className={styles.secondary}>
-        Register Now
+      <Link
+        href={hasPublishedSchedule ? ROBOTICS_BOOKING_URL : "/contact#consultation-form"}
+        className={styles.secondary}
+      >
+        {loading
+          ? "Ask a Question"
+          : hasOpenRequests
+            ? "View Schedules"
+            : hasOpenWaitlist ? "View Waitlists"
+              : hasPublishedSchedule ? "View Schedules" : "Ask About Programs"}
       </Link>
     </div>
   );

@@ -205,7 +205,7 @@ export function NavigationBar() {
                 href="/booking"
                 className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[#0c6162] px-4 py-1.5 text-[0.72rem] font-semibold text-white shadow-sm transition-all duration-200 hover:bg-[#0a5051] hover:shadow-[0_4px_16px_rgba(12,97,98,0.35)]"
               >
-                Book a Program
+                View Programs
                 <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
@@ -316,7 +316,7 @@ export function NavigationBar() {
                 onClick={closeMobileMenu}
                 className="flex w-full items-center justify-center gap-2 rounded-full bg-[#0c6162] py-3.5 text-sm font-bold text-white shadow-[0_4px_20px_rgba(12,97,98,0.3)]"
               >
-                Book a Program
+                View Programs
                 <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
                 </svg>

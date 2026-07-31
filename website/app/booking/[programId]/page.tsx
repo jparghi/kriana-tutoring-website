@@ -4,18 +4,21 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
-  getProgram, getActiveSessions, getAvailableSeats,
-  formatDateTime, SESSION_STATUS, statusBadgeClass,
+  getProgram, getActiveOfferings,
+  formatOfferingDateRange, formatOfferingWeeklySchedule, isOfferingRequestWindowOpen, isOfferingSoldOut,
+  statusBadgeClass,
 } from '../../../lib/booking'
+import { isRequestOnlyBookingFlow } from '../../../lib/booking-flow'
 import BookingLayout from '../../../components/booking/BookingLayout'
 import { BookingStepper } from '../../../components/booking/BookingStepper'
 
-function CapacityBar({ session }: { session: any }) {
-  const total = session.capacity ?? 0
+function CapacityBar({ offering }: { offering: any }) {
+  const total = offering.capacity ?? 0
   if (!total) return null
-  const confirmed = session.confirmedCount ?? 0
-  const available = Math.max(0, total - confirmed)
-  const pct = Math.round((confirmed / total) * 100)
+  const occupied = (offering.confirmedCount ?? 0) + (offering.heldCount ?? 0)
+  const markedFull = isOfferingSoldOut(offering)
+  const available = markedFull ? 0 : Math.max(0, total - occupied)
+  const pct = markedFull ? 100 : Math.round((occupied / total) * 100)
   const low = available <= 3 && available > 0
 
   return (
@@ -36,29 +39,33 @@ function CapacityBar({ session }: { session: any }) {
   )
 }
 
-function SessionCard({ session, onSelect }: { session: any; onSelect: (s: any) => void }) {
-  const available = getAvailableSeats(session)
-  const soldOut = session.status === SESSION_STATUS.SOLD_OUT || available === 0
-  const hasWaitlist = soldOut && session.waitlistEnabled
+function OfferingCard({ offering, onSelect }: { offering: any; onSelect: (s: any) => void }) {
+  const soldOut = isOfferingSoldOut(offering)
+  const requestWindowOpen = isOfferingRequestWindowOpen(offering)
+  const hasWaitlist = soldOut && offering.waitlistEnabled && requestWindowOpen
+  const dateRange = formatOfferingDateRange(offering)
+  const tuition = Number(offering.tuitionCents ?? 0)
 
   return (
     <div className={`bg-white rounded-2xl border p-5 transition-all ${
-      soldOut ? 'border-slate-100 opacity-80' : 'border-slate-200 hover:border-[#0c6162] hover:shadow-sm cursor-pointer'
+      soldOut || !requestWindowOpen ? 'border-slate-100 opacity-80' : 'border-slate-200 hover:border-[#0c6162] hover:shadow-sm cursor-pointer'
     }`}>
       <div className="flex items-start justify-between gap-4 mb-3">
         <div>
-          <h4 className="font-bold text-slate-800">{session.title}</h4>
-          {session.location && (
+          <h4 className="font-bold text-slate-800">{offering.title}</h4>
+          {offering.location && (
             <p className="text-sm text-slate-400 mt-0.5 flex items-center gap-1">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5 shrink-0">
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" /><circle cx="12" cy="9" r="2.5" />
               </svg>
-              {session.location}
+              {offering.location}
             </p>
           )}
         </div>
-        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${statusBadgeClass(session.status)}`}>
-          {session.status}
+        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${
+          requestWindowOpen ? statusBadgeClass(offering.status) : 'bg-slate-100 text-slate-600'
+        }`}>
+          {!requestWindowOpen ? 'Requests Closed' : soldOut ? 'Full' : 'Open'}
         </span>
       </div>
 
@@ -67,34 +74,54 @@ function SessionCard({ session, onSelect }: { session: any; onSelect: (s: any) =
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4 text-slate-400 shrink-0">
             <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
           </svg>
-          {formatDateTime(session.startDateTime)}
-          {session.endDateTime && <span className="text-slate-400">– {formatDateTime(session.endDateTime)}</span>}
+          {formatOfferingWeeklySchedule(offering)}
         </div>
-        {session.durationMin && (
+        {dateRange && (
+          <div className="flex items-center gap-2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4 text-slate-400 shrink-0">
+              <path d="M8 2v3M16 2v3M3 9h18M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2z" />
+            </svg>
+            {dateRange}
+          </div>
+        )}
+        {(offering.classCount > 0 || offering.durationMin) && (
           <div className="flex items-center gap-2">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4 text-slate-400 shrink-0">
               <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
             </svg>
-            {session.durationMin} min
+            {[
+              offering.classCount > 0 ? `${offering.classCount} class${offering.classCount === 1 ? '' : 'es'}` : '',
+              offering.durationMin ? `${offering.durationMin} min each` : '',
+            ].filter(Boolean).join(' · ')}
+          </div>
+        )}
+        {tuition > 0 && (
+          <div className="flex items-center gap-2 font-semibold text-slate-700">
+            <span aria-hidden="true" className="w-4 text-center text-slate-400">$</span>
+            ${(tuition / 100).toFixed(2)} {offering.currency ?? 'CAD'} tuition
           </div>
         )}
       </div>
 
-      <CapacityBar session={session} />
+      <CapacityBar offering={offering} />
 
       <button
-        onClick={() => onSelect(session)}
-        disabled={soldOut && !session.waitlistEnabled}
+        onClick={() => onSelect(offering)}
+        disabled={!requestWindowOpen || (soldOut && !offering.waitlistEnabled)}
         className={`mt-4 w-full py-2.5 rounded-xl text-sm font-bold transition-all active:scale-[0.98] ${
           hasWaitlist
             ? 'bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-100'
-            : soldOut
+            : soldOut || !requestWindowOpen
               ? 'bg-slate-50 text-slate-400 cursor-not-allowed border border-slate-100'
               : 'text-white hover:opacity-90'
         }`}
-        style={!soldOut && !hasWaitlist ? { backgroundColor: '#0c6162' } : {}}
+        style={requestWindowOpen && !soldOut && !hasWaitlist ? { backgroundColor: '#0c6162' } : {}}
       >
-        {hasWaitlist ? 'Join Waitlist' : soldOut ? 'Sold Out' : 'Select This Session →'}
+        {hasWaitlist
+          ? 'Join Waitlist'
+          : !requestWindowOpen ? 'Requests Closed'
+          : soldOut ? 'Full'
+          : isRequestOnlyBookingFlow ? 'Request a Spot →' : 'Select This Program →'}
       </button>
     </div>
   )
@@ -116,18 +143,15 @@ export default function ProgramDetailPage() {
   const { programId } = useParams<{ programId: string }>()
   const router = useRouter()
   const [program, setProgram] = useState<any>(null)
-  const [sessions, setSessions] = useState<any[]>([])
+  const [offerings, setOfferings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
       try {
-        const [prog, sess] = await Promise.all([
-          getProgram(programId),
-          getActiveSessions(programId),
-        ])
+        const prog = await getProgram(programId)
         setProgram(prog)
-        setSessions(sess)
+        setOfferings(prog ? await getActiveOfferings(prog) : [])
       } finally {
         setLoading(false)
       }
@@ -135,8 +159,11 @@ export default function ProgramDetailPage() {
     load()
   }, [programId])
 
-  function handleSelectSession(session: any) {
-    router.push(`/booking/${programId}/register?sessionId=${session.id}`)
+  function handleSelectOffering(offering: any) {
+    const params = new URLSearchParams()
+    if (offering.source === 'legacySession') params.set('sessionId', offering.id)
+    else params.set('offeringId', offering.id)
+    router.push(`/booking/${programId}/register?${params.toString()}`)
   }
 
   if (loading) return (
@@ -154,7 +181,13 @@ export default function ProgramDetailPage() {
     </BookingLayout>
   )
 
-  const price = program.isDepositOnly ? program.depositAmount : program.price
+  const nextOffering = offerings[0]
+  const listedTuition = Number(
+    nextOffering?.tuitionCents
+      || (nextOffering?.source === 'legacySession'
+        ? (program.isDepositOnly ? program.depositAmount : program.price)
+        : 0)
+  )
   const colorClass = CATEGORY_COLORS[program.category] ?? 'bg-slate-100 text-slate-600'
 
   return (
@@ -199,10 +232,14 @@ export default function ProgramDetailPage() {
               </div>
             )}
             <div className="bg-slate-50 rounded-xl p-3">
-              <p className="text-xs text-slate-400 mb-0.5">{program.isDepositOnly ? 'Deposit' : 'Price'}</p>
-              <p className="text-sm font-bold text-slate-700">{price ? `$${(price / 100).toFixed(2)} CAD` : 'Free'}</p>
+              <p className="text-xs text-slate-400 mb-0.5">Tuition</p>
+              <p className="text-sm font-bold text-slate-700">
+                {listedTuition > 0
+                  ? `$${(listedTuition / 100).toFixed(2)} ${nextOffering?.currency ?? 'CAD'}`
+                  : offerings.length > 0 ? 'Confirmed after review' : 'Schedule pending'}
+              </p>
             </div>
-            {program.isDepositOnly && program.price && (
+            {!isRequestOnlyBookingFlow && program.isDepositOnly && program.price && (
               <div className="bg-slate-50 rounded-xl p-3">
                 <p className="text-xs text-slate-400 mb-0.5">Total Price</p>
                 <p className="text-sm font-bold text-slate-700">${(program.price / 100).toFixed(2)} CAD</p>
@@ -210,7 +247,15 @@ export default function ProgramDetailPage() {
             )}
           </div>
 
-          {program.isDepositOnly && (
+          {isRequestOnlyBookingFlow && offerings.length > 0 && (
+            <div className="mt-4 bg-[#e6f4f4] border border-[#0c6162]/15 rounded-xl px-4 py-3">
+              <p className="text-sm text-[#0c6162] font-medium">
+                No payment is due when you request a spot. We will confirm availability, placement and payment details separately.
+              </p>
+            </div>
+          )}
+
+          {!isRequestOnlyBookingFlow && program.isDepositOnly && (
             <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
               <p className="text-sm text-amber-800 font-medium">
                 A deposit of ${(program.depositAmount / 100).toFixed(2)} CAD is required to secure your spot.
@@ -229,20 +274,25 @@ export default function ProgramDetailPage() {
       </div>
 
       <h2 className="text-lg font-black text-slate-800 mb-4">
-        Choose a Session
-        <span className="ml-2 text-sm font-normal text-slate-400">({sessions.length} available)</span>
+        Weekly Program Schedules
+        <span className="ml-2 text-sm font-normal text-slate-400">({offerings.length} published)</span>
       </h2>
 
-      {sessions.length === 0 ? (
+      {offerings.length === 0 ? (
         <div className="bg-white rounded-2xl border border-slate-100 p-10 text-center">
-          <p className="font-semibold text-slate-600">No sessions available right now</p>
-          <p className="text-sm text-slate-400 mt-1">Check back soon or contact us to be notified.</p>
-          <Link href="/booking" className="mt-4 inline-block text-sm font-semibold text-[#0c6162] hover:underline">← Browse other programs</Link>
+          <p className="font-semibold text-slate-600">The next schedule is still being planned</p>
+          <p className="text-sm text-slate-400 mt-1">There is no registration form until real dates and times are published.</p>
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-4 text-sm font-semibold">
+            <Link href="/contact#consultation-form" className="rounded-xl bg-[#0c6162] px-4 py-2.5 text-white hover:opacity-90">
+              Ask About This Program
+            </Link>
+            <Link href="/booking" className="text-[#0c6162] hover:underline">← Browse other programs</Link>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {sessions.map(session => (
-            <SessionCard key={session.id} session={session} onSelect={handleSelectSession} />
+          {offerings.map(offering => (
+            <OfferingCard key={offering.id} offering={offering} onSelect={handleSelectOffering} />
           ))}
         </div>
       )}

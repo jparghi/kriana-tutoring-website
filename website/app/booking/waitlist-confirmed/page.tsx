@@ -7,6 +7,7 @@ import Link from 'next/link'
 function WaitlistContent() {
   const searchParams = useSearchParams()
   const program = searchParams.get('program')
+  const reference = searchParams.get('reference')
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center px-4 py-16">
@@ -17,13 +18,19 @@ function WaitlistContent() {
             <path d="M12 8v4M12 16h.01" />
           </svg>
         </div>
-        <h1 className="text-2xl font-black text-slate-800 mb-2">You're on the Waitlist!</h1>
+        <h1 className="text-2xl font-black text-slate-800 mb-2">Waitlist request received</h1>
         <p className="text-slate-500 mb-3">
-          {program ? <><strong>{program}</strong> is currently full.</> : 'This session is currently full.'}
+          {program ? <><strong>{program}</strong> is currently full.</> : 'This weekly program is currently full.'}
         </p>
         <p className="text-slate-500 mb-8">
-          We've added you to the waitlist. If a spot opens up, we'll contact you by email to confirm your registration.
+          We&apos;ve added your request to the waitlist. If a spot opens, we&apos;ll contact you by email with the next steps. A place is not confirmed yet, and no payment is due.
         </p>
+        {reference && (
+          <div className="mb-6 rounded-xl bg-slate-50 px-4 py-3">
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Waitlist reference</p>
+            <p className="mt-1 font-mono font-bold text-slate-700">{reference}</p>
+          </div>
+        )}
         <Link href="/booking" className="inline-flex items-center justify-center gap-2 text-sm font-semibold px-6 py-3 rounded-xl text-white" style={{ backgroundColor: '#0c6162' }}>
           Browse More Programs
         </Link>

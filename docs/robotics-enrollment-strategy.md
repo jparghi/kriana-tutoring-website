@@ -1,9 +1,19 @@
-# Robotics Enrollment and Deferred-Payment Strategy
+# Robotics Enrollment and Future-Payment Strategy
 
-- **Status:** Proposed for implementation
+- **Status:** Request-only foundation implemented locally; deployment pending
 - **Decision date:** 2026-07-31
 - **Scope:** Kriana Tutoring public website and Kriana tutoring platform
-- **Payment posture:** Registration request only; online payment disabled
+- **Payment posture:** Registration request and staff placement only; all payment handling is outside this release
+
+## Implementation checkpoint — 2026-07-31
+
+The coordinated request-only foundation is implemented in both worktrees. It is **not deployed and has not changed live Firebase or Stripe data**.
+
+The public website now has fail-closed request-only pages, a Firebase Admin-backed validated submission endpoint, throttling and idempotency, published `programOfferings` reads with a constrained legacy fallback, and no registration CTA when no real schedule exists.
+
+The management portal now has fail-closed payment controls, separate program-offering administration, request-aware dashboards, staged Firestore rules/indexes, and parked legacy functions/schedules. Staff request transitions and capacity holds are part of the same local implementation pass.
+
+Before release, staff must populate real offerings, review and run the payment-config migration, deactivate old Payment Links in Stripe, configure server credentials, deploy in the documented order, and complete post-deploy verification. Term dates, program-to-weekday assignments, tuition, capacity and policies remain business inputs; this implementation does not invent them.
 
 ## Executive decision
 
@@ -13,7 +23,7 @@ A parent registers their child once for a fixed weekly program offering, such as
 
 > Bricks Challenge — Mondays, 5:00–6:15 PM — Fall/Winter — 24 classes
 
-The parent does not register separately for every weekly class and does not pay during the initial request. Staff reviews the request, confirms suitability and availability, and then sends payment instructions separately. Enrollment is confirmed only after staff approval and the applicable payment is received.
+The parent does not register separately for every weekly class and does not pay during the request flow. Staff reviews suitability and availability, offers a time-limited seat, and then confirms the child's roster placement. In this release, `Confirmed` means **staff-confirmed placement**, not payment. The payment field remains `Not Requested`; no action in this flow records, verifies, requests, or infers payment. Any offline payment arrangement is an operational process outside this software release.
 
 The parent journey should be:
 
@@ -23,7 +33,7 @@ Choose program
   -> Request a spot
   -> Request received (no payment due today)
   -> Staff review
-       -> Seat offered -> Payment requested -> Payment received -> Enrolled
+       -> Seat offered -> Staff confirms placement -> Confirmed roster seat
        -> Waitlisted
        -> More information requested
        -> Declined
@@ -39,7 +49,7 @@ This plan currently assumes:
 2. A family enrolls once in a fixed program series rather than purchasing individual weekly classes.
 3. The program duration and billing cadence are separate decisions. A six- or eight-month enrollment can be billed termly without requiring the parent to register again.
 4. Form submission does not reserve a seat. A seat hold begins only when staff offers the seat.
-5. No payment is collected during the initial registration request.
+5. No payment is collected or recorded anywhere in the request-only lifecycle.
 
 These assumptions must be confirmed before final schedules and policies are published.
 
@@ -112,9 +122,14 @@ Parents do not purchase or register for meetings individually.
 
 One child's request and eventual place in one offering. It should snapshot the schedule, tuition and policy accepted by the parent so that later offering edits do not rewrite historical enrollment terms.
 
-### Payment
+### Payment (future domain)
 
-Payments must be independent records rather than fields that define enrollment state. This supports deposits, installments, partial payments, refunds and future provider integrations without confusing payment status with roster status.
+Payment processing is not part of this release. New request-only records keep
+`paymentStatus: 'Not Requested'`, and placement transitions never change it.
+If payment is introduced later, payments should become independent records
+rather than fields that define enrollment state. That future separation can
+support deposits, installments, partial payments, refunds and provider
+integrations without confusing payment status with roster status.
 
 ### Waitlist entry
 
@@ -148,7 +163,7 @@ The program card and detail page should display:
 - First and last class dates
 - Number of classes
 - Location
-- Tuition summary or “Payment arranged after approval”
+- Tuition summary for information only, with no pay-now or payment-status action
 - Availability state
 - **Request a Spot** call to action
 
@@ -191,57 +206,66 @@ The management portal must provide an operational queue:
 3. Request missing information if necessary.
 4. Offer a seat, waitlist the request or decline it.
 5. When offering a seat, create an expiring hold; 72 hours is the recommended starting policy.
-6. Send approved payment instructions.
-7. Record the payment.
-8. Confirm enrollment and add the child to the roster atomically.
-9. Release expired or declined holds and offer the next waitlisted family a place.
+6. Use **Confirm Placement** to convert the active hold into a roster seat
+   atomically.
+7. Release expired or declined holds and offer the next waitlisted family a
+   place.
 
-No request should become `Enrolled` solely because a public form was submitted.
+This release has no portal action for requesting, recording, verifying, or
+confirming payment. If staff handles an offline payment arrangement, it remains
+outside this workflow and must never cause the application to infer `Paid`.
+
+No request should become `Confirmed` solely because a public form was
+submitted.
 
 ## Status model
 
-Enrollment status and payment status must remain independent.
+Placement status and payment status are independent. For this release, payment
+status is fixed at `Not Requested`.
 
-### Enrollment
-
-```text
-Submitted
-  -> Under Review
-  -> Offered
-  -> Awaiting Payment
-  -> Enrolled
-```
-
-Alternative terminal or branch states:
+### Current request-only placement lifecycle
 
 ```text
-Waitlisted
-Declined
-Offer Expired
-Cancelled
-Withdrawn
-Completed
+Pending Review
+  -> Offered -> Confirmed / Expired / Cancelled
+  -> Waitlisted -> Offered / Cancelled
+  -> Declined
+  -> Cancelled
 ```
 
-### Payment
+`Confirmed` means staff-confirmed placement/roster membership. It is not proof
+of payment and does not change `paymentStatus`.
+
+The linked waitlist lifecycle is:
+
+```text
+Waiting -> Offered -> Converted / Expired / Cancelled
+Waiting -> Cancelled
+```
+
+### Current payment lifecycle
 
 ```text
 Not Requested
-  -> Pending
-  -> Partially Paid
-  -> Paid
 ```
 
-Additional states:
+There is deliberately no transition out of `Not Requested` in this release.
+The following are future-only concepts and must not appear in the request-only
+UI or be inferred from placement:
 
 ```text
+Pending
+Partially Paid
+Paid
 Failed
 Partially Refunded
 Refunded
 Waived
 ```
 
-Capacity rules must define whether `Offered` and `Awaiting Payment` consume held capacity. `Submitted` and `Under Review` should not consume capacity.
+`Offered` consumes held capacity. `Confirmed` consumes confirmed capacity.
+`Pending Review`, `Waitlisted`, `Declined`, `Expired`, and `Cancelled` do not
+consume capacity after their transition completes.
 
 ## Recommended Firestore model
 
@@ -346,7 +370,9 @@ Disabling automated Checkout does not disable static Payment Links.
 5. Deploy the server-authoritative `request_only` mode.
 6. Guard `/booking/pay`, `/booking/success`, `/booking/cancel` and `/booking/etransfer` against direct visits.
 7. Stop creating new e-transfer holds.
-8. Keep the e-transfer expiry job temporarily only for legacy pending records, then disable it.
+8. Reconcile legacy e-transfer holds before cutover. Keep the legacy hold-expiry
+   schedule absent; the new request-only offer-expiry job is a separate
+   capacity operation and never changes payment state.
 
 ### How to preserve Stripe for later
 
@@ -357,7 +383,7 @@ Suggested responsibilities:
 ```text
 PaymentProvider
   DisabledPaymentProvider
-  ManualPaymentProvider
+  ManualPaymentProvider         # possible future release, not current behavior
   StripeInvoiceProvider       # future
   StripeCheckoutProvider      # later, if instant self-service is required
 ```
@@ -388,7 +414,7 @@ The current `docs/stripe-integration.md` must not be treated as a one-flag activ
 
 This work has a higher-priority privacy dependency.
 
-The management platform's current Firestore rules permit unauthenticated listing of registrations and waitlist records and public reading of every document in the shared `sessions` collection. These records may expose child, medical, emergency-contact or tutoring-schedule information. The current “My Bookings” endpoint also returns registration records using an email address without proving ownership.
+The pre-change committed Firestore rules permit unauthenticated listing of registrations and waitlist records and public reading of every document in the shared `sessions` collection. If production still uses those rules, treat it as a privacy incident and lock it down immediately. The hardened working tree denies those reads and retires the email-only “My Bookings” endpoint; production must be verified separately before launch.
 
 Before launching the revised flow:
 
@@ -444,7 +470,8 @@ Required platform work includes:
 - Add offer expiry, capacity holds, waitlist promotion and atomic enrollment confirmation.
 - Separate enrollment and payment state in the data layer and UI.
 - Hide or disable Stripe Payment Link configuration in `request_only` mode.
-- Replace “Confirm Stripe Payment” with the appropriate manual-payment workflow until Stripe invoices are introduced.
+- Replace payment-confirmation actions with **Confirm Placement**. Do not add a
+  manual-payment action in the request-only release.
 - Update booking dashboards, counts, CSV exports and filters for the new states.
 - Update seed data to create offerings instead of placeholder event-shaped sessions.
 - Lock down Firestore rules and add required indexes.
@@ -500,7 +527,7 @@ The platform work is not optional: without a staff approval queue, requests coll
 
 ### Phase 2 — Domain and portal operations
 
-- Add `programOfferings`, meetings, enrollments, payments and waitlist entries.
+- Add `programOfferings`, meetings, enrollment requests and waitlist entries.
 - Add server-side enrollment creation and validation.
 - Build offering administration.
 - Build the staff review, offer and confirmation queue.
@@ -524,10 +551,13 @@ The platform work is not optional: without a staff approval queue, requests coll
 
 - No parent-facing page offers Stripe, card or e-transfer payment during registration.
 - Direct payment-route visits cannot expose an outdated payment journey.
-- A valid request is stored as `Submitted` with payment `Not Requested`.
+- A valid request is stored as `Pending Review` with payment `Not Requested`.
 - Confirmation copy clearly says that the request is not yet an enrollment or seat reservation.
 - Staff can review and progress every request without editing Firestore manually.
-- Staff can offer, expire, waitlist, decline and confirm an enrollment.
+- Staff can offer, expire, waitlist, decline and **Confirm Placement**.
+- `Confirmed` always means roster placement, while `paymentStatus` remains
+  `Not Requested`; the release has no financial-ledger action and never infers
+  `Paid`.
 - Capacity and holds update atomically.
 - Existing registrations remain readable and administrable.
 - Public users cannot list or read other families' records.
@@ -546,4 +576,6 @@ The platform work is not optional: without a staff approval queue, requests coll
 
 ## Decision still needed
 
-Before implementation begins, confirm whether the intended schedule is **five weekly cohorts total** or **five cohorts every evening**. This document and its implementation sequence currently assume five total weekly cohorts.
+Before publishing the real offerings, confirm whether the intended schedule is
+**five weekly cohorts total** or **five cohorts every evening**. The current
+implementation and rollout plan assume five total weekly cohorts.

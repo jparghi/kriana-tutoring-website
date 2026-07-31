@@ -3,6 +3,8 @@
 import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { LegacyPaymentDisabled } from '../../../components/booking/LegacyPaymentDisabled'
+import { isRequestOnlyBookingFlow } from '../../../lib/booking-flow'
 
 function CancelContent() {
   const searchParams = useSearchParams()
@@ -32,6 +34,8 @@ function CancelContent() {
 }
 
 export default function BookingCancelPage() {
+  if (isRequestOnlyBookingFlow) return <LegacyPaymentDisabled />
+
   return (
     <Suspense fallback={null}>
       <CancelContent />

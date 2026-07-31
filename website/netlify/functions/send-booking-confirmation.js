@@ -1,5 +1,7 @@
 import nodemailer from 'nodemailer'
 
+const LEGACY_ENDPOINT_RETIRED = true
+
 const PROJECT_ID = process.env.FIREBASE_PROJECT_ID
 const FS_BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`
 
@@ -172,8 +174,20 @@ ${reg.medicalNotes ? `<p><strong>Medical Notes:</strong> ${reg.medicalNotes}</p>
 }
 
 export const handler = async (event) => {
+  if (LEGACY_ENDPOINT_RETIRED) {
+    return { statusCode: 410, body: JSON.stringify({ error: 'Legacy booking confirmation is retired.' }) }
+  }
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' }
+  }
+
+  // This legacy endpoint accepts a caller-selected email type. It is intentionally
+  // parked until it is replaced by an authenticated, state-derived notification.
+  if (
+    process.env.BOOKING_FLOW_MODE !== 'legacy_payments'
+    && process.env.BOOKING_FLOW_MODE !== 'stripe_checkout'
+  ) {
+    return { statusCode: 410, body: JSON.stringify({ error: 'Legacy booking confirmations are disabled.' }) }
   }
 
   let body

@@ -1,5 +1,7 @@
 import Stripe from 'stripe'
 
+const LEGACY_ENDPOINT_RETIRED = true
+
 const PROJECT_ID = process.env.FIREBASE_PROJECT_ID
 const FS_BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`
 
@@ -50,11 +52,17 @@ async function sendConfirmationEmail(registrationId) {
 }
 
 export const handler = async (event) => {
+  if (LEGACY_ENDPOINT_RETIRED) {
+    return { statusCode: 410, body: JSON.stringify({ error: 'Legacy Stripe webhook is retired.' }) }
+  }
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' }
   }
 
-  if (process.env.ENABLE_AUTOMATED_STRIPE_PAYMENTS !== 'true') {
+  if (
+    process.env.BOOKING_FLOW_MODE !== 'stripe_checkout'
+    || process.env.ENABLE_AUTOMATED_STRIPE_PAYMENTS !== 'true'
+  ) {
     return { statusCode: 200, body: 'disabled' }
   }
 

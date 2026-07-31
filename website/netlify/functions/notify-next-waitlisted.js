@@ -2,6 +2,7 @@ const nodemailer = require('nodemailer')
 
 const PROJECT_ID = process.env.FIREBASE_PROJECT_ID
 const FS_BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`
+const LEGACY_ENDPOINT_RETIRED = true
 
 function fsVal(v) {
   if (v == null) return null
@@ -64,7 +65,19 @@ async function patchDoc(collection, id, fields) {
 }
 
 exports.handler = async function (event) {
+  if (LEGACY_ENDPOINT_RETIRED) {
+    return { statusCode: 410, body: JSON.stringify({ error: 'Legacy waitlist notification is retired.' }) }
+  }
   if (event.httpMethod !== 'POST') return { statusCode: 405, body: 'Method Not Allowed' }
+
+  // This legacy endpoint has no staff authentication and creates a timed payment
+  // offer. Leave it unreachable while the request-only enrollment flow is active.
+  if (
+    process.env.BOOKING_FLOW_MODE !== 'legacy_payments'
+    || process.env.ENABLE_LEGACY_WAITLIST_NOTIFICATIONS !== 'true'
+  ) {
+    return { statusCode: 410, body: 'Legacy waitlist offers are disabled.' }
+  }
 
   const { sessionId } = JSON.parse(event.body ?? '{}')
   if (!sessionId) return { statusCode: 400, body: 'Missing sessionId' }

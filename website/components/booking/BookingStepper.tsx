@@ -1,5 +1,7 @@
 'use client'
 
+import { isRequestOnlyBookingFlow } from '../../lib/booking-flow'
+
 function Step({ num, label, state }: { num: number; label: string; state: 'done' | 'active' | 'upcoming' }) {
   return (
     <div className="flex flex-col items-center gap-1">
@@ -30,15 +32,21 @@ function Connector({ done }: { done: boolean }) {
 
 export function BookingStepper({ step }: { step: number }) {
   const s = (n: number): 'done' | 'active' | 'upcoming' => step > n ? 'done' : step === n ? 'active' : 'upcoming'
+  const steps = isRequestOnlyBookingFlow
+    ? ['Choose Schedule', 'Your Info', 'Request Sent']
+    : ['Choose Schedule', 'Your Info', 'Payment', 'Confirmed']
+
   return (
     <div className="flex items-start justify-center py-4 mb-6">
-      <Step num={1} label="Choose Session" state={s(1)} />
-      <Connector done={step > 1} />
-      <Step num={2} label="Your Info" state={s(2)} />
-      <Connector done={step > 2} />
-      <Step num={3} label="Payment" state={s(3)} />
-      <Connector done={step > 3} />
-      <Step num={4} label="Confirmed" state={s(4)} />
+      {steps.map((label, index) => {
+        const number = index + 1
+        return (
+          <div key={label} className="contents">
+            <Step num={number} label={label} state={s(number)} />
+            {number < steps.length && <Connector done={step > number} />}
+          </div>
+        )
+      })}
     </div>
   )
 }

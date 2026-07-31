@@ -3,8 +3,13 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { getActiveSessions, getPrograms, SESSION_STATUS } from "../../lib/booking";
-import { ROBOTICS_BOOKING_URL, ROBOTICS_CATEGORY } from "../../lib/site-links";
+import {
+  getActiveOfferings,
+  getPrograms,
+  isOfferingRequestWindowOpen,
+  isOfferingSoldOut,
+} from "../../lib/booking";
+import { ROBOTICS_CATEGORY } from "../../lib/site-links";
 import {
   imageForCategory,
   licensedRoboticsPrograms,
@@ -13,7 +18,7 @@ import {
 } from "../../lib/robotics-content";
 
 type Program = Record<string, any>;
-type Session = Record<string, any>;
+type Offering = Record<string, any>;
 
 function normalizeProgramName(value?: string) {
   return (value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -38,21 +43,24 @@ function withLicensedProgramAssets(program: Program): Program {
 
 function ProgramCard({
   program,
-  sessions,
+  offerings,
   isPlaceholder = false,
   image,
 }: {
   program: Program;
-  sessions: Session[];
+  offerings: Offering[];
   isPlaceholder?: boolean;
   image?: string;
 }) {
-  const activeSessions = sessions.filter(
-    (s) => s.status !== SESSION_STATUS.DRAFT && s.status !== SESSION_STATUS.CANCELLED
+  const nextOffering = offerings[0];
+  const hasSchedule = offerings.length > 0;
+  const allSoldOut = hasSchedule && offerings.every(isOfferingSoldOut);
+  const isOpen = offerings.some(
+    (offering) => isOfferingRequestWindowOpen(offering) && !isOfferingSoldOut(offering)
   );
-  const nextSession = activeSessions[0];
-  const allSoldOut = activeSessions.length > 0 && activeSessions.every((s) => s.status === SESSION_STATUS.SOLD_OUT);
-  const isOpen = activeSessions.length > 0 && !allSoldOut;
+  const hasWaitlist = offerings.some(
+    (offering) => isOfferingRequestWindowOpen(offering) && isOfferingSoldOut(offering) && offering.waitlistEnabled
+  );
   const accent = themeColorForCategory(program.category);
   const cardImage = image ?? program.image ?? imageForCategory(program.category);
   const programId = normalizeProgramName(program.id);
@@ -67,12 +75,16 @@ function ProgramCard({
     programId === "robotoys" ||
     programTitle === "robotoys";
 
-  const availabilityLabel = allSoldOut ? "Sold Out" : isOpen ? "Registration Open" : "Coming Soon";
-  const availabilityClasses = allSoldOut
+  const availabilityLabel = isOpen
+    ? "Requests Open"
+    : hasWaitlist ? "Waitlist Open"
+      : allSoldOut ? "Full"
+        : hasSchedule ? "Schedule Published" : "Schedule Pending";
+  const availabilityClasses = allSoldOut && !hasWaitlist
     ? "bg-red-50 text-red-600"
     : isOpen
       ? "bg-emerald-50 text-emerald-700"
-      : "bg-slate-100 text-slate-600";
+      : hasWaitlist ? "bg-orange-50 text-orange-700" : "bg-slate-100 text-slate-600";
 
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
@@ -100,9 +112,9 @@ function ProgramCard({
               Ages {program.ageRange}
             </span>
           )}
-          {(nextSession?.durationMin ?? program.durationMin) && (
+          {(nextOffering?.durationMin ?? program.durationMin) && (
             <span className="rounded-full bg-amber-500 px-3 py-1 text-xs font-bold text-white shadow-sm">
-              {nextSession?.durationMin ?? program.durationMin} min
+              {nextOffering?.durationMin ?? program.durationMin} min
             </span>
           )}
         </div>
@@ -111,11 +123,9 @@ function ProgramCard({
       <div className="flex flex-1 flex-col gap-3 p-6">
         <div className="flex items-start justify-between gap-3">
           <h3 className="text-lg font-bold text-slate-900">{program.title}</h3>
-          {!isPlaceholder && (
-            <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${availabilityClasses}`}>
-              {availabilityLabel}
-            </span>
-          )}
+          <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${availabilityClasses}`}>
+            {availabilityLabel}
+          </span>
         </div>
 
         {program.description && (
@@ -146,13 +156,13 @@ function ProgramCard({
           </div>
         )}
 
-        {isPlaceholder ? (
+        {isPlaceholder || !hasSchedule ? (
           <div className="mt-auto flex gap-3 pt-2">
             <Link
-              href={ROBOTICS_BOOKING_URL}
+              href="/contact#consultation-form"
               className="inline-flex flex-1 items-center justify-center rounded-full bg-[#0c6162] px-5 py-2 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#0a5051]"
             >
-              Register
+              {isPlaceholder ? "Ask About Program" : "Ask About Schedule"}
             </Link>
             {program.learnMoreUrl && (
               <a
@@ -172,7 +182,7 @@ function ProgramCard({
               href={`/booking/${program.id}`}
               className="group/cta inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[#0c6162] px-5 py-2 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#0a5051]"
             >
-              Register
+              {isOpen ? "Request a Spot" : hasWaitlist ? "Join Waitlist" : "View Schedule"}
               <span aria-hidden="true" className="transition-transform duration-200 group-hover/cta:translate-x-1">
                 →
               </span>
@@ -197,7 +207,7 @@ function ProgramCard({
 
 export function RoboticsPrograms() {
   const [programs, setPrograms] = useState<Program[]>([]);
-  const [sessionsByProgram, setSessionsByProgram] = useState<Record<string, Session[]>>({});
+  const [offeringsByProgram, setOfferingsByProgram] = useState<Record<string, Offering[]>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -206,13 +216,13 @@ export function RoboticsPrograms() {
         const all = await getPrograms({ activeOnly: true });
         const robotics = all.filter((p: Program) => p.category === ROBOTICS_CATEGORY);
         setPrograms(robotics);
-        const map: Record<string, Session[]> = {};
+        const map: Record<string, Offering[]> = {};
         await Promise.all(
           robotics.map(async (p: Program) => {
-            map[p.id] = await getActiveSessions(p.id);
+            map[p.id] = await getActiveOfferings(p);
           })
         );
-        setSessionsByProgram(map);
+        setOfferingsByProgram(map);
       } finally {
         setLoading(false);
       }
@@ -246,7 +256,7 @@ export function RoboticsPrograms() {
           <ProgramCard
             key={licensedProgram.id}
             program={displayProgram}
-            sessions={savedProgram ? sessionsByProgram[savedProgram.id] ?? [] : []}
+            offerings={savedProgram ? offeringsByProgram[savedProgram.id] ?? [] : []}
             isPlaceholder={!savedProgram}
             image={displayProgram.image ?? placeholderImageForIndex(i)}
           />
@@ -257,7 +267,9 @@ export function RoboticsPrograms() {
 }
 
 export function useRoboticsAvailability() {
-  const [hasOpenRegistration, setHasOpenRegistration] = useState(false);
+  const [hasPublishedSchedule, setHasPublishedSchedule] = useState(false);
+  const [hasOpenRequests, setHasOpenRequests] = useState(false);
+  const [hasOpenWaitlist, setHasOpenWaitlist] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -265,13 +277,16 @@ export function useRoboticsAvailability() {
       try {
         const all = await getPrograms({ activeOnly: true });
         const robotics = all.filter((p: Program) => p.category === ROBOTICS_CATEGORY);
-        const sessionLists = await Promise.all(robotics.map((p: Program) => getActiveSessions(p.id)));
-        const anyOpen = sessionLists.some((sessions) =>
-          sessions.some(
-            (s: Session) => s.status === SESSION_STATUS.ACTIVE || s.status === SESSION_STATUS.SOLD_OUT
-          )
-        );
-        setHasOpenRegistration(anyOpen);
+        const offeringLists = await Promise.all(robotics.map((p: Program) => getActiveOfferings(p)));
+        setHasPublishedSchedule(offeringLists.some((offerings) => offerings.length > 0));
+        setHasOpenRequests(offeringLists.some((offerings) => offerings.some(
+          (offering) => isOfferingRequestWindowOpen(offering) && !isOfferingSoldOut(offering)
+        )));
+        setHasOpenWaitlist(offeringLists.some((offerings) => offerings.some(
+          (offering) => isOfferingRequestWindowOpen(offering)
+            && isOfferingSoldOut(offering)
+            && offering.waitlistEnabled
+        )));
       } finally {
         setLoading(false);
       }
@@ -279,5 +294,5 @@ export function useRoboticsAvailability() {
     load();
   }, []);
 
-  return { hasOpenRegistration, loading };
+  return { hasPublishedSchedule, hasOpenRequests, hasOpenWaitlist, loading };
 }
