@@ -1,6 +1,7 @@
 const PROJECT_ID = process.env.FIREBASE_PROJECT_ID
 const FS_BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`
 const HOLD_HOURS = 24
+const LEGACY_ENDPOINT_RETIRED = true
 
 function fsVal(v) {
   if (v == null) return null
@@ -57,6 +58,14 @@ async function patchDoc(collection, id, fields) {
 }
 
 exports.handler = async function () {
+  if (LEGACY_ENDPOINT_RETIRED) {
+    return { statusCode: 200, body: JSON.stringify({ disabled: true, reason: 'Legacy e-transfer holds are retired.' }) }
+  }
+  if (process.env.BOOKING_FLOW_MODE !== 'legacy_payments') {
+    console.log('Legacy e-transfer hold expiry is disabled in the current booking mode.')
+    return { statusCode: 200, body: JSON.stringify({ disabled: true, expired: 0 }) }
+  }
+
   if (!PROJECT_ID) {
     console.error('FIREBASE_PROJECT_ID not set')
     return { statusCode: 500, body: 'FIREBASE_PROJECT_ID not set' }

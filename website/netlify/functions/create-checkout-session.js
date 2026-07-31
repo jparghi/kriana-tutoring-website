@@ -1,12 +1,23 @@
 import Stripe from 'stripe'
 
+// Source-level retirement: environment variables cannot reactivate this
+// caller-priced checkout implementation. Rebuild it around authenticated,
+// server-authoritative pricing before removing this guard.
+const LEGACY_ENDPOINT_RETIRED = true
+
 export const handler = async (event) => {
+  if (LEGACY_ENDPOINT_RETIRED) {
+    return { statusCode: 410, body: JSON.stringify({ error: 'Legacy Stripe checkout is retired.' }) }
+  }
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' }
   }
 
-  if (process.env.ENABLE_AUTOMATED_STRIPE_PAYMENTS !== 'true') {
-    return { statusCode: 403, body: JSON.stringify({ error: 'Automated Stripe checkout is disabled — programs use Stripe Payment Links instead.' }) }
+  if (
+    process.env.BOOKING_FLOW_MODE !== 'stripe_checkout'
+    || process.env.ENABLE_AUTOMATED_STRIPE_PAYMENTS !== 'true'
+  ) {
+    return { statusCode: 403, body: JSON.stringify({ error: 'Automated Stripe checkout is disabled.' }) }
   }
 
   let body

@@ -1,5 +1,6 @@
 const PROJECT_ID = process.env.FIREBASE_PROJECT_ID
 const FS_BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`
+const LEGACY_ENDPOINT_RETIRED = true
 
 function fsVal(v) {
   if (v == null) return null
@@ -41,7 +42,22 @@ async function getDoc(collection, id) {
 }
 
 exports.handler = async function (event) {
+  // Email-only lookup disclosed complete family records. A future replacement
+  // must require authenticated ownership or a short-lived signed link.
+  if (LEGACY_ENDPOINT_RETIRED) {
+    return { statusCode: 410, body: JSON.stringify({ error: 'Legacy booking lookup is retired.' }) }
+  }
   if (event.httpMethod !== 'POST') return { statusCode: 405, body: 'Method Not Allowed' }
+
+  // The legacy lookup disclosed child and registration data based only on an email
+  // address. Keep it parked until a verified sign-in or one-time-link flow exists.
+  if (process.env.BOOKING_FLOW_MODE !== 'legacy_payments') {
+    return {
+      statusCode: 410,
+      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+      body: JSON.stringify({ error: 'Self-service booking lookup is temporarily unavailable.' }),
+    }
+  }
 
   const { email } = JSON.parse(event.body ?? '{}')
   if (!email || !email.includes('@')) return { statusCode: 400, body: JSON.stringify({ error: 'Invalid email' }) }

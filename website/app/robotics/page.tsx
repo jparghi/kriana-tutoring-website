@@ -61,7 +61,7 @@ const faqs = [
   },
   {
     q: "What ages can participate?",
-    a: "Age ranges vary by session — check the age range listed on each program above before registering.",
+    a: "Age ranges vary by program — check the age range and weekly schedule before requesting a spot.",
   },
   {
     q: "Are all building materials provided?",
@@ -69,19 +69,19 @@ const faqs = [
   },
   {
     q: "Does my child need to bring a tablet?",
-    a: "Any device requirements will be listed on the specific program page. Most in-person sessions provide the equipment children need on-site.",
+    a: "Any device requirements will be listed on the specific program page. Most in-person classes provide the equipment children need on-site.",
   },
   {
     q: "Where are classes held?",
-    a: "Class locations are listed on each program above and confirmed again during registration.",
+    a: "Class locations are listed with each published weekly schedule and confirmed when we review your request.",
   },
   {
     q: "What happens if my child misses a class?",
-    a: "Please contact us as soon as you know about a missed class so we can let you know the options available for that session.",
+    a: "Please contact us as soon as you know about a missed class so we can explain the options for your child's weekly program.",
   },
   {
     q: "What are the cancellation and refund policies?",
-    a: "Cancellation and refund details are provided on the program's registration page, and any deposit terms are shown before you complete registration.",
+    a: "Cancellation, refund and payment terms are provided when we offer your child a place. No payment is due when you first request a spot.",
   },
   {
     q: "Are birthday parties and school workshops available?",

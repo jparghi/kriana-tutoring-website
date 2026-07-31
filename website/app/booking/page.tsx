@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { getPrograms, getActiveSessions, SESSION_STATUS } from '../../lib/booking'
+import { getPrograms, getActiveOfferings, isOfferingSoldOut } from '../../lib/booking'
+import { isRequestOnlyBookingFlow } from '../../lib/booking-flow'
 import { Footer } from '../../components/footer'
 
 const CATEGORY_ACCENTS: Record<string, { bg: string; text: string; bar: string }> = {
@@ -27,9 +28,14 @@ function CategoryBadge({ category }: { category: string }) {
   )
 }
 
-function ProgramCard({ program, sessions }: { program: any; sessions: any[] }) {
-  const activeSessions = sessions.filter(s => s.status !== SESSION_STATUS.DRAFT && s.status !== SESSION_STATUS.CANCELLED)
-  const allSoldOut = activeSessions.length > 0 && activeSessions.every(s => s.status === SESSION_STATUS.SOLD_OUT)
+function ProgramCard({ program, offerings }: { program: any; offerings: any[] }) {
+  const hasSchedule = offerings.length > 0
+  const allSoldOut = hasSchedule && offerings.every(isOfferingSoldOut)
+  const nextOffering = offerings[0]
+  const listedTuition = nextOffering?.tuitionCents
+    || (nextOffering?.source === 'legacySession'
+      ? (program.isDepositOnly ? program.depositAmount : program.price)
+      : 0)
   const accent = CATEGORY_ACCENTS[program.category] ?? DEFAULT_ACCENT
 
   return (
@@ -76,29 +82,41 @@ function ProgramCard({ program, sessions }: { program: any; sessions: any[] }) {
               Grades {program.gradeRange}
             </div>
           )}
-          {activeSessions.length > 0 && (
+          {hasSchedule && (
             <div className="flex items-center gap-2">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4 text-slate-400 shrink-0">
                 <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
               </svg>
-              {activeSessions.length} session{activeSessions.length !== 1 ? 's' : ''} available
+              {offerings.length} weekly schedule{offerings.length !== 1 ? 's' : ''} published
+            </div>
+          )}
+          {!hasSchedule && (
+            <div className="flex items-center gap-2 text-slate-500">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4 text-slate-400 shrink-0">
+                <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
+              </svg>
+              Schedule coming soon
             </div>
           )}
         </div>
       </div>
       <div className="px-6 pb-6 flex items-center justify-between border-t border-slate-100 pt-4 mt-1">
-        <div>
-          <span className="text-xl font-black text-slate-900">
-            ${((program.isDepositOnly ? program.depositAmount : program.price) / 100).toFixed(0)}
+        {listedTuition > 0 ? (
+          <div>
+            <span className="text-xl font-black text-slate-900">${(listedTuition / 100).toFixed(0)}</span>
+            <span className="text-xs text-slate-400 ml-1">listed tuition</span>
+          </div>
+        ) : (
+          <span className="max-w-[9rem] text-xs font-semibold leading-snug text-slate-500">
+            {hasSchedule ? 'Tuition confirmed after review' : 'Dates to be announced'}
           </span>
-          {program.isDepositOnly && <span className="text-xs text-slate-400 ml-1">deposit</span>}
-        </div>
+        )}
         <Link
           href={`/booking/${program.id}`}
           className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl text-white shadow-sm transition-all duration-200 active:scale-95 hover:shadow-[0_4px_16px_rgba(12,97,98,0.35)]"
           style={{ backgroundColor: '#0c6162' }}
         >
-          View &amp; Book
+          {hasSchedule ? (isRequestOnlyBookingFlow ? 'View Schedule' : 'View & Book') : 'View Program'}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5">
             <path d="M5 12h14M12 5l7 7-7 7" />
           </svg>
@@ -110,7 +128,7 @@ function ProgramCard({ program, sessions }: { program: any; sessions: any[] }) {
 
 export default function BookingPage() {
   const [programs, setPrograms] = useState<any[]>([])
-  const [sessionsByProgram, setSessionsByProgram] = useState<Record<string, any[]>>({})
+  const [offeringsByProgram, setOfferingsByProgram] = useState<Record<string, any[]>>({})
   const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState('All')
 
@@ -124,9 +142,9 @@ export default function BookingPage() {
         setPrograms(progs)
         const map: Record<string, any[]> = {}
         await Promise.all(progs.map(async (p: any) => {
-          map[p.id] = await getActiveSessions(p.id)
+          map[p.id] = await getActiveOfferings(p)
         }))
-        setSessionsByProgram(map)
+        setOfferingsByProgram(map)
       } finally {
         setLoading(false)
       }
@@ -147,7 +165,7 @@ export default function BookingPage() {
               Home
             </Link>
             <span className="mx-2 text-slate-300">/</span>
-            <span className="text-slate-700">Book a Program</span>
+            <span className="text-slate-700">Programs &amp; Schedules</span>
           </nav>
         </div>
 
@@ -167,7 +185,9 @@ export default function BookingPage() {
           <div className="mx-auto max-w-6xl">
             <h1 className="text-3xl font-bold text-[#0A2D5A] sm:text-4xl">Programs &amp; Activities</h1>
             <p className="mt-3 max-w-2xl text-base text-slate-600">
-              Choose a program and book your child&apos;s spot online in just a few minutes.
+              {isRequestOnlyBookingFlow
+                ? 'Choose a program and request a place for your child. We will review availability and contact you with next steps.'
+                : 'Choose a program and book your child\'s spot online in just a few minutes.'}
             </p>
           </div>
         </section>
@@ -212,7 +232,7 @@ export default function BookingPage() {
                 <ProgramCard
                   key={program.id}
                   program={program}
-                  sessions={sessionsByProgram[program.id] ?? []}
+                  offerings={offeringsByProgram[program.id] ?? []}
                 />
               ))}
             </div>

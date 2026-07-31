@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { getRegistration, getProgram, getSession, formatDateTime } from '../../../../lib/booking'
+import { isRequestOnlyBookingFlow } from '../../../../lib/booking-flow'
 import BookingLayout from '../../../../components/booking/BookingLayout'
 import { BookingStepper } from '../../../../components/booking/BookingStepper'
+import { LegacyPaymentDisabled } from '../../../../components/booking/LegacyPaymentDisabled'
 
 const ETRANSFER_EMAIL = process.env.NEXT_PUBLIC_ETRANSFER_EMAIL || 'info@krianatutoring.com'
 const HOLD_HOURS = 24
@@ -51,7 +53,7 @@ function InfoRow({ label, value }: { label: string; value?: string }) {
   )
 }
 
-export default function ETransferPage() {
+function LegacyETransferPage() {
   const { registrationId } = useParams<{ registrationId: string }>()
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -138,4 +140,10 @@ export default function ETransferPage() {
       </div>
     </BookingLayout>
   )
+}
+
+export default function ETransferPage() {
+  const { registrationId } = useParams<{ registrationId: string }>()
+  if (isRequestOnlyBookingFlow) return <LegacyPaymentDisabled reference={registrationId} />
+  return <LegacyETransferPage />
 }

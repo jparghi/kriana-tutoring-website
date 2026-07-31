@@ -3,8 +3,12 @@
 import Link from 'next/link'
 import BookingLayout from '../../../components/booking/BookingLayout'
 import { BookingStepper } from '../../../components/booking/BookingStepper'
+import { LegacyPaymentDisabled } from '../../../components/booking/LegacyPaymentDisabled'
+import { isRequestOnlyBookingFlow } from '../../../lib/booking-flow'
 
 export default function BookingSuccessPage() {
+  if (isRequestOnlyBookingFlow) return <LegacyPaymentDisabled />
+
   return (
     <BookingLayout maxWidth="max-w-lg">
       <BookingStepper step={4} />

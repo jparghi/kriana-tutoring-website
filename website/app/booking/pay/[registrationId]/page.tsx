@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { getRegistration, getProgram, getSession, formatDateTime } from '../../../../lib/booking'
+import { isRequestOnlyBookingFlow } from '../../../../lib/booking-flow'
 import BookingLayout from '../../../../components/booking/BookingLayout'
 import { BookingStepper } from '../../../../components/booking/BookingStepper'
+import { LegacyPaymentDisabled } from '../../../../components/booking/LegacyPaymentDisabled'
 
 function InfoRow({ label, value }: { label: string; value?: string }) {
   if (!value) return null
@@ -17,7 +19,7 @@ function InfoRow({ label, value }: { label: string; value?: string }) {
   )
 }
 
-export default function PayPage() {
+function LegacyPayPage() {
   const { registrationId } = useParams<{ registrationId: string }>()
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -109,4 +111,9 @@ export default function PayPage() {
       </div>
     </BookingLayout>
   )
+}
+
+export default function PayPage() {
+  if (isRequestOnlyBookingFlow) return <LegacyPaymentDisabled />
+  return <LegacyPayPage />
 }

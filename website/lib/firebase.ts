@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'firebase/app'
-import { getFirestore } from 'firebase/firestore'
+import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore'
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -13,3 +13,12 @@ const firebaseConfig = {
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
 
 export const db = getFirestore(app)
+
+if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === 'true' && typeof window !== 'undefined') {
+  const marker = '__krianaWebsiteFirestoreEmulatorConnected'
+  const globalState = globalThis as typeof globalThis & Record<string, boolean>
+  if (!globalState[marker]) {
+    connectFirestoreEmulator(db, '127.0.0.1', 8080)
+    globalState[marker] = true
+  }
+}

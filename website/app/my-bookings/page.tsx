@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { REGISTRATION_STATUS, PAYMENT_METHOD, statusBadgeClass } from '../../lib/booking'
+import { isRequestOnlyBookingFlow } from '../../lib/booking-flow'
 import { Footer } from '../../components/footer'
 
 function formatDate(iso: string) {
@@ -14,7 +15,7 @@ function StatusPill({ status }: { status: string }) {
   return <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${statusBadgeClass(status)}`}>{status}</span>
 }
 
-export default function MyBookingsPage() {
+function LegacyMyBookingsPage() {
   const [email, setEmail] = useState('')
   const [submitted, setSubmitted] = useState('')
   const [data, setData] = useState<any>(null)
@@ -203,4 +204,64 @@ export default function MyBookingsPage() {
       <Footer />
     </>
   )
+}
+
+function RequestOnlyBookingsNotice() {
+  return (
+    <>
+      <main className="min-h-[75vh] bg-white text-slate-900">
+        <div className="mx-auto max-w-6xl px-6 pt-6 sm:px-10">
+          <nav aria-label="Breadcrumb" className="text-xs font-semibold text-slate-500">
+            <Link href="/" className="hover:text-brand-sky">Home</Link>
+            <span className="mx-2 text-slate-300">/</span>
+            <Link href="/booking" className="hover:text-brand-sky">Programs</Link>
+            <span className="mx-2 text-slate-300">/</span>
+            <span className="text-slate-700">My Requests</span>
+          </nav>
+        </div>
+
+        <section className="px-6 py-14 sm:px-10">
+          <div className="mx-auto max-w-lg rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+            <div className="h-1.5 w-full" style={{ background: 'linear-gradient(90deg, #0c6162, #0d9e9f)' }} />
+            <div className="p-7 text-center">
+              <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 bg-[#e6f4f4]">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#0c6162" strokeWidth={2} className="w-7 h-7" aria-hidden="true">
+                  <path d="M4 4h16v16H4z" /><path d="m4 7 8 6 8-6" />
+                </svg>
+              </div>
+              <h1 className="text-2xl font-black text-slate-800 mb-3">Check your email for your request</h1>
+              <p className="text-slate-500 leading-relaxed mb-3">
+                For privacy, registration requests cannot be looked up here by email address.
+                We send a request reference to the email used during registration.
+              </p>
+              <p className="text-sm text-slate-500 mb-7">
+                Need an update? Contact us and include that reference so we can help quickly.
+              </p>
+              <div className="flex flex-col sm:flex-row items-stretch justify-center gap-3">
+                <a
+                  href="mailto:info@krianatutoring.com"
+                  className="inline-flex items-center justify-center px-5 py-3 rounded-xl text-white text-sm font-bold hover:opacity-90"
+                  style={{ backgroundColor: '#0c6162' }}
+                >
+                  Email Us
+                </a>
+                <Link
+                  href="/booking"
+                  className="inline-flex items-center justify-center px-5 py-3 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-50"
+                >
+                  Browse Programs
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+      <Footer />
+    </>
+  )
+}
+
+export default function MyBookingsPage() {
+  if (isRequestOnlyBookingFlow) return <RequestOnlyBookingsNotice />
+  return <LegacyMyBookingsPage />
 }
