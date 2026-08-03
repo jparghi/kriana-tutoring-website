@@ -108,9 +108,17 @@ function scheduleSnapshot(session, program) {
   }
 }
 
+function applyProgramDiscount(baseCents, program) {
+  if (!program?.discountActive || !program.discountValue || baseCents <= 0) return baseCents
+  return program.discountType === 'amount'
+    ? Math.max(0, baseCents - Number(program.discountValue))
+    : Math.max(0, Math.round(baseCents * (1 - Math.min(100, Math.max(0, Number(program.discountValue))) / 100)))
+}
+
 function quotedTuition(program, session) {
   const value = session.tuitionCents ?? session.price ?? program.price ?? 0
-  return Number.isFinite(Number(value)) ? Math.max(0, Math.round(Number(value))) : 0
+  const baseCents = Number.isFinite(Number(value)) ? Math.max(0, Math.round(Number(value))) : 0
+  return applyProgramDiscount(baseCents, program)
 }
 
 function availableSeats(session) {

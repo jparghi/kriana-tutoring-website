@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { getPrograms, getActiveOfferings, isOfferingSoldOut, formatOfferingWeeklySchedule } from '../../lib/booking'
+import { getPrograms, getActiveOfferings, isOfferingSoldOut, formatOfferingWeeklySchedule, applyProgramDiscount } from '../../lib/booking'
 import { isRequestOnlyBookingFlow } from '../../lib/booking-flow'
 import { Footer } from '../../components/footer'
 
@@ -73,9 +73,9 @@ function ProgramCard({ program, offerings }: { program: any; offerings: any[] })
   const allSoldOut = hasSchedule && offerings.every(isOfferingSoldOut)
   const nextOffering = offerings[0]
   const listedTuition = nextOffering?.tuitionCents
-    || (nextOffering?.source === 'legacySession'
-      ? (program.isDepositOnly ? program.depositAmount : program.price)
-      : 0)
+    || (program.isDepositOnly ? program.depositAmount : program.price)
+    || 0
+  const discount = applyProgramDiscount(listedTuition, program)
   const accent = CATEGORY_ACCENTS[program.category] ?? DEFAULT_ACCENT
   const ageGrade = [
     program.ageRange ? `Ages ${program.ageRange}` : '',
@@ -101,9 +101,21 @@ function ProgramCard({ program, offerings }: { program: any; offerings: any[] })
           {allSoldOut && (
             <span className="absolute right-1.5 top-2.5 shrink-0 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full shadow-sm">Sold Out</span>
           )}
+          {discount.active && (
+            <span className="absolute bottom-0 left-1.5 inline-flex items-center gap-1 rounded-t-md bg-gradient-to-r from-amber-500 to-orange-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm animate-pulse">
+              🏷️ {discount.label}
+            </span>
+          )}
         </div>
       ) : (
-        <div className="h-1 w-full shrink-0 rounded-t-xl" style={{ backgroundColor: accent.bar }} />
+        <div className="relative">
+          <div className="h-1 w-full shrink-0 rounded-t-xl" style={{ backgroundColor: accent.bar }} />
+          {discount.active && (
+            <span className="absolute right-1.5 top-2 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm animate-pulse">
+              🏷️ {discount.label}
+            </span>
+          )}
+        </div>
       )}
       <div className="flex flex-1 flex-col p-3">
         {!program.imageUrl && (
@@ -129,7 +141,14 @@ function ProgramCard({ program, offerings }: { program: any; offerings: any[] })
         <div className="mt-auto pt-3 flex items-end justify-between gap-2 border-t border-slate-100 mt-3">
           {listedTuition > 0 ? (
             <div>
-              <span className="text-base font-black text-slate-900">${(listedTuition / 100).toFixed(0)}</span>
+              {discount.active ? (
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-[11px] text-slate-400 line-through">${(listedTuition / 100).toFixed(0)}</span>
+                  <span className="text-base font-black text-orange-600">${(discount.finalCents / 100).toFixed(0)}</span>
+                </div>
+              ) : (
+                <span className="text-base font-black text-slate-900">${(listedTuition / 100).toFixed(0)}</span>
+              )}
               <span className="ml-1 text-[9px] text-slate-400">tuition</span>
             </div>
           ) : (

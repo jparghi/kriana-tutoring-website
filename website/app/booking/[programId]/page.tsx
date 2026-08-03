@@ -6,45 +6,19 @@ import Link from 'next/link'
 import {
   getProgram, getActiveOfferings,
   formatOfferingDateRange, formatOfferingWeeklySchedule, isOfferingRequestWindowOpen, isOfferingSoldOut,
-  statusBadgeClass,
+  statusBadgeClass, applyProgramDiscount,
 } from '../../../lib/booking'
 import { isRequestOnlyBookingFlow } from '../../../lib/booking-flow'
 import BookingLayout from '../../../components/booking/BookingLayout'
 import { BookingStepper } from '../../../components/booking/BookingStepper'
 
-function CapacityBar({ offering }: { offering: any }) {
-  const total = offering.capacity ?? 0
-  if (!total) return null
-  const occupied = (offering.confirmedCount ?? 0) + (offering.heldCount ?? 0)
-  const markedFull = isOfferingSoldOut(offering)
-  const available = markedFull ? 0 : Math.max(0, total - occupied)
-  const pct = markedFull ? 100 : Math.round((occupied / total) * 100)
-  const low = available <= 3 && available > 0
-
-  return (
-    <div className="mt-3">
-      <div className="flex justify-between text-xs mb-1">
-        <span className={`font-semibold ${low ? 'text-orange-600' : 'text-slate-500'}`}>
-          {available === 0 ? 'Sold out' : low ? `Only ${available} spot${available !== 1 ? 's' : ''} left!` : `${available} of ${total} spots left`}
-        </span>
-        <span className="text-slate-400">{pct}% full</span>
-      </div>
-      <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all ${pct >= 90 ? 'bg-red-400' : low ? 'bg-orange-400' : 'bg-[#0c6162]'}`}
-          style={{ width: `${Math.max(4, pct)}%` }}
-        />
-      </div>
-    </div>
-  )
-}
-
-function OfferingCard({ offering, onSelect }: { offering: any; onSelect: (s: any) => void }) {
+function OfferingCard({ offering, program, onSelect }: { offering: any; program: any; onSelect: (s: any) => void }) {
   const soldOut = isOfferingSoldOut(offering)
   const requestWindowOpen = isOfferingRequestWindowOpen(offering)
   const hasWaitlist = soldOut && offering.waitlistEnabled && requestWindowOpen
   const dateRange = formatOfferingDateRange(offering)
   const tuition = Number(offering.tuitionCents ?? 0)
+  const discount = applyProgramDiscount(tuition, program)
 
   return (
     <div className={`bg-white rounded-2xl border p-5 transition-all ${
@@ -98,12 +72,21 @@ function OfferingCard({ offering, onSelect }: { offering: any; onSelect: (s: any
         {tuition > 0 && (
           <div className="flex items-center gap-2 font-semibold text-slate-700">
             <span aria-hidden="true" className="w-4 text-center text-slate-400">$</span>
-            ${(tuition / 100).toFixed(2)} {offering.currency ?? 'CAD'} tuition
+            {discount.active ? (
+              <span className="flex items-center gap-1.5">
+                <span className="text-slate-400 line-through font-normal">${(tuition / 100).toFixed(2)}</span>
+                <span className="text-orange-600">${(discount.finalCents / 100).toFixed(2)}</span>
+                {offering.currency ?? 'CAD'} tuition
+                <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                  🏷️ {discount.label}
+                </span>
+              </span>
+            ) : (
+              <>${(tuition / 100).toFixed(2)} {offering.currency ?? 'CAD'} tuition</>
+            )}
           </div>
         )}
       </div>
-
-      <CapacityBar offering={offering} />
 
       <button
         onClick={() => onSelect(offering)}
@@ -184,11 +167,11 @@ export default function ProgramDetailPage() {
   const nextOffering = offerings[0]
   const listedTuition = Number(
     nextOffering?.tuitionCents
-      || (nextOffering?.source === 'legacySession'
-        ? (program.isDepositOnly ? program.depositAmount : program.price)
-        : 0)
+      || (program.isDepositOnly ? program.depositAmount : program.price)
+      || 0
   )
   const colorClass = CATEGORY_COLORS[program.category] ?? 'bg-slate-100 text-slate-600'
+  const headerDiscount = applyProgramDiscount(listedTuition, program)
 
   return (
     <BookingLayout backTo="/booking" backLabel="All Programs">
@@ -209,6 +192,11 @@ export default function ProgramDetailPage() {
             )}
             {program.partnerName && (
               <span className="text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-600">with {program.partnerName}</span>
+            )}
+            {program.discountActive && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-1 text-xs font-bold text-white shadow-sm animate-pulse">
+                🏷️ {program.discountLabel || 'Promotion'}
+              </span>
             )}
           </div>
 
@@ -233,11 +221,18 @@ export default function ProgramDetailPage() {
             )}
             <div className="bg-slate-50 rounded-xl p-3">
               <p className="text-xs text-slate-400 mb-0.5">Tuition</p>
-              <p className="text-sm font-bold text-slate-700">
-                {listedTuition > 0
-                  ? `$${(listedTuition / 100).toFixed(2)} ${nextOffering?.currency ?? 'CAD'}`
-                  : offerings.length > 0 ? 'Confirmed after review' : 'Schedule pending'}
-              </p>
+              {listedTuition > 0 ? (
+                headerDiscount.active ? (
+                  <p className="text-sm font-bold text-orange-600">
+                    <span className="mr-1.5 text-xs font-normal text-slate-400 line-through">${(listedTuition / 100).toFixed(2)}</span>
+                    ${(headerDiscount.finalCents / 100).toFixed(2)} {nextOffering?.currency ?? 'CAD'}
+                  </p>
+                ) : (
+                  <p className="text-sm font-bold text-slate-700">${(listedTuition / 100).toFixed(2)} {nextOffering?.currency ?? 'CAD'}</p>
+                )
+              ) : (
+                <p className="text-sm font-bold text-slate-700">{offerings.length > 0 ? 'Confirmed after review' : 'Schedule pending'}</p>
+              )}
             </div>
             {!isRequestOnlyBookingFlow && program.isDepositOnly && program.price && (
               <div className="bg-slate-50 rounded-xl p-3">
@@ -292,7 +287,7 @@ export default function ProgramDetailPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {offerings.map(offering => (
-            <OfferingCard key={offering.id} offering={offering} onSelect={handleSelectOffering} />
+            <OfferingCard key={offering.id} offering={offering} program={program} onSelect={handleSelectOffering} />
           ))}
         </div>
       )}

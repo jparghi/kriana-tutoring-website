@@ -5,6 +5,7 @@ const PROGRAM_FIELDS = [
   'gradeRange', 'price', 'depositAmount', 'isDepositOnly',
   'refundPolicyText', 'imageUrl', 'durationMin', 'learnMoreUrl',
   'bookingModel', 'offeringModelVersion', 'legacyBookingEnabled',
+  'discountActive', 'discountLabel', 'discountType', 'discountValue',
 ]
 const OFFERING_FIELDS = [
   'programId', 'title', 'termName', 'location', 'timezone', 'weekday',

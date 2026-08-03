@@ -311,6 +311,19 @@ export function formatPrice(cents: number) {
   return `$${(cents / 100).toFixed(2)}`
 }
 
+export type ProgramDiscount = { active: boolean; label: string; finalCents: number }
+
+/** Applies a program's promotional discount (if active) to a base price. */
+export function applyProgramDiscount(baseCents: number, program: any): ProgramDiscount {
+  if (!program?.discountActive || !program.discountValue || baseCents <= 0) {
+    return { active: false, label: '', finalCents: baseCents }
+  }
+  const finalCents = program.discountType === 'amount'
+    ? Math.max(0, baseCents - Number(program.discountValue))
+    : Math.max(0, Math.round(baseCents * (1 - Math.min(100, Math.max(0, Number(program.discountValue))) / 100)))
+  return { active: finalCents < baseCents, label: program.discountLabel || 'Promotion', finalCents }
+}
+
 export function formatDateTime(dt: any) {
   if (!dt) return ''
   const d = typeof dt === 'string' ? new Date(dt) : dt?.toDate ? dt.toDate() : new Date(dt)
