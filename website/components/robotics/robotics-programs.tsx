@@ -156,7 +156,7 @@ function ProgramCard({
           </div>
         )}
 
-        {isPlaceholder || !hasSchedule ? (
+        {isPlaceholder ? (
           <div className="mt-auto flex gap-3 pt-2">
             <Link
               href="/contact#consultation-form"

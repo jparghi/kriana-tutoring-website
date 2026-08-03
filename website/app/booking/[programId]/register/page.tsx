@@ -5,7 +5,7 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   getProgram, getOffering, formatOfferingDateRange, formatOfferingWeeklySchedule,
-  isOfferingRequestWindowOpen, isOfferingSoldOut, programUsesOfferings,
+  isOfferingRequestWindowOpen, isOfferingSoldOut, programUsesOfferings, applyProgramDiscount,
 } from '../../../../lib/booking'
 import BookingLayout from '../../../../components/booking/BookingLayout'
 import { BookingStepper } from '../../../../components/booking/BookingStepper'
@@ -233,11 +233,12 @@ function RegisterForm() {
   const useWaitlist = isWaitlistParam || (soldOut && offering.waitlistEnabled)
   const price = Number(
     offering.tuitionCents
-      || (offering.source === 'legacySession'
-        ? (program.isDepositOnly ? program.depositAmount : program.price)
-        : 0)
+      || (program.isDepositOnly ? program.depositAmount : program.price)
+      || 0
   )
+  const discount = applyProgramDiscount(price, program)
   const priceLabel = price ? `$${(price / 100).toFixed(2)} ${offering.currency ?? 'CAD'}` : ''
+  const discountedPriceLabel = discount.active ? `$${(discount.finalCents / 100).toFixed(2)} ${offering.currency ?? 'CAD'}` : ''
   const dateRange = formatOfferingDateRange(offering)
   const isBirthday = program.category === 'Birthday Party'
 
@@ -256,8 +257,18 @@ function RegisterForm() {
           </div>
           {price > 0 && !useWaitlist && (
             <div className="shrink-0 text-right">
-              <p className="text-xl font-black text-slate-800">{priceLabel}</p>
-              <p className="text-xs text-slate-400">listed price</p>
+              {discount.active ? (
+                <>
+                  <p className="text-xs text-slate-400 line-through">{priceLabel}</p>
+                  <p className="text-xl font-black text-orange-600">{discountedPriceLabel}</p>
+                  <p className="text-[10px] font-bold text-orange-600">🏷️ {discount.label}</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-xl font-black text-slate-800">{priceLabel}</p>
+                  <p className="text-xs text-slate-400">listed price</p>
+                </>
+              )}
             </div>
           )}
           {useWaitlist && <span className="shrink-0 text-xs font-bold bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full">Waitlist</span>}

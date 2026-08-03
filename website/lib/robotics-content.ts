@@ -72,17 +72,18 @@ export const licensedRoboticsPrograms = [
     image: "/images/robotics/programs/galileo-technic.png",
     logo: "/images/robotics/programs/galileo-technic-logo.png",
   },
-  {
-    id: "algo-play",
-    title: "Algo Play",
-    ageRange: "6-10",
-    durationMin: 75,
-    description:
-      "A program designed to introduce children to essential coding fundamentals such as conditioning, loops, multithreading, debugging and more through tangible or screen GoAlgo coding application.",
-    learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/algoplay-enrichment-program/",
-    image: "/images/robotics/programs/algo-play.png",
-    logo: "/images/robotics/programs/algo-play-logo.png",
-  },
+  // Hidden for now — re-enable when ready to launch.
+  // {
+  //   id: "algo-play",
+  //   title: "Algo Play",
+  //   ageRange: "6-10",
+  //   durationMin: 75,
+  //   description:
+  //     "A program designed to introduce children to essential coding fundamentals such as conditioning, loops, multithreading, debugging and more through tangible or screen GoAlgo coding application.",
+  //   learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/algoplay-enrichment-program/",
+  //   image: "/images/robotics/programs/algo-play.png",
+  //   logo: "/images/robotics/programs/algo-play-logo.png",
+  // },
   {
     id: "robo-toys",
     title: "Robo Toys",
