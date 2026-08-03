@@ -22,7 +22,7 @@ const DEFAULT_ACCENT = { bg: 'bg-slate-100', text: 'text-slate-600', bar: '#94A3
 function CategoryBadge({ category }: { category: string }) {
   const accent = CATEGORY_ACCENTS[category] ?? DEFAULT_ACCENT
   return (
-    <span className={`inline-block truncate text-[10px] font-semibold px-2 py-0.5 rounded-full ${accent.bg} ${accent.text}`}>
+    <span className={`inline-block truncate text-[10px] font-semibold px-2 py-0.5 rounded-full shadow-sm ${accent.bg} ${accent.text}`}>
       {category}
     </span>
   )
@@ -84,9 +84,9 @@ function ProgramCard({ program, offerings }: { program: any; offerings: any[] })
 
   return (
     <div className="group flex flex-col overflow-visible rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_28px_rgba(15,23,42,0.1)]">
-      <div className="overflow-hidden rounded-t-xl">
-        <div className="h-1 w-full shrink-0" style={{ backgroundColor: accent.bar }} />
-        {program.imageUrl && (
+      {program.imageUrl ? (
+        <div className="relative overflow-hidden rounded-t-xl">
+          <div className="h-1 w-full shrink-0" style={{ backgroundColor: accent.bar }} />
           <div className="h-24 w-full shrink-0 overflow-hidden bg-slate-50">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -95,15 +95,25 @@ function ProgramCard({ program, offerings }: { program: any; offerings: any[] })
               className="h-full w-full object-contain p-2.5 transition-transform duration-300 group-hover:scale-105"
             />
           </div>
-        )}
-      </div>
-      <div className="flex flex-1 flex-col p-3">
-        <div className="mb-1.5 flex items-start justify-between gap-1.5">
-          <CategoryBadge category={program.category} />
+          <div className="absolute left-1.5 top-2.5">
+            <CategoryBadge category={program.category} />
+          </div>
           {allSoldOut && (
-            <span className="shrink-0 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">Sold Out</span>
+            <span className="absolute right-1.5 top-2.5 shrink-0 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full shadow-sm">Sold Out</span>
           )}
         </div>
+      ) : (
+        <div className="h-1 w-full shrink-0 rounded-t-xl" style={{ backgroundColor: accent.bar }} />
+      )}
+      <div className="flex flex-1 flex-col p-3">
+        {!program.imageUrl && (
+          <div className="mb-1.5 flex items-start justify-between gap-1.5">
+            <CategoryBadge category={program.category} />
+            {allSoldOut && (
+              <span className="shrink-0 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">Sold Out</span>
+            )}
+          </div>
+        )}
         <h3 className="text-sm font-bold leading-snug text-slate-900 line-clamp-2">{program.title}</h3>
         {program.partnerName && (
           <p className="text-[10px] text-slate-400">with {program.partnerName}</p>
