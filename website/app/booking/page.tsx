@@ -101,21 +101,9 @@ function ProgramCard({ program, offerings }: { program: any; offerings: any[] })
           {allSoldOut && (
             <span className="absolute right-1.5 top-2.5 shrink-0 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full shadow-sm">Sold Out</span>
           )}
-          {discount.active && (
-            <span className="absolute bottom-0 left-1.5 inline-flex items-center gap-1 rounded-t-md bg-gradient-to-r from-amber-500 to-orange-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm animate-pulse">
-              🏷️ {discount.label}
-            </span>
-          )}
         </div>
       ) : (
-        <div className="relative">
-          <div className="h-1 w-full shrink-0 rounded-t-xl" style={{ backgroundColor: accent.bar }} />
-          {discount.active && (
-            <span className="absolute right-1.5 top-2 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm animate-pulse">
-              🏷️ {discount.label}
-            </span>
-          )}
-        </div>
+        <div className="h-1 w-full shrink-0 rounded-t-xl" style={{ backgroundColor: accent.bar }} />
       )}
       <div className="flex flex-1 flex-col p-3">
         {!program.imageUrl && (
@@ -149,7 +137,11 @@ function ProgramCard({ program, offerings }: { program: any; offerings: any[] })
               ) : (
                 <span className="text-base font-black text-slate-900">${(listedTuition / 100).toFixed(0)}</span>
               )}
-              <span className="ml-1 text-[9px] text-slate-400">tuition</span>
+              {discount.active && (
+                <span className="mt-1 flex w-fit items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-2 py-0.5 text-[9px] font-bold text-white shadow-sm">
+                  🏷️ {discount.label}
+                </span>
+              )}
             </div>
           ) : (
             <span className="max-w-[6.5rem] text-[10px] font-semibold leading-snug text-slate-500">
