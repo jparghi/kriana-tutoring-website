@@ -73,7 +73,7 @@ export const WAITLIST_STATUS = {
 
 async function catalogRequest(params: Record<string, string>) {
   const queryString = new URLSearchParams(params).toString()
-  const response = await fetch(`/.netlify/functions/get-public-catalog?${queryString}`, {
+  const response = await fetch(`/api/public-catalog?${queryString}`, {
     headers: { Accept: 'application/json' },
   })
   if (response.status === 404) return null

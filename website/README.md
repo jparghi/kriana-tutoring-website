@@ -11,27 +11,30 @@ npm run dev
 
 Visit `http://localhost:3000` to view the landing page.
 
-## Local Development With Netlify Functions
+## Booking / Programs Catalog
 
-Plain `npm run dev` only runs Next.js — any page that calls `/.netlify/functions/*`
-(e.g. `/booking`, which calls `get-public-catalog`) will 404 on those requests
-because there's no function runtime behind it.
+`/booking` reads programs and offerings through `app/api/public-catalog`, a
+normal Next.js API route — not a Netlify Function. That means plain `npm run
+dev` is enough; programs and schedules created in the tutor portal show up at
+`http://localhost:3000/booking` with no Netlify CLI, no extra ports, and no
+Node version juggling required. It reads Firebase Admin credentials straight
+from `.env.local` (see Environment Variables below).
 
-To test those pages locally, run the Netlify CLI instead so functions are served
-too. Requires the [Netlify CLI](https://docs.netlify.com/cli/get-started/)
-(`npm install -g netlify-cli`) and this site linked (`netlify link`):
+A few other flows (Stripe checkout, e-transfer emails, enrollment webhooks)
+are still real Netlify Functions under `netlify/functions/` and only run
+under `netlify dev`, not plain `next dev`. If you need to test one of those:
 
 ```bash
+cd website   # .nvmrc and package.json both live here, not the repo root
+nvm use      # picks up the pinned .nvmrc version (22.14.0) — run netlify dev
+             # under an LTS Node; newer non-LTS builds (e.g. 23.x) have
+             # crashed the Netlify CLI's dev proxy mid-session
 npm run dev:functions
 ```
 
-This keeps the site on the familiar `http://localhost:3000` URL — Next.js itself
-runs internally on port 3500, but you never need to visit that port directly.
-(Netlify's dev proxy refuses to share a single port between itself and the
-framework it wraps, which is why the internal port has to differ.)
-
-Function calls read credentials from `.env.local` (Firebase Admin, SMTP, Stripe,
-etc.) — see below.
+This keeps the site on `http://localhost:3000` (Next.js itself runs
+internally on port 3500 — you never need to visit that port directly;
+Netlify's dev proxy won't share a single port with the framework it wraps).
 
 ## Environment Variables
 
