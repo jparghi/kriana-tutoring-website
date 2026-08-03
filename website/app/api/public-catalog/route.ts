@@ -16,7 +16,7 @@ function programUsesOfferings(program: any) {
     || (Number.isSafeInteger(program.offeringModelVersion) && program.offeringModelVersion >= 1)
 }
 
-async function loadProgram(db: Firestore, programId: string | null) {
+async function loadProgram(db: Firestore, programId: string | null): Promise<any> {
   if (!validId(programId)) return null
   return publicProgram(await db.collection('programs').doc(programId as string).get())
 }
@@ -73,14 +73,14 @@ export async function GET(request: NextRequest) {
     if (!validId(id)) return NextResponse.json({ error: 'Invalid offering ID' }, { status: 400, headers: noStore })
     const offeringDocument = await db.collection('programOfferings').doc(id as string).get()
     if (offeringDocument.exists) {
-      const offering = publicOffering(offeringDocument)
+      const offering: any = publicOffering(offeringDocument)
       const program = offering ? await loadProgram(db, offering.programId) : null
       return offering && program
         ? NextResponse.json({ offering })
         : NextResponse.json({ error: 'Offering not found' }, { status: 404, headers: noStore })
     }
     const legacyDocument = await db.collection('sessions').doc(id as string).get()
-    const legacy = legacyDocument.exists ? publicLegacySession(legacyDocument) : null
+    const legacy: any = legacyDocument.exists ? publicLegacySession(legacyDocument) : null
     const program = legacy ? await loadProgram(db, legacy.programId) : null
     if (!legacy || !program || programUsesOfferings(program) || program.legacyBookingEnabled !== true) {
       return NextResponse.json({ error: 'Offering not found' }, { status: 404, headers: noStore })
