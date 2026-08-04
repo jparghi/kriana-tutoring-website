@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookIcon, HashIcon, PencilIcon, SproutIcon } from "./icons";
+import { BookIcon, FlaskIcon, HashIcon, SproutIcon } from "./icons";
 import { SectionHeading } from "./section-heading";
 
 type IconComponent = React.ComponentType<React.SVGProps<SVGSVGElement>>;
@@ -43,11 +43,11 @@ const programs: {
     iconColor: "text-brand-teal",
   },
   {
-    icon: PencilIcon,
-    title: "Homework Support",
+    icon: FlaskIcon,
+    title: "Science Tutoring",
     description:
-      "Structured, focused homework sessions that turn the nightly battle into a productive routine. Our homework help for kids helps children get unstuck, build independence, and finish feeling good.",
-    tags: ["Daily homework", "Study skills", "Organization", "All subjects"],
+      "Clear explanations and hands-on examples help children understand science concepts, strengthen reasoning, and stay curious about how the world works.",
+    tags: ["Life science", "Earth science", "Experiments", "Scientific thinking"],
     grades: "Grades 1 to 8",
     color: "text-brand-rose",
     bg: "from-brand-rose/15 to-brand-amber/5",

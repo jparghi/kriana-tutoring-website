@@ -23,7 +23,7 @@ export function TestimonialCarousel() {
   };
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-white via-slate-50/80 to-white py-24">
+    <section className="relative overflow-hidden bg-gradient-to-b from-white via-slate-50/80 to-white pb-12 pt-10">
       {/* Background decorations */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -left-12 top-10 h-64 w-64 rounded-full bg-brand-rose/15 blur-3xl" />

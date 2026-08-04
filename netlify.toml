@@ -8,13 +8,12 @@
 [build.environment]
   NEXT_TELEMETRY_DISABLED = "1"
   NODE_VERSION = "18.20.3"
+  NEXT_PUBLIC_BOOKING_FLOW_MODE = "request_only"
+  BOOKING_FLOW_MODE = "request_only"
+  ENABLE_AUTOMATED_STRIPE_PAYMENTS = "false"
 
 [functions]
   node_bundler = "esbuild"
-
-# Expire pending e-transfer holds every hour
-[functions."expire-etransfer-holds"]
-  schedule = "@hourly"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"

@@ -1,0 +1,153 @@
+import { BrainCircuitIcon, CompassIcon, GearIcon, SparkleIcon, TargetIcon, UsersIcon } from "../components/icons";
+
+// Young Engineers' own brand palette (pulled from their site's theme CSS),
+// used as accent color so the page reads as a joint Kriana + YE effort.
+export const YE_BLUE = "#0083CB";
+export const YE_RED = "#ED174B";
+export const YE_AMBER = "#F2A100";
+
+// Program category -> card accent, per the design brief:
+// bricks/mechanics = amber, advanced mechanics = red, robotics = blue, coding = navy/purple.
+export function themeColorForCategory(category?: string) {
+  const value = (category ?? "").toLowerCase();
+  if (value.includes("coding")) return "#3730A3"; // navy/purple-blue
+  if (value.includes("advanced")) return YE_RED;
+  if (value.includes("brick") || value.includes("mechanic")) return YE_AMBER;
+  return YE_BLUE; // default: Robotics
+}
+
+// No per-program image field exists in Firestore yet, so cards are illustrated
+// by category using existing project photography instead of repeating one image.
+export function imageForCategory(category?: string) {
+  const value = (category ?? "").toLowerCase();
+  if (value.includes("coding")) return "/images/robotics/robotics-tablet-coding.png";
+  if (value.includes("advanced")) return "/images/robotics/build-test-improve.png";
+  if (value.includes("brick") || value.includes("mechanic")) return "/images/young-engineers/robotics-and-coding.png";
+  return "/images/young-engineers/robotics-and-coding.png"; // default: Robotics
+}
+
+// Presentation-only category tags (not business facts like age/price/schedule).
+export function skillTagsForCategory(category?: string) {
+  const value = (category ?? "").toLowerCase();
+  if (value.includes("coding")) return ["Coding", "Logical Thinking"];
+  if (value.includes("advanced")) return ["Advanced Engineering", "Problem-Solving"];
+  if (value.includes("brick")) return ["Mechanics", "Creativity"];
+  return ["Robotics", "Teamwork"];
+}
+
+// Confirmed licensed Young Engineers programs (names, ages, durations only —
+// no price/schedule/location yet). Shown as placeholder cards until each is
+// created for real in Firestore via the separate program-management portal.
+export const licensedRoboticsPrograms = [
+  {
+    id: "smartivo",
+    title: "Smartivo",
+    ageRange: "4-6",
+    durationMin: 45,
+    description:
+      "Smartivo is an early coding program where young children explore the basics of programming through playful, story-based missions. Using either tangible coding blocks or GoAlgo App, kids bring robots to life-making them move, light up, and react to their commands. Each session combines logic and fun to build confidence and foundational coding skills like command sequencing, conditions, loops and multithreading in an age-appropriate way.",
+    learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/smartivo-enrichment-program/",
+    image: "/images/robotics/programs/smartivo.png",
+    logo: "/images/robotics/programs/smartivo-logo.png",
+  },
+  {
+    id: "bricks-challenge",
+    title: "Bricks Challenge",
+    ageRange: "6-10",
+    durationMin: 75,
+    description:
+      "An educational program that introduces children to the principles of STEM and basic subjects of classical mechanics through the use of building blocks and mechanical parts.",
+    learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/bricks-challenge-enrichment-program/",
+    image: "/images/robotics/programs/bricks-challenge.png",
+    logo: "/images/robotics/programs/bricks-challenge-logo.png",
+  },
+  {
+    id: "galileo-technic",
+    title: "Galileo Technic",
+    ageRange: "7-10",
+    durationMin: 75,
+    description:
+      "An advanced program that delves deep into comprehensive mechanical engineering principles, allowing students to explore new engineering terms through building complex models.",
+    learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/galileo-technic-enrichment-program/",
+    image: "/images/robotics/programs/galileo-technic.png",
+    logo: "/images/robotics/programs/galileo-technic-logo.png",
+  },
+  // Hidden for now — re-enable when ready to launch.
+  // {
+  //   id: "algo-play",
+  //   title: "Algo Play",
+  //   ageRange: "6-10",
+  //   durationMin: 75,
+  //   description:
+  //     "A program designed to introduce children to essential coding fundamentals such as conditioning, loops, multithreading, debugging and more through tangible or screen GoAlgo coding application.",
+  //   learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/algoplay-enrichment-program/",
+  //   image: "/images/robotics/programs/algo-play.png",
+  //   logo: "/images/robotics/programs/algo-play-logo.png",
+  // },
+  {
+    id: "robo-toys",
+    title: "Robo Toys",
+    ageRange: "9-12",
+    durationMin: 75,
+    description:
+      "A program designed to provide children with the basic skills to become proficient robotic makers and introduce them robotic-mechanical planning while using programming subjects.",
+    learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/robotoys-program/",
+    image: "/images/robotics/programs/robo-toys.png",
+    logo: "/images/robotics/programs/robo-toys-logo.png",
+  },
+  // Hidden for now — re-enable when ready to launch.
+  // {
+  //   id: "algoc",
+  //   title: "AlgoC",
+  //   ageRange: "13-18",
+  //   durationMin: 90,
+  //   description:
+  //     "AlgoC is a hands-on learning experience designed to equip students with essential coding, robotics, coding with AI, and problem-solving skills. This program focuses on C programming, the foundational language used in robotics, automation, and embedded systems. Through real-world challenges and interactive lessons, children will build, code, and innovate—preparing for a technology-driven future.",
+  //   learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/algoc-enrichment-program/",
+  //   image: "/images/robotics/programs/algoc.png",
+  //   logo: "/images/robotics/programs/algoc-logo.png",
+  // },
+];
+
+const PLACEHOLDER_IMAGES = [
+  "/images/young-engineers/robotics-and-coding.png",
+  "/images/robotics/robotics-tablet-coding.png",
+  "/images/robotics/build-test-improve.png",
+];
+
+export function placeholderImageForIndex(i: number) {
+  return PLACEHOLDER_IMAGES[i % PLACEHOLDER_IMAGES.length];
+}
+
+export const skillsBuilt = [
+  {
+    title: "Engineering Thinking",
+    icon: CompassIcon,
+    description: "Breaking a challenge into steps and reasoning through a design.",
+  },
+  {
+    title: "Problem-Solving",
+    icon: TargetIcon,
+    description: "Working through obstacles when a model doesn't behave as planned.",
+  },
+  {
+    title: "Creativity",
+    icon: SparkleIcon,
+    description: "Exploring original ways to build, move and design.",
+  },
+  {
+    title: "Teamwork",
+    icon: UsersIcon,
+    description: "Building and troubleshooting alongside classmates.",
+  },
+  {
+    title: "Mechanical Understanding",
+    icon: GearIcon,
+    description: "Learning how gears, motors and structures work together.",
+  },
+  {
+    title: "Coding & Logical Thinking",
+    icon: BrainCircuitIcon,
+    description: "Using age-appropriate programming to control a creation.",
+  },
+];

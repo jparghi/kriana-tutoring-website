@@ -2,3 +2,7 @@ node_modules
 .next
 website/.next
 docs/stripe-keys.md
+docs/**/*.mp4
+
+# Local Netlify folder
+.netlify

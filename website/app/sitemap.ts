@@ -1,12 +1,12 @@
 import type { MetadataRoute } from "next";
 
 import { blogPosts } from "./blog/data";
-import { servicePages } from "./services/data";
+import { servicePages } from "./tutoring/data";
 
 const baseUrl = "https://www.krianatutoring.com";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const staticRoutes = ["", "/about", "/blog", "/contact", "/practice-tests", "/register", "/services", "/worksheets"];
+  const staticRoutes = ["", "/about", "/blog", "/contact", "/practice-tests", "/register", "/robotics", "/tutoring", "/worksheets"];
 
   const staticEntries = staticRoutes.map((route) => ({
     url: `${baseUrl}${route}`,
@@ -23,7 +23,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   }));
 
   const serviceEntries = servicePages.map((service) => ({
-    url: `${baseUrl}/services/${service.slug}`,
+    url: `${baseUrl}/tutoring/${service.slug}`,
     lastModified: new Date(),
     changeFrequency: "monthly" as const,
     priority: 0.8

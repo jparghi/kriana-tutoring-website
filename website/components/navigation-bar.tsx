@@ -7,15 +7,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const navItems = [
-  { label: "Home", href: "/" },
-  { label: "Services", href: "/services" },
-  {
-    label: "About",
-    children: [
-      { label: "About Us", href: "/about" },
-      { label: "Why Kriana", href: "/why-kriana" },
-    ],
-  },
+  { label: "Tutoring", href: "/tutoring" },
+  { label: "Robotics & Coding", href: "/robotics" },
   {
     label: "Resources",
     children: [
@@ -24,7 +17,14 @@ const navItems = [
       { label: "Practice Tests", href: "/practice-tests" },
     ],
   },
-  { label: "Contact", href: "/contact#consultation-form" },
+  {
+    label: "About",
+    children: [
+      { label: "About Us", href: "/about" },
+      { label: "Why Kriana", href: "/why-kriana" },
+      { label: "Contact", href: "/contact#consultation-form" },
+    ],
+  },
 ];
 
 const phoneHref = "tel:+16134006921";
@@ -98,9 +98,9 @@ export function NavigationBar() {
           scrolled ? "opacity-0" : "opacity-100"
         }`}
       />
-      <div className="mx-auto max-w-7xl px-4 pb-4 pt-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl px-6 pb-1 pt-1 sm:px-10">
         <div
-          className={`relative rounded-[2rem] border px-4 py-3 ring-1 backdrop-blur-xl transition-all duration-300 sm:px-5 ${
+          className={`relative rounded-[2rem] border px-4 py-1 ring-1 backdrop-blur-xl transition-all duration-300 sm:px-5 ${
             scrolled
               ? "border-[#5AC8FA]/50 bg-white/95 shadow-[0_8px_32px_rgba(6,11,26,0.12)] ring-[#5AC8FA]/20"
               : "border-[#5AC8FA]/40 bg-[#E8F9FF]/90 shadow-[0_18px_48px_rgba(6,11,26,0.08)] ring-[#5AC8FA]/30"
@@ -109,23 +109,15 @@ export function NavigationBar() {
           <div className="pointer-events-none absolute inset-x-0 top-0 h-px rounded-t-[2rem] bg-gradient-to-r from-transparent via-brand-sky/40 to-transparent" />
 
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 xl:grid-cols-[auto_minmax(0,1fr)_auto] xl:gap-5">
-            <Link href="/" className="flex min-w-0 items-center gap-2 sm:gap-3" aria-label="Kriana Tutoring home">
+            <Link href="/" className="flex min-w-0 items-center py-1.5 pr-2" aria-label="Kriana Tutoring home">
               <Image
-                src="/images/kriana-logo-icon-large.png"
-                alt="Kriana Tutoring logo"
-                width={56}
-                height={56}
+                src="/images/kriana-tutoring-logo-horizontal-6.png"
+                alt="Kriana Tutoring"
+                width={1355}
+                height={242}
                 priority
-                className="h-12 w-12 flex-shrink-0 object-contain sm:h-16 sm:w-16"
+                className="h-7 w-auto flex-shrink-0 object-contain sm:h-7"
               />
-              <div className="min-w-0">
-                <p className="truncate font-bold uppercase leading-none tracking-[0.16em] text-[#0A2D5A] text-[0.9rem] sm:text-lg sm:tracking-[0.22em]">
-                  Kriana
-                </p>
-                <p className="mt-1 truncate text-[0.78rem] font-semibold uppercase leading-none tracking-[0.16em] text-[#1F5B99] sm:text-base sm:tracking-[0.22em]">
-                  Tutoring
-                </p>
-              </div>
             </Link>
 
             <nav ref={navRef} className="hidden min-w-0 items-center justify-center gap-0.5 xl:flex xl:w-full xl:px-3">
@@ -139,7 +131,7 @@ export function NavigationBar() {
                       <button
                         type="button"
                         onClick={() => setDesktopOpenGroup(isOpen ? null : item.label)}
-                        className={`relative inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-full px-3 py-3 text-[0.88rem] font-semibold transition-all duration-200 2xl:px-4 2xl:text-[0.95rem] ${
+                        className={`relative inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1.5 text-[0.82rem] font-medium transition-all duration-200 2xl:px-3 2xl:text-[0.88rem] ${
                           active || isOpen
                             ? "text-[#0A2D5A]"
                             : "text-[#003B73] hover:bg-[#5AC8FA]/16 hover:text-[#0A2D5A]"
@@ -184,7 +176,7 @@ export function NavigationBar() {
                   <Link
                     key={item.label}
                     href={item.href}
-                    className={`relative inline-flex items-center justify-center whitespace-nowrap rounded-full px-3 py-3 text-[0.88rem] font-semibold transition-all duration-200 2xl:px-4 2xl:text-[0.95rem] ${
+                    className={`relative inline-flex items-center justify-center whitespace-nowrap rounded-full px-2.5 py-1.5 text-[0.82rem] font-medium transition-all duration-200 2xl:px-3 2xl:text-[0.88rem] ${
                       active
                         ? "text-[#0A2D5A]"
                         : "text-[#003B73] hover:bg-[#5AC8FA]/16 hover:text-[#0A2D5A]"
@@ -202,7 +194,7 @@ export function NavigationBar() {
             <div className="hidden items-center gap-2 xl:flex xl:pl-3">
               <Link
                 href={phoneHref}
-                className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-[#5AC8FA]/50 bg-white/90 px-5 py-2.5 text-[0.78rem] font-bold text-[#0A2D5A] shadow-sm transition-all duration-200 hover:border-[#5AC8FA] hover:bg-white hover:shadow-[0_4px_16px_rgba(74,144,226,0.2)]"
+                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-[#5AC8FA]/50 bg-white/90 px-3.5 py-1.5 text-[0.72rem] font-semibold text-[#0A2D5A] shadow-sm transition-all duration-200 hover:border-[#5AC8FA] hover:bg-white hover:shadow-[0_4px_16px_rgba(74,144,226,0.2)]"
               >
                 <svg className="h-3.5 w-3.5 shrink-0 text-brand-sky" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
                   <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.86 19.86 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.86 19.86 0 0 1 2.08 4.18 2 2 0 0 1 4.05 2h3a2 2 0 0 1 2 1.72c.14 1.05.47 2.06.96 3 .31.63.1 1.38-.44 1.79l-1.27.95a2 2 0 0 0-.57 2.57 13 13 0 0 0 6.1 6.1 2 2 0 0 0 2.57-.57l.95-1.27c.41-.54 1.16-.75 1.79-.44a12.84 12.84 0 0 0 3 1c.96.24 1.64 1.1 1.64 2.09Z" />
@@ -211,9 +203,9 @@ export function NavigationBar() {
               </Link>
               <Link
                 href="/booking"
-                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[#0c6162] px-5 py-2.5 text-[0.78rem] font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#0a5051] hover:shadow-[0_4px_16px_rgba(12,97,98,0.35)]"
+                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[#0c6162] px-4 py-1.5 text-[0.72rem] font-semibold text-white shadow-sm transition-all duration-200 hover:bg-[#0a5051] hover:shadow-[0_4px_16px_rgba(12,97,98,0.35)]"
               >
-                Book a Program
+                View Programs
                 <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
@@ -324,7 +316,7 @@ export function NavigationBar() {
                 onClick={closeMobileMenu}
                 className="flex w-full items-center justify-center gap-2 rounded-full bg-[#0c6162] py-3.5 text-sm font-bold text-white shadow-[0_4px_20px_rgba(12,97,98,0.3)]"
               >
-                Book a Program
+                View Programs
                 <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
                 </svg>

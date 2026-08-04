@@ -1,17 +1,14 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useRef, useState, Suspense } from 'react'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
-  getProgram, getSession, getAvailableSeats, formatDateTime,
-  createRegistration, updateRegistration, addToWaitlist,
-  PAYMENT_METHOD, REGISTRATION_STATUS, SESSION_STATUS,
+  getProgram, getOffering, formatOfferingDateRange, formatOfferingWeeklySchedule,
+  isOfferingRequestWindowOpen, isOfferingSoldOut, programUsesOfferings, applyProgramDiscount,
 } from '../../../../lib/booking'
 import BookingLayout from '../../../../components/booking/BookingLayout'
 import { BookingStepper } from '../../../../components/booking/BookingStepper'
-
-const ETRANSFER_EMAIL = process.env.NEXT_PUBLIC_ETRANSFER_EMAIL || 'info@krianatutoring.com'
 
 function Field({ label, children, required, hint }: { label: string; children: React.ReactNode; required?: boolean; hint?: string }) {
   return (
@@ -27,20 +24,8 @@ function Field({ label, children, required, hint }: { label: string; children: R
 
 const inputClass = 'w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-base sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0c6162]/30 focus:border-[#0c6162] transition-all bg-white'
 
-async function sendConfirmationEmail(registrationId: string, type: string) {
-  try {
-    await fetch('/.netlify/functions/send-booking-confirmation', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ registrationId, type }),
-    })
-  } catch {
-    // non-blocking
-  }
-}
-
 function SubStepper({ step }: { step: number }) {
-  const steps = ['Your Info', 'Child Details', 'Review & Pay']
+  const steps = ['Your Info', 'Child Details', 'Review & Submit']
   return (
     <div className="flex items-center mb-6">
       {steps.map((label, i) => {
@@ -73,12 +58,15 @@ function SubStepper({ step }: { step: number }) {
 function RegisterForm() {
   const { programId } = useParams<{ programId: string }>()
   const searchParams = useSearchParams()
-  const sessionId = searchParams.get('sessionId') ?? ''
+  const offeringId = searchParams.get('offeringId') ?? ''
+  const legacySessionId = searchParams.get('sessionId') ?? ''
+  const selectedOfferingId = offeringId || legacySessionId
   const isWaitlistParam = searchParams.get('waitlist') === '1'
   const router = useRouter()
+  const clientRequestId = useRef('')
 
   const [program, setProgram] = useState<any>(null)
-  const [session, setSession] = useState<any>(null)
+  const [offering, setOffering] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -88,22 +76,35 @@ function RegisterForm() {
     parentName: '', parentEmail: '', parentPhone: '', childName: '',
     childAge: '', childGrade: '', medicalNotes: '', emergencyContact: '',
     specialRequests: '', consentAccepted: false, photoConsent: false,
-    paymentMethod: PAYMENT_METHOD.ETRANSFER,
   })
 
   useEffect(() => {
+    if (!clientRequestId.current) {
+      clientRequestId.current = globalThis.crypto?.randomUUID?.()
+        ?? `request-${Date.now()}-${Math.random().toString(36).slice(2)}`
+    }
+
     async function load() {
-      if (!sessionId) { setLoading(false); return }
+      if (!selectedOfferingId) { setLoading(false); return }
       try {
-        const [prog, sess] = await Promise.all([getProgram(programId), getSession(sessionId)])
+        const [prog, selectedOffering] = await Promise.all([
+          getProgram(programId),
+          getOffering(selectedOfferingId),
+        ])
         setProgram(prog)
-        setSession(sess)
+        const isRetiredLegacySelection = selectedOffering?.source === 'legacySession'
+          && programUsesOfferings(prog)
+        setOffering(
+          selectedOffering?.programId === programId && !isRetiredLegacySelection
+            ? selectedOffering
+            : null
+        )
       } finally {
         setLoading(false)
       }
     }
     load()
-  }, [programId, sessionId])
+  }, [programId, selectedOfferingId])
 
   function set(field: string, value: any) {
     setFormState(prev => ({ ...prev, [field]: value }))
@@ -137,53 +138,48 @@ function RegisterForm() {
     setSubmitting(true)
 
     try {
-      const soldOut = session && getAvailableSeats(session) === 0
-      const useWaitlist = isWaitlistParam || (soldOut && session?.waitlistEnabled)
-
-      if (useWaitlist) {
-        await addToWaitlist({
-          programId, sessionId,
-          parentName: form.parentName, parentEmail: form.parentEmail, parentPhone: form.parentPhone,
-          childName: form.childName, childAge: form.childAge, childGrade: form.childGrade,
-          medicalNotes: form.medicalNotes, emergencyContact: form.emergencyContact,
-          specialRequests: form.specialRequests, consentAccepted: form.consentAccepted,
-          photoConsent: form.photoConsent,
-        })
-        router.push(`/booking/waitlist-confirmed?program=${encodeURIComponent(program?.title ?? '')}`)
-        return
-      }
-
-      const amountCents = program?.isDepositOnly ? program.depositAmount : program?.price
-      const registrationId = await createRegistration({
-        programId, sessionId,
-        parentName: form.parentName, parentEmail: form.parentEmail, parentPhone: form.parentPhone,
-        childName: form.childName, childAge: form.childAge, childGrade: form.childGrade,
-        medicalNotes: form.medicalNotes, emergencyContact: form.emergencyContact,
-        specialRequests: form.specialRequests, consentAccepted: form.consentAccepted,
-        photoConsent: form.photoConsent, paymentMethod: form.paymentMethod,
-        amountDue: amountCents, amountPaid: 0, isDepositOnly: program?.isDepositOnly ?? false,
-      })
-
-      if (form.paymentMethod === PAYMENT_METHOD.ETRANSFER) {
-        await updateRegistration(registrationId, { registrationStatus: REGISTRATION_STATUS.PENDING_PAYMENT })
-        sendConfirmationEmail(registrationId, 'pending')
-        router.push(`/booking/etransfer/${registrationId}`)
-        return
-      }
-
-      const res = await fetch('/.netlify/functions/create-checkout-session', {
+      const soldOut = offering && isOfferingSoldOut(offering)
+      const useWaitlist = isWaitlistParam || (soldOut && offering?.waitlistEnabled)
+      const response = await fetch('/.netlify/functions/submit-enrollment-request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          registrationId, programId, sessionId,
-          programTitle: program?.title ?? '', sessionTitle: session?.title ?? '',
-          amountCents, parentEmail: form.parentEmail, parentName: form.parentName,
-          childName: form.childName, isDepositOnly: program?.isDepositOnly ?? false,
+          programId,
+          ...(offering.source === 'legacySession'
+            ? { sessionId: offering.id }
+            : { offeringId: offering.id }),
+          clientRequestId: clientRequestId.current,
+          requestedAction: useWaitlist ? 'waitlist' : 'enrollment',
+          registration: {
+            parentName: form.parentName,
+            parentEmail: form.parentEmail,
+            parentPhone: form.parentPhone,
+            childName: form.childName,
+            childAge: form.childAge,
+            childGrade: form.childGrade,
+            medicalNotes: form.medicalNotes,
+            emergencyContact: form.emergencyContact,
+            specialRequests: form.specialRequests,
+            consentAccepted: form.consentAccepted,
+            photoConsent: form.photoConsent,
+          },
         }),
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Failed to create checkout session')
-      window.location.href = data.url
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(result.error || 'We could not submit your request. Please try again.')
+
+      if (useWaitlist) {
+        const waitlistParams = new URLSearchParams()
+        if (program?.title) waitlistParams.set('program', program.title)
+        if (result.reference) waitlistParams.set('reference', result.reference)
+        router.push(`/booking/waitlist-confirmed?${waitlistParams.toString()}`)
+        return
+      }
+
+      const requestParams = new URLSearchParams()
+      if (result.registrationNumber) requestParams.set('reference', result.registrationNumber)
+      if (program?.title) requestParams.set('program', program.title)
+      router.push(`/booking/request-received?${requestParams.toString()}`)
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.')
       setSubmitting(false)
@@ -196,20 +192,54 @@ function RegisterForm() {
     </BookingLayout>
   )
 
-  if (!program || !session) return (
+  if (!program || !offering) return (
     <BookingLayout backTo="/booking" backLabel="All Programs">
       <div className="text-center py-20">
-        <p className="text-slate-500 mb-4">Session not found or no longer available.</p>
+        <p className="text-slate-500 mb-4">This program schedule was not found or is no longer available.</p>
         <Link href="/booking" className="text-[#0c6162] font-semibold hover:underline">← Browse Programs</Link>
       </div>
     </BookingLayout>
   )
 
-  const available = getAvailableSeats(session)
-  const soldOut = available === 0
-  const useWaitlist = isWaitlistParam || (soldOut && session.waitlistEnabled)
-  const price = program.isDepositOnly ? program.depositAmount : program.price
-  const priceLabel = price ? `$${(price / 100).toFixed(2)} CAD${program.isDepositOnly ? ' deposit' : ''}` : 'Free'
+  if (!isOfferingRequestWindowOpen(offering)) return (
+    <BookingLayout backTo={`/booking/${programId}`} backLabel="Back to Program">
+      <div className="mx-auto max-w-lg rounded-2xl border border-slate-100 bg-white px-6 py-12 text-center shadow-sm">
+        <h1 className="text-xl font-black text-slate-800">Requests are not open for this schedule</h1>
+        <p className="mt-2 text-sm leading-relaxed text-slate-500">
+          View the program page for another weekly schedule, or contact us and we&apos;ll help you find the right option.
+        </p>
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-4 text-sm font-semibold">
+          <Link href={`/booking/${programId}`} className="text-[#0c6162] hover:underline">View Program</Link>
+          <Link href="/contact#consultation-form" className="text-[#0c6162] hover:underline">Contact Us</Link>
+        </div>
+      </div>
+    </BookingLayout>
+  )
+
+  const soldOut = isOfferingSoldOut(offering)
+  if (soldOut && !offering.waitlistEnabled) return (
+    <BookingLayout backTo={`/booking/${programId}`} backLabel="Back to Program">
+      <div className="mx-auto max-w-lg rounded-2xl border border-slate-100 bg-white px-6 py-12 text-center shadow-sm">
+        <h1 className="text-xl font-black text-slate-800">This weekly program is full</h1>
+        <p className="mt-2 text-sm leading-relaxed text-slate-500">
+          The waitlist is not open right now. Contact us and we&apos;ll help you explore another schedule or program.
+        </p>
+        <Link href="/contact#consultation-form" className="mt-5 inline-block text-sm font-semibold text-[#0c6162] hover:underline">
+          Contact Us →
+        </Link>
+      </div>
+    </BookingLayout>
+  )
+  const useWaitlist = isWaitlistParam || (soldOut && offering.waitlistEnabled)
+  const price = Number(
+    offering.tuitionCents
+      || (program.isDepositOnly ? program.depositAmount : program.price)
+      || 0
+  )
+  const discount = applyProgramDiscount(price, program)
+  const priceLabel = price ? `$${(price / 100).toFixed(2)} ${offering.currency ?? 'CAD'}` : ''
+  const discountedPriceLabel = discount.active ? `$${(discount.finalCents / 100).toFixed(2)} ${offering.currency ?? 'CAD'}` : ''
+  const dateRange = formatOfferingDateRange(offering)
   const isBirthday = program.category === 'Birthday Party'
 
   return (
@@ -220,14 +250,25 @@ function RegisterForm() {
         <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg, #0c6162, #0d9e9f)' }} />
         <div className="px-5 py-4 flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-0.5">{useWaitlist ? 'Joining Waitlist' : 'Booking'}</p>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-0.5">{useWaitlist ? 'Joining Waitlist' : 'Requesting a Spot'}</p>
             <h2 className="font-black text-slate-800">{program.title}</h2>
-            <p className="text-sm text-slate-500 mt-0.5">{session.title} · {formatDateTime(session.startDateTime)}</p>
+            <p className="text-sm text-slate-500 mt-0.5">{offering.title} · {formatOfferingWeeklySchedule(offering)}</p>
+            {dateRange && <p className="text-xs text-slate-400 mt-0.5">{dateRange}</p>}
           </div>
           {price > 0 && !useWaitlist && (
             <div className="shrink-0 text-right">
-              <p className="text-xl font-black text-slate-800">{priceLabel}</p>
-              {program.isDepositOnly && <p className="text-xs text-slate-400">deposit</p>}
+              {discount.active ? (
+                <>
+                  <p className="text-xs text-slate-400 line-through">{priceLabel}</p>
+                  <p className="text-xl font-black text-orange-600">{discountedPriceLabel}</p>
+                  <p className="text-[10px] font-bold text-orange-600">🏷️ {discount.label}</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-xl font-black text-slate-800">{priceLabel}</p>
+                  <p className="text-xs text-slate-400">listed price</p>
+                </>
+              )}
             </div>
           )}
           {useWaitlist && <span className="shrink-0 text-xs font-bold bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full">Waitlist</span>}
@@ -244,7 +285,7 @@ function RegisterForm() {
           <div className="space-y-4">
             <div className="mb-5">
               <h3 className="font-black text-slate-800 text-base">Your Information</h3>
-              <p className="text-sm text-slate-400 mt-0.5">We'll send booking details to this email.</p>
+              <p className="text-sm text-slate-400 mt-0.5">We&apos;ll send request updates to this email.</p>
             </div>
             <Field label="Full Name" required>
               <input required className={inputClass} value={form.parentName} onChange={e => set('parentName', e.target.value)} placeholder="Jane Smith" autoComplete="name" />
@@ -305,7 +346,7 @@ function RegisterForm() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="mb-5">
               <h3 className="font-black text-slate-800 text-base">Review & Confirm</h3>
-              <p className="text-sm text-slate-400 mt-0.5">Double-check your details before submitting.</p>
+              <p className="text-sm text-slate-400 mt-0.5">Double-check your details before submitting your request.</p>
             </div>
             <div className="bg-slate-50 rounded-xl divide-y divide-slate-100 text-sm">
               {[
@@ -325,31 +366,18 @@ function RegisterForm() {
             </div>
             <button type="button" onClick={goBack} className="text-sm font-semibold text-slate-400 hover:text-[#0c6162] transition-colors">← Edit details</button>
 
-            {!useWaitlist && price > 0 && (
-              <div>
-                <h4 className="font-bold text-slate-800 text-sm mb-3">How would you like to pay?</h4>
-                <div className="space-y-2">
-                  <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${form.paymentMethod === PAYMENT_METHOD.ETRANSFER ? 'border-[#0c6162] bg-[#e6f4f4]' : 'border-slate-200 hover:border-slate-300'}`}>
-                    <input type="radio" name="paymentMethod" value={PAYMENT_METHOD.ETRANSFER} checked={form.paymentMethod === PAYMENT_METHOD.ETRANSFER} onChange={() => set('paymentMethod', PAYMENT_METHOD.ETRANSFER)} className="mt-0.5 accent-[#0c6162]" />
-                    <div>
-                      <p className="font-bold text-slate-800 text-sm">Interac E-Transfer</p>
-                      <p className="text-xs text-slate-500 mt-0.5">Send to <span className="font-mono font-semibold">{ETRANSFER_EMAIL}</span>. Spot held 24 hours.</p>
-                    </div>
-                  </label>
-                  <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${form.paymentMethod === PAYMENT_METHOD.STRIPE ? 'border-[#0c6162] bg-[#e6f4f4]' : 'border-slate-200 hover:border-slate-300'}`}>
-                    <input type="radio" name="paymentMethod" value={PAYMENT_METHOD.STRIPE} checked={form.paymentMethod === PAYMENT_METHOD.STRIPE} onChange={() => set('paymentMethod', PAYMENT_METHOD.STRIPE)} className="mt-0.5 accent-[#0c6162]" />
-                    <div>
-                      <p className="font-bold text-slate-800 text-sm">Pay Online — Credit / Debit</p>
-                      <p className="text-xs text-slate-500 mt-0.5">Secure checkout via Stripe. Spot confirmed instantly.</p>
-                    </div>
-                  </label>
-                </div>
+            {!useWaitlist && (
+              <div className="bg-[#e6f4f4] border border-[#0c6162]/15 rounded-xl px-4 py-3">
+                <p className="text-sm font-bold text-[#0c6162]">No payment is due today.</p>
+                <p className="text-sm text-slate-600 mt-1">
+                  This form requests a place; it does not confirm enrollment. We will review availability and contact you with placement and payment details.
+                </p>
               </div>
             )}
 
             {useWaitlist && (
               <div className="bg-orange-50 border border-orange-100 rounded-xl px-4 py-3 text-sm text-orange-700 font-medium">
-                This session is full. Joining the waitlist is free — you'll be emailed if a spot opens.
+                This weekly program is full. Joining the waitlist is free — you&apos;ll be emailed if a spot opens.
               </div>
             )}
 
@@ -357,7 +385,7 @@ function RegisterForm() {
               <label className="flex items-start gap-3 cursor-pointer">
                 <input type="checkbox" required checked={form.consentAccepted} onChange={e => set('consentAccepted', e.target.checked)} className="mt-0.5 accent-[#0c6162] w-4 h-4 shrink-0" />
                 <span className="text-sm text-slate-600">
-                  I agree to the program terms, refund policy, and waiver of liability. I confirm all information is accurate. <span className="text-red-500">*</span>
+                  I confirm this information is accurate and consent to Kriana using it to review this request and contact me. I understand this request does not confirm a seat. <span className="text-red-500">*</span>
                 </span>
               </label>
               <label className="flex items-start gap-3 cursor-pointer">
@@ -367,7 +395,7 @@ function RegisterForm() {
             </div>
 
             <button type="submit" disabled={submitting} className="w-full py-4 rounded-xl text-white font-black text-base transition-all disabled:opacity-50 active:scale-[0.98] shadow-sm" style={{ backgroundColor: '#0c6162' }}>
-              {submitting ? 'Processing…' : useWaitlist ? 'Join Waitlist' : form.paymentMethod === PAYMENT_METHOD.STRIPE ? `Pay ${priceLabel} →` : 'Register & Get E-Transfer Instructions →'}
+              {submitting ? 'Submitting…' : useWaitlist ? 'Join Waitlist' : 'Submit Registration Request →'}
             </button>
             <p className="text-center text-xs text-slate-400">Your information is kept private and used only for program administration.</p>
           </form>
