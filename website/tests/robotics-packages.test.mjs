@@ -7,6 +7,7 @@ import {
   getRoboticsPackage,
   getPackagePromoDiscountCents,
   getDiscountedSubtotalCents,
+  getBillingCadenceLabel,
   buildPackageSnapshot,
 } from '../lib/robotics-packages.js'
 
@@ -78,4 +79,11 @@ test('getDiscountedSubtotalCents subtracts the promo discount and never goes neg
   const expected = Math.max(0, pkg.subtotalCents - getPackagePromoDiscountCents(pkg))
   assert.equal(getDiscountedSubtotalCents(pkg), expected)
   assert.equal(getDiscountedSubtotalCents(null), 0)
+})
+
+test('getBillingCadenceLabel explains upfront vs monthly billing per package', () => {
+  assert.match(getBillingCadenceLabel(getRoboticsPackage('explorer')), /upfront/i)
+  assert.match(getBillingCadenceLabel(getRoboticsPackage('builder')), /monthly/i)
+  assert.match(getBillingCadenceLabel(getRoboticsPackage('engineer')), /monthly/i)
+  assert.equal(getBillingCadenceLabel(null), '')
 })

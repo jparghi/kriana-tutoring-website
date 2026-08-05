@@ -11,7 +11,7 @@ import {
 import { isRequestOnlyBookingFlow } from '../../../lib/booking-flow'
 import BookingLayout from '../../../components/booking/BookingLayout'
 import { BookingStepper } from '../../../components/booking/BookingStepper'
-import { ROBOTICS_PACKAGES, PACKAGE_PROMO, getRoboticsPackage, isValidPackageId, getPackagePromoDiscountCents, getDiscountedSubtotalCents } from '../../../lib/robotics-packages.js'
+import { ROBOTICS_PACKAGES, PACKAGE_PROMO, getRoboticsPackage, isValidPackageId, getPackagePromoDiscountCents, getDiscountedSubtotalCents, getBillingCadenceLabel } from '../../../lib/robotics-packages.js'
 
 const ROBOTICS_CATEGORY = 'Robotics'
 
@@ -192,6 +192,7 @@ function PackageChooser({ programId }: { programId: string }) {
                 <p className="mt-0.5 text-[11px] font-bold text-orange-600">Includes 1 free class — save ${(discountCents / 100).toFixed(0)}</p>
               )}
               <p className="text-xs text-slate-400">${(pkg.perClassCents / 100).toFixed(0)}/class · plus applicable taxes</p>
+              <p className="mt-1.5 text-[11px] font-semibold text-[#0c6162]">{getBillingCadenceLabel(pkg)}</p>
 
               <span
                 className="mt-4 inline-flex w-fit items-center gap-1 rounded-full px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition-transform duration-200 group-hover:scale-[1.03]"

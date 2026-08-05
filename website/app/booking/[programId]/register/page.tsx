@@ -9,7 +9,7 @@ import {
 } from '../../../../lib/booking'
 import BookingLayout from '../../../../components/booking/BookingLayout'
 import { BookingStepper } from '../../../../components/booking/BookingStepper'
-import { getRoboticsPackage, isValidPackageId, getPackagePromoDiscountCents, getDiscountedSubtotalCents } from '../../../../lib/robotics-packages.js'
+import { getRoboticsPackage, isValidPackageId, getPackagePromoDiscountCents, getDiscountedSubtotalCents, getBillingCadenceLabel } from '../../../../lib/robotics-packages.js'
 
 const ROBOTICS_CATEGORY = 'Robotics'
 
@@ -403,6 +403,7 @@ function RegisterForm() {
                 ) : (
                   <p className="font-semibold text-slate-800">${(selectedPackage.subtotalCents / 100).toFixed(0)} package subtotal</p>
                 )}
+                <p className="mt-1.5 text-xs font-semibold text-[#0c6162]">{getBillingCadenceLabel(selectedPackage)}</p>
                 <p className="mt-1 text-xs text-slate-400">Plus applicable taxes. Payment is not collected when requesting a spot.</p>
               </div>
             )}

@@ -87,6 +87,14 @@ export function getDiscountedSubtotalCents(pkg) {
   return Math.max(0, pkg.subtotalCents - getPackagePromoDiscountCents(pkg))
 }
 
+/** Short, family-facing explanation of how a package is actually billed. */
+export function getBillingCadenceLabel(pkg) {
+  if (!pkg) return ''
+  return pkg.billingCadence === 'upfront'
+    ? `Paid upfront — one invoice covers all ${pkg.classCount} classes`
+    : 'Monthly option available — billed only for the classes that fall in each month'
+}
+
 /** Builds the immutable snapshot stored on a registration/waitlist document. */
 export function buildPackageSnapshot(packageId) {
   const pkg = getRoboticsPackage(packageId)
