@@ -71,9 +71,13 @@ export const WAITLIST_STATUS = {
 
 // ─── Programs ─────────────────────────────────────────────────────────────────
 
-async function catalogRequest(params: Record<string, string>) {
-  const queryString = new URLSearchParams(params).toString()
-  const response = await fetch(`/api/public-catalog?${queryString}`, {
+// Each resource type below lives on its own distinct URL path (rather than a
+// shared path with a `?resource=` query string) so that CDN/edge caching can
+// never serve one lookup's cached response for a different lookup — that
+// exact collision, when this used a single shared path, once broke
+// enrollment site-wide by serving a /catalog response in place of /offerings.
+async function catalogRequest(path: string) {
+  const response = await fetch(`/api/public-catalog/${path}`, {
     headers: { Accept: 'application/json' },
   })
   if (response.status === 404) return null
@@ -85,7 +89,7 @@ export async function getPrograms({ activeOnly = false } = {}) {
   // The public site never reads Firestore catalogue documents directly. The
   // server returns an explicit safe projection and ignores private/unknown
   // fields even if privileged code accidentally adds one later.
-  const payload = await catalogRequest({ resource: 'programs' })
+  const payload = await catalogRequest('programs')
   const all = (payload?.programs ?? []) as any[]
   if (!activeOnly) return all
   return all.sort((a, b) => {
@@ -101,7 +105,7 @@ export async function getPrograms({ activeOnly = false } = {}) {
 }
 
 export async function getProgram(programId: string) {
-  const payload = await catalogRequest({ resource: 'program', id: programId })
+  const payload = await catalogRequest(`program/${encodeURIComponent(programId)}`)
   return payload?.program ?? null
 }
 
@@ -208,7 +212,7 @@ async function getLegacyActiveSessions(programId: string) {
 export async function getActiveOfferings(programOrId: string | Record<string, any>) {
   const programId = typeof programOrId === 'string' ? programOrId : programOrId?.id
   if (!programId) return [] as PublicOffering[]
-  const payload = await catalogRequest({ resource: 'offerings', programId })
+  const payload = await catalogRequest(`offerings/${encodeURIComponent(programId)}`)
   const offerings = (payload?.offerings ?? []).map((data: any) => (
     data.source === 'legacySession'
       ? normalizeLegacySession(data.id, data)
@@ -234,7 +238,7 @@ function normalizeOfferingsPayload(offerings: any[]) {
  * cause of slow loads on those pages.
  */
 export async function getProgramsWithOfferings({ category, activeOnly = false }: { category?: string; activeOnly?: boolean } = {}) {
-  const payload = await catalogRequest({ resource: 'catalog', ...(category ? { category } : {}) })
+  const payload = await catalogRequest(category ? `catalog/${encodeURIComponent(category)}` : 'catalog')
   const programs = (payload?.programs ?? []) as any[]
   const offeringsByProgram: Record<string, PublicOffering[]> = {}
   for (const [programId, offerings] of Object.entries(payload?.offeringsByProgram ?? {})) {
@@ -254,7 +258,7 @@ export async function getProgramsWithOfferings({ category, activeOnly = false }:
 }
 
 export async function getOffering(offeringId: string) {
-  const payload = await catalogRequest({ resource: 'offering', id: offeringId })
+  const payload = await catalogRequest(`offering/${encodeURIComponent(offeringId)}`)
   const data = payload?.offering
   if (!data) return null
   const offering = data.source === 'legacySession'
