@@ -5,6 +5,9 @@ import Link from 'next/link'
 import { getPrograms, getActiveOfferings, isOfferingSoldOut, formatOfferingWeeklySchedule, applyProgramDiscount } from '../../lib/booking'
 import { isRequestOnlyBookingFlow } from '../../lib/booking-flow'
 import { Footer } from '../../components/footer'
+import { getRoboticsPackage, isValidPackageId } from '../../lib/robotics-packages.js'
+
+const ROBOTICS_CATEGORY = 'Robotics'
 
 const CATEGORY_ACCENTS: Record<string, { bg: string; text: string; bar: string }> = {
   'Demo Class':      { bg: 'bg-sky-50',    text: 'text-sky-700',    bar: '#0EA5E9' },
@@ -68,7 +71,7 @@ function ScheduleBadge({ offerings, hasSchedule }: { offerings: any[]; hasSchedu
   )
 }
 
-function ProgramCard({ program, offerings }: { program: any; offerings: any[] }) {
+function ProgramCard({ program, offerings, packageId }: { program: any; offerings: any[]; packageId?: string }) {
   const hasSchedule = offerings.length > 0
   const allSoldOut = hasSchedule && offerings.every(isOfferingSoldOut)
   const nextOffering = offerings[0]
@@ -149,7 +152,7 @@ function ProgramCard({ program, offerings }: { program: any; offerings: any[] })
             </span>
           )}
           <Link
-            href={`/booking/${program.id}`}
+            href={packageId && program.category === ROBOTICS_CATEGORY ? `/booking/${program.id}?package=${packageId}` : `/booking/${program.id}`}
             className="inline-flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-white shadow-sm transition-all duration-200 active:scale-95 hover:shadow-[0_4px_12px_rgba(12,97,98,0.35)]"
             style={{ backgroundColor: '#0c6162' }}
           >
@@ -169,10 +172,19 @@ export default function BookingPage() {
   const [offeringsByProgram, setOfferingsByProgram] = useState<Record<string, any[]>>({})
   const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState('All')
+  const [selectedPackageId, setSelectedPackageId] = useState('')
 
   useEffect(() => {
-    const categoryParam = new URLSearchParams(window.location.search).get('category')
+    const params = new URLSearchParams(window.location.search)
+    const categoryParam = params.get('category')
     if (categoryParam) setSelectedCategory(categoryParam)
+
+    // A robotics package selection only ever applies to the Robotics category —
+    // never carry it into an unrelated category filter.
+    const packageParam = params.get('package')
+    if (categoryParam === ROBOTICS_CATEGORY && packageParam && isValidPackageId(packageParam)) {
+      setSelectedPackageId(packageParam)
+    }
 
     async function load() {
       try {
@@ -192,6 +204,7 @@ export default function BookingPage() {
 
   const categories = ['All', ...Array.from(new Set(programs.map((p: any) => p.category).filter(Boolean)))]
   const filtered = selectedCategory === 'All' ? programs : programs.filter((p: any) => p.category === selectedCategory)
+  const selectedPackage = selectedPackageId ? getRoboticsPackage(selectedPackageId) : null
 
   return (
     <>
@@ -231,6 +244,25 @@ export default function BookingPage() {
         </section>
 
         <div className="mx-auto max-w-6xl px-6 pb-16 sm:px-10">
+          {selectedPackage && (
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#0083CB]/25 bg-[#0083CB]/5 px-5 py-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-[#0083CB]">Selected Package</p>
+                <p className="mt-0.5 text-sm font-semibold text-slate-800">
+                  {selectedPackage.name} — {selectedPackage.classCount} classes · ${(selectedPackage.perClassCents / 100).toFixed(0)}/class · $
+                  {(selectedPackage.subtotalCents / 100).toFixed(0)} total (plus applicable taxes)
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedPackageId('')}
+                className="text-xs font-semibold text-slate-500 hover:text-slate-700"
+              >
+                Change package
+              </button>
+            </div>
+          )}
+
           {!loading && categories.length > 1 && (
             <div className="flex flex-wrap gap-2 mb-8">
               {categories.map(cat => (
@@ -271,6 +303,7 @@ export default function BookingPage() {
                   key={program.id}
                   program={program}
                   offerings={offeringsByProgram[program.id] ?? []}
+                  packageId={selectedPackageId}
                 />
               ))}
             </div>

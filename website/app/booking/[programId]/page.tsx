@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { Suspense, useEffect, useState } from 'react'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   getProgram, getActiveOfferings,
@@ -11,6 +11,9 @@ import {
 import { isRequestOnlyBookingFlow } from '../../../lib/booking-flow'
 import BookingLayout from '../../../components/booking/BookingLayout'
 import { BookingStepper } from '../../../components/booking/BookingStepper'
+import { ROBOTICS_PACKAGES, getRoboticsPackage, isValidPackageId } from '../../../lib/robotics-packages.js'
+
+const ROBOTICS_CATEGORY = 'Robotics'
 
 function OfferingCard({ offering, program, onSelect }: { offering: any; program: any; onSelect: (s: any) => void }) {
   const soldOut = isOfferingSoldOut(offering)
@@ -122,9 +125,41 @@ const CATEGORY_COLORS: Record<string, string> = {
   'Tutoring':       'bg-blue-100 text-blue-700',
 }
 
-export default function ProgramDetailPage() {
+function PackageChooser({ programId }: { programId: string }) {
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 md:p-8 mb-8">
+      <h2 className="text-lg font-black text-slate-800">Choose a Class Package</h2>
+      <p className="mt-1 text-sm text-slate-500">
+        This program is offered as a fixed class package. Pick one to continue — each total is the complete package
+        subtotal, not a monthly price, plus applicable taxes.
+      </p>
+      <div className="mt-5 grid gap-4 sm:grid-cols-3">
+        {ROBOTICS_PACKAGES.map(pkg => (
+          <Link
+            key={pkg.id}
+            href={`/booking/${programId}?package=${pkg.id}`}
+            className="flex flex-col rounded-xl border border-slate-200 p-5 transition-all hover:border-[#0c6162] hover:shadow-sm"
+          >
+            {pkg.badge && (
+              <span className="mb-2 inline-flex w-fit rounded-full bg-[#0083CB]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#0083CB]">
+                {pkg.badge}
+              </span>
+            )}
+            <p className="font-bold text-slate-800">{pkg.name}</p>
+            <p className="mt-0.5 text-sm text-slate-500">{pkg.classCount} classes</p>
+            <p className="mt-3 text-xl font-black text-slate-900">${(pkg.subtotalCents / 100).toFixed(0)}</p>
+            <p className="text-xs text-slate-400">${(pkg.perClassCents / 100).toFixed(0)}/class · plus applicable taxes</p>
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ProgramDetailContent() {
   const { programId } = useParams<{ programId: string }>()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [program, setProgram] = useState<any>(null)
   const [offerings, setOfferings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -142,10 +177,15 @@ export default function ProgramDetailPage() {
     load()
   }, [programId])
 
+  const packageParam = searchParams.get('package') || ''
+  const isRobotics = program?.category === ROBOTICS_CATEGORY
+  const selectedPackage = isRobotics && isValidPackageId(packageParam) ? getRoboticsPackage(packageParam) : null
+
   function handleSelectOffering(offering: any) {
     const params = new URLSearchParams()
     if (offering.source === 'legacySession') params.set('sessionId', offering.id)
     else params.set('offeringId', offering.id)
+    if (selectedPackage) params.set('package', selectedPackage.id)
     router.push(`/booking/${programId}/register?${params.toString()}`)
   }
 
@@ -268,29 +308,62 @@ export default function ProgramDetailPage() {
         </div>
       </div>
 
-      <h2 className="text-lg font-black text-slate-800 mb-4">
-        Weekly Program Schedules
-        <span className="ml-2 text-sm font-normal text-slate-400">({offerings.length} published)</span>
-      </h2>
-
-      {offerings.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-100 p-10 text-center">
-          <p className="font-semibold text-slate-600">The next schedule is still being planned</p>
-          <p className="text-sm text-slate-400 mt-1">There is no registration form until real dates and times are published.</p>
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-4 text-sm font-semibold">
-            <Link href="/contact#consultation-form" className="rounded-xl bg-[#0c6162] px-4 py-2.5 text-white hover:opacity-90">
-              Ask About This Program
-            </Link>
-            <Link href="/booking" className="text-[#0c6162] hover:underline">← Browse other programs</Link>
-          </div>
-        </div>
+      {isRobotics && !selectedPackage ? (
+        <PackageChooser programId={programId} />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {offerings.map(offering => (
-            <OfferingCard key={offering.id} offering={offering} program={program} onSelect={handleSelectOffering} />
-          ))}
-        </div>
+        <>
+          {selectedPackage && (
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#0083CB]/25 bg-[#0083CB]/5 px-5 py-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-[#0083CB]">Selected Package</p>
+                <p className="mt-0.5 text-sm font-semibold text-slate-800">
+                  {selectedPackage.name} — {selectedPackage.classCount} classes · ${(selectedPackage.perClassCents / 100).toFixed(0)}/class · $
+                  {(selectedPackage.subtotalCents / 100).toFixed(0)} total (plus applicable taxes)
+                </p>
+              </div>
+              <Link href={`/booking/${programId}`} className="text-xs font-semibold text-slate-500 hover:text-slate-700">
+                Change package
+              </Link>
+            </div>
+          )}
+
+          <h2 className="text-lg font-black text-slate-800 mb-4">
+            Weekly Program Schedules
+            <span className="ml-2 text-sm font-normal text-slate-400">({offerings.length} published)</span>
+          </h2>
+
+          {offerings.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-slate-100 p-10 text-center">
+              <p className="font-semibold text-slate-600">The next schedule is still being planned</p>
+              <p className="text-sm text-slate-400 mt-1">There is no registration form until real dates and times are published.</p>
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-4 text-sm font-semibold">
+                <Link href="/contact#consultation-form" className="rounded-xl bg-[#0c6162] px-4 py-2.5 text-white hover:opacity-90">
+                  Ask About This Program
+                </Link>
+                <Link href="/booking" className="text-[#0c6162] hover:underline">← Browse other programs</Link>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {offerings.map(offering => (
+                <OfferingCard key={offering.id} offering={offering} program={program} onSelect={handleSelectOffering} />
+              ))}
+            </div>
+          )}
+        </>
       )}
     </BookingLayout>
+  )
+}
+
+export default function ProgramDetailPage() {
+  return (
+    <Suspense fallback={
+      <BookingLayout backTo="/booking" backLabel="All Programs">
+        <div className="flex items-center justify-center h-48 text-slate-400">Loading…</div>
+      </BookingLayout>
+    }>
+      <ProgramDetailContent />
+    </Suspense>
   )
 }
