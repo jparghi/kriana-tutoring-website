@@ -2,8 +2,11 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   ROBOTICS_PACKAGES,
+  PACKAGE_PROMO,
   isValidPackageId,
   getRoboticsPackage,
+  getPackagePromoDiscountCents,
+  getDiscountedSubtotalCents,
   buildPackageSnapshot,
 } from '../lib/robotics-packages.js'
 
@@ -15,11 +18,11 @@ test('every package subtotal equals classCount * perClassCents', () => {
 
 test('exact catalogue values match the spec', () => {
   assert.deepEqual(
-    ROBOTICS_PACKAGES.map(p => [p.id, p.classCount, p.perClassCents, p.subtotalCents, p.badge]),
+    ROBOTICS_PACKAGES.map(p => [p.id, p.classCount, p.perClassCents, p.subtotalCents, p.badge, p.billingCadence]),
     [
-      ['explorer', 10, 3000, 30000, null],
-      ['builder', 20, 2800, 56000, 'Most Popular'],
-      ['engineer', 36, 2600, 93600, 'Best Value'],
+      ['explorer', 10, 3000, 30000, null, 'upfront'],
+      ['builder', 20, 2800, 56000, 'Most Popular', 'monthly'],
+      ['engineer', 36, 2600, 93600, 'Best Value', 'monthly'],
     ]
   )
 })
@@ -40,16 +43,19 @@ test('getRoboticsPackage returns null for unknown ids', () => {
   assert.equal(getRoboticsPackage('builder')?.name, 'Builder')
 })
 
-test('buildPackageSnapshot produces an immutable, versioned snapshot', () => {
+test('buildPackageSnapshot produces an immutable, versioned snapshot including the active promo', () => {
   const snapshot = buildPackageSnapshot('builder')
   assert.deepEqual(snapshot, {
-    version: 1,
+    version: 3,
     id: 'builder',
     name: 'Builder',
     classCount: 20,
     perClassCents: 2800,
     subtotalCents: 56000,
     currency: 'CAD',
+    billingCadence: 'monthly',
+    promoLabel: PACKAGE_PROMO.active ? PACKAGE_PROMO.label : null,
+    promoDiscountCents: PACKAGE_PROMO.active ? 2800 : 0,
   })
   assert.equal(buildPackageSnapshot('bogus'), null)
 })
@@ -57,4 +63,19 @@ test('buildPackageSnapshot produces an immutable, versioned snapshot', () => {
 test('package objects are frozen (cannot be mutated at runtime)', () => {
   const pkg = getRoboticsPackage('explorer')
   assert.throws(() => { pkg.perClassCents = 1 }, /Cannot assign to read only property|frozen/i)
+})
+
+test('getPackagePromoDiscountCents equals one class at the package rate when the promo is active', () => {
+  for (const pkg of ROBOTICS_PACKAGES) {
+    const expected = PACKAGE_PROMO.active ? pkg.perClassCents * PACKAGE_PROMO.discountClasses : 0
+    assert.equal(getPackagePromoDiscountCents(pkg), expected, `${pkg.id} promo discount mismatch`)
+  }
+  assert.equal(getPackagePromoDiscountCents(null), 0)
+})
+
+test('getDiscountedSubtotalCents subtracts the promo discount and never goes negative', () => {
+  const pkg = getRoboticsPackage('explorer')
+  const expected = Math.max(0, pkg.subtotalCents - getPackagePromoDiscountCents(pkg))
+  assert.equal(getDiscountedSubtotalCents(pkg), expected)
+  assert.equal(getDiscountedSubtotalCents(null), 0)
 })

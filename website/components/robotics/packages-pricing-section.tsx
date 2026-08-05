@@ -1,5 +1,11 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ROBOTICS_PACKAGES } from "../../lib/robotics-packages.js";
+import { getPrograms } from "../../lib/booking";
+
+const ROBOTICS_CATEGORY = "Robotics";
 
 const HIGHLIGHTS = [
   "One-hour instructor-led classes",
@@ -16,11 +22,37 @@ function formatDollars(cents: number) {
 }
 
 export function PackagesPricingSection() {
+  const [promoLabel, setPromoLabel] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadPromo() {
+      try {
+        const programs = await getPrograms({ activeOnly: true });
+        const promoted = programs.find(
+          (p: any) => p.category === ROBOTICS_CATEGORY && p.discountActive && p.discountLabel
+        );
+        if (!cancelled) setPromoLabel(promoted?.discountLabel ?? null);
+      } catch {
+        // Promo banner is a nice-to-have — pricing itself never depends on it.
+      }
+    }
+    loadPromo();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <section id="packages" className="bg-white px-6 py-16 sm:px-10">
       <div className="mx-auto max-w-6xl">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-black uppercase tracking-[0.28em] text-[#ED174B]">Class Packages</p>
+          {promoLabel && (
+            <span className="mt-3 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-1 text-xs font-bold text-white shadow-sm">
+              🏷️ {promoLabel}
+            </span>
+          )}
           <h2 className="mt-3 text-2xl font-semibold text-[#0A2D5A] sm:text-3xl">Choose Your Robotics Package</h2>
           <p className="mt-3 text-base leading-7 text-slate-600">
             Classes are offered in the Beaverbrook area of Kanata. Each package is a complete class bundle — pick the

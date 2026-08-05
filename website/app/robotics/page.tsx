@@ -3,7 +3,6 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { Footer } from "../../components/footer";
-import { PackagesPricingSection } from "../../components/robotics/packages-pricing-section";
 import { RoboticsPrograms } from "../../components/robotics/robotics-programs";
 import { RoboticsCtaButtons } from "../../components/robotics/robotics-cta-buttons";
 import { SkillsSection } from "../../components/robotics/skills-section";
@@ -221,9 +220,6 @@ export default function RoboticsPage() {
             </div>
           </div>
         </section>
-
-        {/* Class packages — pricing */}
-        <PackagesPricingSection />
 
         {/* 4. Program cards + upcoming classes / launch list */}
         <section id="programs" className="relative overflow-hidden bg-slate-50 px-6 py-16 sm:px-10">

@@ -43,7 +43,7 @@ export const licensedRoboticsPrograms = [
     id: "smartivo",
     title: "Smartivo",
     ageRange: "4-6",
-    durationMin: 45,
+    durationMin: 60,
     description:
       "Smartivo is an early coding program where young children explore the basics of programming through playful, story-based missions. Using either tangible coding blocks or GoAlgo App, kids bring robots to life-making them move, light up, and react to their commands. Each session combines logic and fun to build confidence and foundational coding skills like command sequencing, conditions, loops and multithreading in an age-appropriate way.",
     learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/smartivo-enrichment-program/",

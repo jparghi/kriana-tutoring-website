@@ -9,7 +9,7 @@ import {
 } from '../../../../lib/booking'
 import BookingLayout from '../../../../components/booking/BookingLayout'
 import { BookingStepper } from '../../../../components/booking/BookingStepper'
-import { getRoboticsPackage, isValidPackageId } from '../../../../lib/robotics-packages.js'
+import { getRoboticsPackage, isValidPackageId, getPackagePromoDiscountCents, getDiscountedSubtotalCents } from '../../../../lib/robotics-packages.js'
 
 const ROBOTICS_CATEGORY = 'Robotics'
 
@@ -282,7 +282,14 @@ function RegisterForm() {
           {selectedPackage && !useWaitlist ? (
             <div className="shrink-0 text-right">
               <p className="text-xs font-bold uppercase tracking-wide text-[#0083CB]">{selectedPackage.name}</p>
-              <p className="text-xl font-black text-slate-800">${(selectedPackage.subtotalCents / 100).toFixed(0)}</p>
+              {getPackagePromoDiscountCents(selectedPackage) > 0 ? (
+                <>
+                  <p className="text-xs text-slate-400 line-through">${(selectedPackage.subtotalCents / 100).toFixed(0)}</p>
+                  <p className="text-xl font-black text-orange-600">${(getDiscountedSubtotalCents(selectedPackage) / 100).toFixed(0)}</p>
+                </>
+              ) : (
+                <p className="text-xl font-black text-slate-800">${(selectedPackage.subtotalCents / 100).toFixed(0)}</p>
+              )}
               <p className="text-xs text-slate-400">{selectedPackage.classCount} classes · package subtotal</p>
             </div>
           ) : price > 0 && !useWaitlist && (
@@ -385,7 +392,17 @@ function RegisterForm() {
                 <p className="mt-1 font-black text-slate-800">{selectedPackage.name}</p>
                 <p className="mt-1 text-slate-600">{selectedPackage.classCount} classes</p>
                 <p className="text-slate-600">${(selectedPackage.perClassCents / 100).toFixed(0)} per class</p>
-                <p className="font-semibold text-slate-800">${(selectedPackage.subtotalCents / 100).toFixed(0)} package subtotal</p>
+                {getPackagePromoDiscountCents(selectedPackage) > 0 ? (
+                  <>
+                    <p className="text-slate-500">
+                      <span className="line-through">${(selectedPackage.subtotalCents / 100).toFixed(0)}</span>{' '}
+                      <span className="font-semibold text-orange-600">${(getDiscountedSubtotalCents(selectedPackage) / 100).toFixed(0)} package subtotal</span>
+                    </p>
+                    <p className="mt-1 text-xs font-bold text-orange-600">🏷️ Back to School — first class free (${(getPackagePromoDiscountCents(selectedPackage) / 100).toFixed(0)} off)</p>
+                  </>
+                ) : (
+                  <p className="font-semibold text-slate-800">${(selectedPackage.subtotalCents / 100).toFixed(0)} package subtotal</p>
+                )}
                 <p className="mt-1 text-xs text-slate-400">Plus applicable taxes. Payment is not collected when requesting a spot.</p>
               </div>
             )}

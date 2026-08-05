@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { getPrograms, getActiveOfferings, isOfferingSoldOut, formatOfferingWeeklySchedule, applyProgramDiscount } from '../../lib/booking'
+import { getPrograms, getActiveOfferings, isOfferingSoldOut, formatOfferingWeeklySchedule } from '../../lib/booking'
 import { isRequestOnlyBookingFlow } from '../../lib/booking-flow'
 import { Footer } from '../../components/footer'
-import { getRoboticsPackage, isValidPackageId } from '../../lib/robotics-packages.js'
+import { getRoboticsPackage, isValidPackageId, getPackagePromoDiscountCents, getDiscountedSubtotalCents } from '../../lib/robotics-packages.js'
 
 const ROBOTICS_CATEGORY = 'Robotics'
 
@@ -74,11 +74,6 @@ function ScheduleBadge({ offerings, hasSchedule }: { offerings: any[]; hasSchedu
 function ProgramCard({ program, offerings, packageId }: { program: any; offerings: any[]; packageId?: string }) {
   const hasSchedule = offerings.length > 0
   const allSoldOut = hasSchedule && offerings.every(isOfferingSoldOut)
-  const nextOffering = offerings[0]
-  const listedTuition = nextOffering?.tuitionCents
-    || (program.isDepositOnly ? program.depositAmount : program.price)
-    || 0
-  const discount = applyProgramDiscount(listedTuition, program)
   const accent = CATEGORY_ACCENTS[program.category] ?? DEFAULT_ACCENT
   const ageGrade = [
     program.ageRange ? `Ages ${program.ageRange}` : '',
@@ -129,28 +124,7 @@ function ProgramCard({ program, offerings, packageId }: { program: any; offering
           <ScheduleBadge offerings={offerings} hasSchedule={hasSchedule} />
         </div>
 
-        <div className="mt-auto pt-3 flex items-end justify-between gap-2 border-t border-slate-100 mt-3">
-          {listedTuition > 0 ? (
-            <div>
-              {discount.active ? (
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-[11px] text-slate-400 line-through">${(listedTuition / 100).toFixed(0)}</span>
-                  <span className="text-base font-black text-orange-600">${(discount.finalCents / 100).toFixed(0)}</span>
-                </div>
-              ) : (
-                <span className="text-base font-black text-slate-900">${(listedTuition / 100).toFixed(0)}</span>
-              )}
-              {discount.active && (
-                <span className="mt-1 flex w-fit items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-2 py-0.5 text-[9px] font-bold text-white shadow-sm">
-                  🏷️ {discount.label}
-                </span>
-              )}
-            </div>
-          ) : (
-            <span className="max-w-[6.5rem] text-[10px] font-semibold leading-snug text-slate-500">
-              {hasSchedule ? 'Confirmed after review' : 'TBA'}
-            </span>
-          )}
+        <div className="mt-auto pt-3 flex items-center justify-end gap-2 border-t border-slate-100 mt-3">
           <Link
             href={packageId && program.category === ROBOTICS_CATEGORY ? `/booking/${program.id}?package=${packageId}` : `/booking/${program.id}`}
             className="inline-flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-white shadow-sm transition-all duration-200 active:scale-95 hover:shadow-[0_4px_12px_rgba(12,97,98,0.35)]"
@@ -249,8 +223,16 @@ export default function BookingPage() {
               <div>
                 <p className="text-xs font-bold uppercase tracking-wide text-[#0083CB]">Selected Package</p>
                 <p className="mt-0.5 text-sm font-semibold text-slate-800">
-                  {selectedPackage.name} — {selectedPackage.classCount} classes · ${(selectedPackage.perClassCents / 100).toFixed(0)}/class · $
-                  {(selectedPackage.subtotalCents / 100).toFixed(0)} total (plus applicable taxes)
+                  {selectedPackage.name} — {selectedPackage.classCount} classes · ${(selectedPackage.perClassCents / 100).toFixed(0)}/class · {
+                    getPackagePromoDiscountCents(selectedPackage) > 0 ? (
+                      <>
+                        <span className="text-slate-400 line-through">${(selectedPackage.subtotalCents / 100).toFixed(0)}</span>{' '}
+                        <span className="font-bold text-orange-600">${(getDiscountedSubtotalCents(selectedPackage) / 100).toFixed(0)}</span> total (plus applicable taxes)
+                      </>
+                    ) : (
+                      <>${(selectedPackage.subtotalCents / 100).toFixed(0)} total (plus applicable taxes)</>
+                    )
+                  }
                 </p>
               </div>
               <button
