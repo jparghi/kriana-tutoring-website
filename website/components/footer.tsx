@@ -50,10 +50,10 @@ export function Footer() {
         <div className="max-w-sm space-y-5">
           <Link href="/" className="inline-flex items-center" aria-label="Kriana Tutoring home">
             <Image
-              src="/images/kriana-tutoring-logo-horizontal-6.png"
+              src="/images/kriana-tutoring-logo-horizontal-5.png"
               alt="Kriana Tutoring"
-              width={1355}
-              height={242}
+              width={1266}
+              height={294}
               className="h-10 w-auto object-contain brightness-0 invert"
             />
           </Link>
