@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { getPrograms, getActiveOfferings, isOfferingSoldOut, formatOfferingWeeklySchedule } from '../../lib/booking'
+import { getPrograms, getActiveOfferings, isOfferingSoldOut, formatOfferingScheduleDetail } from '../../lib/booking'
 import { isRequestOnlyBookingFlow } from '../../lib/booking-flow'
 import { Footer } from '../../components/footer'
 import { getRoboticsPackage, isValidPackageId, getPackagePromoDiscountCents, getDiscountedSubtotalCents } from '../../lib/robotics-packages.js'
@@ -61,7 +61,7 @@ function ScheduleBadge({ offerings, hasSchedule }: { offerings: any[]; hasSchedu
         <ul className="space-y-2">
           {offerings.slice(0, 3).map((offering: any) => (
             <li key={offering.id} className="text-xs">
-              <p className="font-semibold text-slate-700">{formatOfferingWeeklySchedule(offering)}</p>
+              <p className="font-semibold text-slate-700">{formatOfferingScheduleDetail(offering)}</p>
               {offering.location && <p className="text-slate-400 truncate">{offering.location}</p>}
             </li>
           ))}

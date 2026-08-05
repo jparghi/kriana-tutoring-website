@@ -89,8 +89,13 @@ export async function getPrograms({ activeOnly = false } = {}) {
   const all = (payload?.programs ?? []) as any[]
   if (!activeOnly) return all
   return all.sort((a, b) => {
-    const ta = a.createdAt?.toMillis?.() ?? 0
-    const tb = b.createdAt?.toMillis?.() ?? 0
+    // Programs with an explicit sortOrder (e.g. the curated Robotics lineup)
+    // are shown first, in that order; everything else falls back to newest-first.
+    const oa = typeof a.sortOrder === 'number' ? a.sortOrder : Infinity
+    const ob = typeof b.sortOrder === 'number' ? b.sortOrder : Infinity
+    if (oa !== ob) return oa - ob
+    const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0
+    const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0
     return tb - ta
   })
 }
@@ -369,6 +374,41 @@ export function formatOfferingWeeklySchedule(offering: any) {
   if (day && start) return `${day}${day.endsWith('s') ? '' : 's'} at ${start}`
   if (offering?.startDateTime) return formatDateTime(offering.startDateTime)
   return day || 'Schedule to be confirmed'
+}
+
+function toDateValue(value: any) {
+  if (!value) return null
+  return value?.toDate ? value.toDate() : new Date(value)
+}
+
+/**
+ * Day of week, first-class date, and from–to time — used where a compact
+ * weekly-cadence summary (formatOfferingWeeklySchedule) isn't specific
+ * enough, e.g. a tooltip. Modern offerings carry weekday/startTime/endTime
+ * directly; legacy sessions only have a single startDateTime/endDateTime, so
+ * the day/date/time are derived from that.
+ */
+export function formatOfferingScheduleDetail(offering: any) {
+  if (offering?.weekday && offering?.startTime) {
+    const day = String(offering.weekday)
+    const dayLabel = day.endsWith('s') ? day : `${day}s`
+    const start = formatTimeOfDay(offering.startTime)
+    const end = formatTimeOfDay(offering.endTime)
+    const dateLabel = offering?.firstClassDate ? `, starting ${formatDate(offering.firstClassDate)}` : ''
+    return start && end ? `${dayLabel}, ${start}–${end}${dateLabel}` : `${dayLabel}${dateLabel}`
+  }
+
+  const start = toDateValue(offering?.startDateTime)
+  if (start) {
+    const end = toDateValue(offering?.endDateTime)
+    const dayLabel = start.toLocaleDateString('en-CA', { timeZone: 'America/Toronto', weekday: 'long' })
+    const dateLabel = start.toLocaleDateString('en-CA', { timeZone: 'America/Toronto', month: 'long', day: 'numeric' })
+    const startTime = start.toLocaleTimeString('en-CA', { timeZone: 'America/Toronto', hour: 'numeric', minute: '2-digit' })
+    const endTime = end ? end.toLocaleTimeString('en-CA', { timeZone: 'America/Toronto', hour: 'numeric', minute: '2-digit' }) : ''
+    return endTime ? `${dayLabel}, ${dateLabel} · ${startTime}–${endTime}` : `${dayLabel}, ${dateLabel} · ${startTime}`
+  }
+
+  return 'Schedule to be confirmed'
 }
 
 export function formatOfferingDateRange(offering: any) {
