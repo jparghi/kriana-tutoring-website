@@ -18,12 +18,9 @@ export const metadata: Metadata = {
     "Personalized tutoring for kids JK–Grade 8 in Ottawa, Kanata & Stittsville. Math, reading, and science support — assessment-first and results-driven.",
   metadataBase: new URL("https://www.krianatutoring.com"),
   icons: {
-    icon: [
-      { url: "/images/favicon/logo-full-book-v1.png", type: "image/png", sizes: "1254x1254" },
-      { url: "/favicon.ico", type: "image/x-icon" }
-    ],
-    shortcut: [{ url: "/images/favicon/logo-full-book-v1.png", type: "image/png" }],
-    apple: [{ url: "/images/favicon/logo-full-book-v1.png", sizes: "1254x1254" }]
+    icon: [{ url: "/images/favicon/logo-full-book-v3-rounded.png", type: "image/png", sizes: "1254x1254" }],
+    shortcut: [{ url: "/images/favicon/logo-full-book-v3-rounded.png", type: "image/png" }],
+    apple: [{ url: "/images/favicon/logo-full-book-v3-rounded.png", sizes: "1254x1254" }]
   },
   openGraph: {
     title: "Kriana Tutoring | Ottawa's Personalized Tutoring for Kids",
