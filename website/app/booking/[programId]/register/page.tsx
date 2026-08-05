@@ -9,6 +9,9 @@ import {
 } from '../../../../lib/booking'
 import BookingLayout from '../../../../components/booking/BookingLayout'
 import { BookingStepper } from '../../../../components/booking/BookingStepper'
+import { getRoboticsPackage, isValidPackageId, getPackagePromoDiscountCents, getDiscountedSubtotalCents } from '../../../../lib/robotics-packages.js'
+
+const ROBOTICS_CATEGORY = 'Robotics'
 
 function Field({ label, children, required, hint }: { label: string; children: React.ReactNode; required?: boolean; hint?: string }) {
   return (
@@ -62,6 +65,7 @@ function RegisterForm() {
   const legacySessionId = searchParams.get('sessionId') ?? ''
   const selectedOfferingId = offeringId || legacySessionId
   const isWaitlistParam = searchParams.get('waitlist') === '1'
+  const packageIdParam = searchParams.get('package') ?? ''
   const router = useRouter()
   const clientRequestId = useRef('')
 
@@ -150,6 +154,7 @@ function RegisterForm() {
             : { offeringId: offering.id }),
           clientRequestId: clientRequestId.current,
           requestedAction: useWaitlist ? 'waitlist' : 'enrollment',
+          ...(selectedPackage ? { packageId: selectedPackage.id } : {}),
           registration: {
             parentName: form.parentName,
             parentEmail: form.parentEmail,
@@ -197,6 +202,25 @@ function RegisterForm() {
       <div className="text-center py-20">
         <p className="text-slate-500 mb-4">This program schedule was not found or is no longer available.</p>
         <Link href="/booking" className="text-[#0c6162] font-semibold hover:underline">← Browse Programs</Link>
+      </div>
+    </BookingLayout>
+  )
+
+  const isRobotics = program.category === ROBOTICS_CATEGORY
+  const selectedPackage = isRobotics && isValidPackageId(packageIdParam) ? getRoboticsPackage(packageIdParam) : null
+
+  // Robotics registrations are always package-based — never silently default
+  // to a package if one wasn't actually chosen on the program page.
+  if (isRobotics && !selectedPackage) return (
+    <BookingLayout backTo={`/booking/${programId}`} backLabel="Back to Program">
+      <div className="mx-auto max-w-lg rounded-2xl border border-slate-100 bg-white px-6 py-12 text-center shadow-sm">
+        <h1 className="text-xl font-black text-slate-800">Please choose a class package first</h1>
+        <p className="mt-2 text-sm leading-relaxed text-slate-500">
+          Go back to the program page and choose Explorer, Builder, or Engineer before requesting a spot.
+        </p>
+        <Link href={`/booking/${programId}`} className="mt-5 inline-block text-sm font-semibold text-[#0c6162] hover:underline">
+          ← Choose a Package
+        </Link>
       </div>
     </BookingLayout>
   )
@@ -255,7 +279,20 @@ function RegisterForm() {
             <p className="text-sm text-slate-500 mt-0.5">{offering.title} · {formatOfferingWeeklySchedule(offering)}</p>
             {dateRange && <p className="text-xs text-slate-400 mt-0.5">{dateRange}</p>}
           </div>
-          {price > 0 && !useWaitlist && (
+          {selectedPackage && !useWaitlist ? (
+            <div className="shrink-0 text-right">
+              <p className="text-xs font-bold uppercase tracking-wide text-[#0083CB]">{selectedPackage.name}</p>
+              {getPackagePromoDiscountCents(selectedPackage) > 0 ? (
+                <>
+                  <p className="text-xs text-slate-400 line-through">${(selectedPackage.subtotalCents / 100).toFixed(0)}</p>
+                  <p className="text-xl font-black text-orange-600">${(getDiscountedSubtotalCents(selectedPackage) / 100).toFixed(0)}</p>
+                </>
+              ) : (
+                <p className="text-xl font-black text-slate-800">${(selectedPackage.subtotalCents / 100).toFixed(0)}</p>
+              )}
+              <p className="text-xs text-slate-400">{selectedPackage.classCount} classes · package subtotal</p>
+            </div>
+          ) : price > 0 && !useWaitlist && (
             <div className="shrink-0 text-right">
               {discount.active ? (
                 <>
@@ -348,6 +385,28 @@ function RegisterForm() {
               <h3 className="font-black text-slate-800 text-base">Review & Confirm</h3>
               <p className="text-sm text-slate-400 mt-0.5">Double-check your details before submitting your request.</p>
             </div>
+
+            {selectedPackage && !useWaitlist && (
+              <div className="rounded-xl border border-[#0083CB]/25 bg-[#0083CB]/5 px-4 py-3.5 text-sm">
+                <p className="text-xs font-bold uppercase tracking-wide text-[#0083CB]">Selected Package</p>
+                <p className="mt-1 font-black text-slate-800">{selectedPackage.name}</p>
+                <p className="mt-1 text-slate-600">{selectedPackage.classCount} classes</p>
+                <p className="text-slate-600">${(selectedPackage.perClassCents / 100).toFixed(0)} per class</p>
+                {getPackagePromoDiscountCents(selectedPackage) > 0 ? (
+                  <>
+                    <p className="text-slate-500">
+                      <span className="line-through">${(selectedPackage.subtotalCents / 100).toFixed(0)}</span>{' '}
+                      <span className="font-semibold text-orange-600">${(getDiscountedSubtotalCents(selectedPackage) / 100).toFixed(0)} package subtotal</span>
+                    </p>
+                    <p className="mt-1 text-xs font-bold text-orange-600">🏷️ Back to School — first class free (${(getPackagePromoDiscountCents(selectedPackage) / 100).toFixed(0)} off)</p>
+                  </>
+                ) : (
+                  <p className="font-semibold text-slate-800">${(selectedPackage.subtotalCents / 100).toFixed(0)} package subtotal</p>
+                )}
+                <p className="mt-1 text-xs text-slate-400">Plus applicable taxes. Payment is not collected when requesting a spot.</p>
+              </div>
+            )}
+
             <div className="bg-slate-50 rounded-xl divide-y divide-slate-100 text-sm">
               {[
                 { label: 'Parent', value: form.parentName },

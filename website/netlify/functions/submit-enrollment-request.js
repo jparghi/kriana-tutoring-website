@@ -2,6 +2,9 @@ import crypto from 'node:crypto'
 import nodemailer from 'nodemailer'
 import { FieldValue, Timestamp } from 'firebase-admin/firestore'
 import { getAdminDb } from './_lib/firebase-admin.js'
+import { isValidPackageId, getRoboticsPackage, buildPackageSnapshot } from '../../lib/robotics-packages.js'
+
+const ROBOTICS_CATEGORY = 'Robotics'
 
 const JSON_HEADERS = {
   'Content-Type': 'application/json',
@@ -31,7 +34,7 @@ function normalizeMultiline(value, maxLength) {
   return value.trim().replace(/\r\n/g, '\n').slice(0, maxLength)
 }
 
-function validatePayload(body) {
+export function validatePayload(body) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
     return { error: 'Invalid request body.' }
   }
@@ -41,6 +44,9 @@ function validatePayload(body) {
   const sessionId = normalizeText(body.sessionId, 150)
   const clientRequestId = normalizeText(body.clientRequestId, 100)
   const requestedAction = normalizeText(body.requestedAction, 20)
+  // The browser only ever sends an id; all pricing/name/class-count details
+  // are resolved server-side from the canonical catalogue in validateCatalogueRequest.
+  const packageId = normalizeText(body.packageId, 50)
   const input = body.registration
 
   if (!programId || (!offeringId && !sessionId) || !input || typeof input !== 'object' || Array.isArray(input)) {
@@ -57,6 +63,9 @@ function validatePayload(body) {
   }
   if (!/^[a-zA-Z0-9_-]{8,100}$/.test(clientRequestId)) {
     return { error: 'Request identifier is invalid.' }
+  }
+  if (packageId && !isValidPackageId(packageId)) {
+    return { error: 'Selected class package is not recognized.' }
   }
 
   const registration = {
@@ -82,7 +91,7 @@ function validatePayload(body) {
   }
   if (!registration.consentAccepted) return { error: 'Consent is required before submitting.' }
 
-  return { programId, offeringId, sessionId, clientRequestId, requestedAction, registration }
+  return { programId, offeringId, sessionId, clientRequestId, requestedAction, packageId, registration }
 }
 
 function toDateValue(value) {
@@ -197,7 +206,7 @@ function ageRange(program, schedule) {
   }
 }
 
-class RequestRejectedError extends Error {
+export class RequestRejectedError extends Error {
   constructor(statusCode, message) {
     super(message)
     this.name = 'RequestRejectedError'
@@ -205,7 +214,7 @@ class RequestRejectedError extends Error {
   }
 }
 
-function validateCatalogueRequest(request, programDoc, sessionDoc) {
+export function validateCatalogueRequest(request, programDoc, sessionDoc) {
   if (!programDoc.exists || !sessionDoc.exists) {
     throw new RequestRejectedError(404, 'This program or class schedule is no longer available.')
   }
@@ -273,6 +282,35 @@ function validateCatalogueRequest(request, programDoc, sessionDoc) {
         ? 'This class schedule is full. Please return to the program page and join the waitlist.'
         : 'This class schedule is full and its waitlist is closed.',
     )
+  }
+
+  // Class packages (Explorer/Builder/Engineer) are a Robotics-only concept.
+  // The browser only ever sends a packageId; the package's name, class count,
+  // and pricing are always resolved here from the canonical catalogue.
+  const isRoboticsCategory = program.category === ROBOTICS_CATEGORY
+  if (isRoboticsCategory) {
+    if (!request.packageId) {
+      throw new RequestRejectedError(400, 'Please choose a class package before requesting a spot.')
+    }
+    if (!isOffering) {
+      throw new RequestRejectedError(
+        409,
+        'Class packages are only available for current class schedules. Please choose a current offering.',
+      )
+    }
+    const selectedPackage = getRoboticsPackage(request.packageId)
+    if (!selectedPackage) {
+      throw new RequestRejectedError(400, 'Selected class package is not recognized.')
+    }
+    const offeringClassCount = Number(session.classCount)
+    if (!Number.isSafeInteger(offeringClassCount) || offeringClassCount < selectedPackage.classCount) {
+      throw new RequestRejectedError(
+        409,
+        'This class schedule does not have enough classes remaining for the selected package.',
+      )
+    }
+  } else if (request.packageId) {
+    throw new RequestRejectedError(400, 'Class packages are only available for Robotics programs.')
   }
 
   return { program, session }
@@ -354,7 +392,11 @@ function createTransport() {
   })
 }
 
-async function sendAcknowledgements({ registration, program, session, reference, isWaitlist }) {
+function formatAmount(cents) {
+  return `$${(Number(cents ?? 0) / 100).toFixed(2)} CAD`
+}
+
+async function sendAcknowledgements({ registration, program, session, reference, isWaitlist, packageSnapshot }) {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     console.warn('Enrollment request saved; SMTP credentials are not configured, so email was skipped.')
     return
@@ -384,6 +426,7 @@ async function sendAcknowledgements({ registration, program, session, reference,
         <div style="background:#f8fafc;padding:16px;border-radius:10px;margin:18px 0">
           <p style="margin:0 0 8px"><strong>Schedule:</strong> ${schedule}</p>
           ${location ? `<p style="margin:0 0 8px"><strong>Location:</strong> ${location}</p>` : ''}
+          ${packageSnapshot ? `<p style="margin:0 0 8px"><strong>Package:</strong> ${escapeHtml(packageSnapshot.name)} — ${packageSnapshot.classCount} classes · ${formatAmount(packageSnapshot.perClassCents)}/class · ${formatAmount(packageSnapshot.subtotalCents)} package subtotal (plus applicable taxes)</p>` : ''}
           <p style="margin:0"><strong>Reference:</strong> ${safeReference}</p>
         </div>
         <p><strong>No payment is due now.</strong> This request does not yet confirm a place. Our team will review availability and contact you with next steps${isWaitlist ? ' if a place becomes available' : ''}.</p>
@@ -397,6 +440,7 @@ async function sendAcknowledgements({ registration, program, session, reference,
     <p><strong>Reference:</strong> ${safeReference}</p>
     <p><strong>Program:</strong> ${programTitle}</p>
     <p><strong>Schedule:</strong> ${schedule}</p>
+    ${packageSnapshot ? `<p><strong>Package:</strong> ${escapeHtml(packageSnapshot.name)} — ${packageSnapshot.classCount} classes · ${formatAmount(packageSnapshot.perClassCents)}/class · ${formatAmount(packageSnapshot.subtotalCents)} subtotal</p>` : ''}
     <p><strong>Child:</strong> ${childName} (age ${escapeHtml(registration.childAge)}${registration.childGrade ? `, ${escapeHtml(registration.childGrade)}` : ''})</p>
     <p><strong>Parent:</strong> ${parentName} · ${escapeHtml(registration.parentEmail)} · ${escapeHtml(registration.parentPhone)}</p>
     <p>Review the private registration record in the program management portal for all additional details.</p>`
@@ -411,12 +455,16 @@ async function sendAcknowledgements({ registration, program, session, reference,
   }
 }
 
+export function idempotencyDigest(request) {
+  const scheduleId = request.offeringId || request.sessionId
+  return crypto.createHash('sha256')
+    .update(`${request.programId}|${scheduleId}|${request.requestedAction}|${request.packageId || ''}|${request.clientRequestId}`)
+    .digest('hex')
+}
+
 function idempotencyRef(db, request) {
   if (!request.clientRequestId) return null
-  const scheduleId = request.offeringId || request.sessionId
-  const digest = crypto.createHash('sha256')
-    .update(`${request.programId}|${scheduleId}|${request.requestedAction}|${request.clientRequestId}`)
-    .digest('hex')
+  const digest = idempotencyDigest(request)
   return db.collection('enrollmentRequestKeys').doc(digest)
 }
 
@@ -488,6 +536,7 @@ async function saveWaitlistRequest(db, request) {
       bookingFlowMode: 'request_only',
       quotedTuitionCents: quotedTuition(program, session),
       currency: session.currency || program.currency || 'CAD',
+      ...(request.packageId ? { packageSnapshot: buildPackageSnapshot(request.packageId) } : {}),
       programSnapshot: { title: program.title || '' },
       scheduleSnapshot: scheduleSnapshot(session, program),
       createdAt: FieldValue.serverTimestamp(),
@@ -503,7 +552,14 @@ async function saveWaitlistRequest(db, request) {
       })
     }
 
-    return { id: ref.id, reference: publicReference, duplicate: false, program, session }
+    return {
+      id: ref.id,
+      reference: publicReference,
+      duplicate: false,
+      program,
+      session,
+      packageSnapshot: request.packageId ? buildPackageSnapshot(request.packageId) : null,
+    }
   })
 }
 
@@ -553,6 +609,7 @@ async function saveEnrollmentRequest(db, request) {
       amountPaid: 0,
       quotedTuitionCents: quotedTuition(program, session),
       currency: session.currency || program.currency || 'CAD',
+      ...(request.packageId ? { packageSnapshot: buildPackageSnapshot(request.packageId) } : {}),
       programSnapshot: {
         title: program.title || '',
         category: program.category || '',
@@ -572,7 +629,14 @@ async function saveEnrollmentRequest(db, request) {
       })
     }
 
-    return { id: registrationRef.id, reference: number, duplicate: false, program, session }
+    return {
+      id: registrationRef.id,
+      reference: number,
+      duplicate: false,
+      program,
+      session,
+      packageSnapshot: request.packageId ? buildPackageSnapshot(request.packageId) : null,
+    }
   })
 }
 
@@ -614,6 +678,7 @@ export const handler = async event => {
           session: saved.session,
           reference: saved.reference,
           isWaitlist: true,
+          packageSnapshot: saved.packageSnapshot,
         })
       }
       return json(201, { reference: saved.reference, requestedAction: 'waitlist' })
@@ -627,6 +692,7 @@ export const handler = async event => {
         session: saved.session,
         reference: saved.reference,
         isWaitlist: false,
+        packageSnapshot: saved.packageSnapshot,
       })
     }
 

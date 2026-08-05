@@ -6,6 +6,7 @@ const PROGRAM_FIELDS = [
   'refundPolicyText', 'imageUrl', 'durationMin', 'learnMoreUrl',
   'bookingModel', 'offeringModelVersion', 'legacyBookingEnabled',
   'discountActive', 'discountLabel', 'discountType', 'discountValue',
+  'sortOrder', 'createdAt',
 ]
 const OFFERING_FIELDS = [
   'programId', 'title', 'termName', 'location', 'timezone', 'weekday',

@@ -2,9 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { getPrograms, getActiveOfferings, isOfferingSoldOut, formatOfferingWeeklySchedule, applyProgramDiscount } from '../../lib/booking'
+import { getPrograms, getActiveOfferings, isOfferingSoldOut, formatOfferingScheduleDetail } from '../../lib/booking'
 import { isRequestOnlyBookingFlow } from '../../lib/booking-flow'
 import { Footer } from '../../components/footer'
+import { getRoboticsPackage, isValidPackageId, getPackagePromoDiscountCents, getDiscountedSubtotalCents } from '../../lib/robotics-packages.js'
+
+const ROBOTICS_CATEGORY = 'Robotics'
 
 const CATEGORY_ACCENTS: Record<string, { bg: string; text: string; bar: string }> = {
   'Demo Class':      { bg: 'bg-sky-50',    text: 'text-sky-700',    bar: '#0EA5E9' },
@@ -58,7 +61,7 @@ function ScheduleBadge({ offerings, hasSchedule }: { offerings: any[]; hasSchedu
         <ul className="space-y-2">
           {offerings.slice(0, 3).map((offering: any) => (
             <li key={offering.id} className="text-xs">
-              <p className="font-semibold text-slate-700">{formatOfferingWeeklySchedule(offering)}</p>
+              <p className="font-semibold text-slate-700">{formatOfferingScheduleDetail(offering)}</p>
               {offering.location && <p className="text-slate-400 truncate">{offering.location}</p>}
             </li>
           ))}
@@ -68,14 +71,9 @@ function ScheduleBadge({ offerings, hasSchedule }: { offerings: any[]; hasSchedu
   )
 }
 
-function ProgramCard({ program, offerings }: { program: any; offerings: any[] }) {
+function ProgramCard({ program, offerings, packageId }: { program: any; offerings: any[]; packageId?: string }) {
   const hasSchedule = offerings.length > 0
   const allSoldOut = hasSchedule && offerings.every(isOfferingSoldOut)
-  const nextOffering = offerings[0]
-  const listedTuition = nextOffering?.tuitionCents
-    || (program.isDepositOnly ? program.depositAmount : program.price)
-    || 0
-  const discount = applyProgramDiscount(listedTuition, program)
   const accent = CATEGORY_ACCENTS[program.category] ?? DEFAULT_ACCENT
   const ageGrade = [
     program.ageRange ? `Ages ${program.ageRange}` : '',
@@ -126,30 +124,9 @@ function ProgramCard({ program, offerings }: { program: any; offerings: any[] })
           <ScheduleBadge offerings={offerings} hasSchedule={hasSchedule} />
         </div>
 
-        <div className="mt-auto pt-3 flex items-end justify-between gap-2 border-t border-slate-100 mt-3">
-          {listedTuition > 0 ? (
-            <div>
-              {discount.active ? (
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-[11px] text-slate-400 line-through">${(listedTuition / 100).toFixed(0)}</span>
-                  <span className="text-base font-black text-orange-600">${(discount.finalCents / 100).toFixed(0)}</span>
-                </div>
-              ) : (
-                <span className="text-base font-black text-slate-900">${(listedTuition / 100).toFixed(0)}</span>
-              )}
-              {discount.active && (
-                <span className="mt-1 flex w-fit items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-2 py-0.5 text-[9px] font-bold text-white shadow-sm">
-                  🏷️ {discount.label}
-                </span>
-              )}
-            </div>
-          ) : (
-            <span className="max-w-[6.5rem] text-[10px] font-semibold leading-snug text-slate-500">
-              {hasSchedule ? 'Confirmed after review' : 'TBA'}
-            </span>
-          )}
+        <div className="mt-auto pt-3 flex items-center justify-end gap-2 border-t border-slate-100 mt-3">
           <Link
-            href={`/booking/${program.id}`}
+            href={packageId && program.category === ROBOTICS_CATEGORY ? `/booking/${program.id}?package=${packageId}` : `/booking/${program.id}`}
             className="inline-flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-white shadow-sm transition-all duration-200 active:scale-95 hover:shadow-[0_4px_12px_rgba(12,97,98,0.35)]"
             style={{ backgroundColor: '#0c6162' }}
           >
@@ -169,10 +146,19 @@ export default function BookingPage() {
   const [offeringsByProgram, setOfferingsByProgram] = useState<Record<string, any[]>>({})
   const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState('All')
+  const [selectedPackageId, setSelectedPackageId] = useState('')
 
   useEffect(() => {
-    const categoryParam = new URLSearchParams(window.location.search).get('category')
+    const params = new URLSearchParams(window.location.search)
+    const categoryParam = params.get('category')
     if (categoryParam) setSelectedCategory(categoryParam)
+
+    // A robotics package selection only ever applies to the Robotics category —
+    // never carry it into an unrelated category filter.
+    const packageParam = params.get('package')
+    if (categoryParam === ROBOTICS_CATEGORY && packageParam && isValidPackageId(packageParam)) {
+      setSelectedPackageId(packageParam)
+    }
 
     async function load() {
       try {
@@ -192,6 +178,7 @@ export default function BookingPage() {
 
   const categories = ['All', ...Array.from(new Set(programs.map((p: any) => p.category).filter(Boolean)))]
   const filtered = selectedCategory === 'All' ? programs : programs.filter((p: any) => p.category === selectedCategory)
+  const selectedPackage = selectedPackageId ? getRoboticsPackage(selectedPackageId) : null
 
   return (
     <>
@@ -231,6 +218,33 @@ export default function BookingPage() {
         </section>
 
         <div className="mx-auto max-w-6xl px-6 pb-16 sm:px-10">
+          {selectedPackage && (
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#0083CB]/25 bg-[#0083CB]/5 px-5 py-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-[#0083CB]">Selected Package</p>
+                <p className="mt-0.5 text-sm font-semibold text-slate-800">
+                  {selectedPackage.name} — {selectedPackage.classCount} classes · ${(selectedPackage.perClassCents / 100).toFixed(0)}/class · {
+                    getPackagePromoDiscountCents(selectedPackage) > 0 ? (
+                      <>
+                        <span className="text-slate-400 line-through">${(selectedPackage.subtotalCents / 100).toFixed(0)}</span>{' '}
+                        <span className="font-bold text-orange-600">${(getDiscountedSubtotalCents(selectedPackage) / 100).toFixed(0)}</span> total (plus applicable taxes)
+                      </>
+                    ) : (
+                      <>${(selectedPackage.subtotalCents / 100).toFixed(0)} total (plus applicable taxes)</>
+                    )
+                  }
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedPackageId('')}
+                className="text-xs font-semibold text-slate-500 hover:text-slate-700"
+              >
+                Change package
+              </button>
+            </div>
+          )}
+
           {!loading && categories.length > 1 && (
             <div className="flex flex-wrap gap-2 mb-8">
               {categories.map(cat => (
@@ -271,6 +285,7 @@ export default function BookingPage() {
                   key={program.id}
                   program={program}
                   offerings={offeringsByProgram[program.id] ?? []}
+                  packageId={selectedPackageId}
                 />
               ))}
             </div>
