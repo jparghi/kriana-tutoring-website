@@ -4,11 +4,12 @@ import { useEffect, useRef, useState, Suspense } from 'react'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
-  getProgram, getOffering, formatOfferingDateRange, formatOfferingWeeklySchedule,
+  getProgram, getOffering, getPackageClassSchedule, formatOfferingDateRange, formatOfferingWeeklySchedule,
   isOfferingRequestWindowOpen, isOfferingSoldOut, programUsesOfferings, applyProgramDiscount,
 } from '../../../../lib/booking'
 import BookingLayout from '../../../../components/booking/BookingLayout'
 import { BookingStepper } from '../../../../components/booking/BookingStepper'
+import { ClassScheduleDisclosure } from '../../../../components/booking/ClassScheduleDisclosure'
 import { getRoboticsPackage, isValidPackageId, getPackagePromoDiscountCents, getDiscountedSubtotalCents, getBillingCadenceLabel } from '../../../../lib/robotics-packages.js'
 
 const ROBOTICS_CATEGORY = 'Robotics'
@@ -184,6 +185,11 @@ function RegisterForm() {
       const requestParams = new URLSearchParams()
       if (result.registrationNumber) requestParams.set('reference', result.registrationNumber)
       if (program?.title) requestParams.set('program', program.title)
+      // Carried through so the confirmation page can show the same itemized
+      // class schedule the family just reviewed, without re-deriving it from
+      // scratch or trying to serialize the whole schedule into the URL.
+      if (offering?.source !== 'legacySession') requestParams.set('offeringId', offering.id)
+      if (selectedPackage) requestParams.set('package', selectedPackage.id)
       router.push(`/booking/request-received?${requestParams.toString()}`)
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.')
@@ -263,7 +269,8 @@ function RegisterForm() {
   const discount = applyProgramDiscount(price, program)
   const priceLabel = price ? `$${(price / 100).toFixed(2)} ${offering.currency ?? 'CAD'}` : ''
   const discountedPriceLabel = discount.active ? `$${(discount.finalCents / 100).toFixed(2)} ${offering.currency ?? 'CAD'}` : ''
-  const dateRange = formatOfferingDateRange(offering)
+  const dateRange = formatOfferingDateRange(offering, selectedPackage)
+  const packageSchedule = selectedPackage ? getPackageClassSchedule(offering, selectedPackage) : null
   const isBirthday = program.category === 'Birthday Party'
 
   return (
@@ -405,6 +412,11 @@ function RegisterForm() {
                 )}
                 <p className="mt-1.5 text-xs font-semibold text-[#0c6162]">{getBillingCadenceLabel(selectedPackage)}</p>
                 <p className="mt-1 text-xs text-slate-400">Plus applicable taxes. Payment is not collected when requesting a spot.</p>
+                {packageSchedule && packageSchedule.classDates.length > 0 && (
+                  <div className="mt-3">
+                    <ClassScheduleDisclosure schedule={packageSchedule} packageName={selectedPackage.name} />
+                  </div>
+                )}
               </div>
             )}
 

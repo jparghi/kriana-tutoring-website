@@ -1,15 +1,38 @@
 'use client'
 
-import { Suspense } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import BookingLayout from '../../../components/booking/BookingLayout'
 import { BookingStepper } from '../../../components/booking/BookingStepper'
+import { ClassScheduleDisclosure } from '../../../components/booking/ClassScheduleDisclosure'
+import { getOffering, getPackageClassSchedule } from '../../../lib/booking'
+import { getRoboticsPackage, isValidPackageId } from '../../../lib/robotics-packages.js'
 
 function RequestReceivedContent() {
   const searchParams = useSearchParams()
   const program = searchParams.get('program')
   const reference = searchParams.get('reference')
+  const offeringId = searchParams.get('offeringId') ?? ''
+  const packageIdParam = searchParams.get('package') ?? ''
+
+  const selectedPackage = isValidPackageId(packageIdParam) ? getRoboticsPackage(packageIdParam) : null
+  const [packageSchedule, setPackageSchedule] = useState<any>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      if (!offeringId || !selectedPackage) return
+      const offering = await getOffering(offeringId)
+      if (!cancelled && offering) setPackageSchedule(getPackageClassSchedule(offering, selectedPackage))
+    }
+    load()
+    return () => { cancelled = true }
+    // selectedPackage is derived fresh each render from packageIdParam, which
+    // is what actually identifies it — depending on packageIdParam directly
+    // avoids re-running this effect on every unrelated re-render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [offeringId, packageIdParam])
 
   return (
     <BookingLayout maxWidth="max-w-lg">
@@ -37,6 +60,20 @@ function RequestReceivedContent() {
               Submitting a request does not confirm a seat. We will confirm the schedule, placement, and payment details separately.
             </p>
           </div>
+
+          {selectedPackage && packageSchedule && packageSchedule.classDates.length > 0 && (
+            <div className="rounded-xl border border-[#0083CB]/25 bg-[#0083CB]/5 px-4 py-3.5">
+              <p className="text-xs font-bold uppercase tracking-wide text-[#0083CB] mb-1">
+                {selectedPackage.name} Package — {packageSchedule.classDates.length} classes
+              </p>
+              <p className="text-sm text-slate-600 mb-3">
+                {packageSchedule.startDate && packageSchedule.endDate
+                  ? `${packageSchedule.classDates[0].label} through ${packageSchedule.classDates[packageSchedule.classDates.length - 1].label}`
+                  : null}
+              </p>
+              <ClassScheduleDisclosure schedule={packageSchedule} packageName={selectedPackage.name} />
+            </div>
+          )}
 
           <div>
             <h2 className="text-sm font-black text-slate-800 mb-3">What happens next</h2>
@@ -74,4 +111,3 @@ export default function RequestReceivedPage() {
     </Suspense>
   )
 }
-

@@ -4,22 +4,24 @@ import { Suspense, useEffect, useState } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import {
-  getProgram, getActiveOfferings,
+  getProgram, getActiveOfferings, getPackageClassSchedule,
   formatOfferingDateRange, formatOfferingWeeklySchedule, isOfferingRequestWindowOpen, isOfferingSoldOut,
   statusBadgeClass, applyProgramDiscount,
 } from '../../../lib/booking'
 import { isRequestOnlyBookingFlow } from '../../../lib/booking-flow'
 import BookingLayout from '../../../components/booking/BookingLayout'
 import { BookingStepper } from '../../../components/booking/BookingStepper'
+import { ClassScheduleDisclosure } from '../../../components/booking/ClassScheduleDisclosure'
 import { ROBOTICS_PACKAGES, PACKAGE_PROMO, getRoboticsPackage, isValidPackageId, getPackagePromoDiscountCents, getDiscountedSubtotalCents, getBillingCadenceLabel } from '../../../lib/robotics-packages.js'
 
 const ROBOTICS_CATEGORY = 'Robotics'
 
-function OfferingCard({ offering, program, onSelect, hideTuition }: { offering: any; program: any; onSelect: (s: any) => void; hideTuition?: boolean }) {
+function OfferingCard({ offering, program, onSelect, hideTuition, selectedPackage }: { offering: any; program: any; onSelect: (s: any) => void; hideTuition?: boolean; selectedPackage?: any }) {
   const soldOut = isOfferingSoldOut(offering)
   const requestWindowOpen = isOfferingRequestWindowOpen(offering)
   const hasWaitlist = soldOut && offering.waitlistEnabled && requestWindowOpen
-  const dateRange = formatOfferingDateRange(offering)
+  const dateRange = formatOfferingDateRange(offering, selectedPackage)
+  const packageSchedule = selectedPackage ? getPackageClassSchedule(offering, selectedPackage) : null
   const tuition = Number(offering.tuitionCents ?? 0)
   const discount = applyProgramDiscount(tuition, program)
 
@@ -61,17 +63,25 @@ function OfferingCard({ offering, program, onSelect, hideTuition }: { offering: 
             {dateRange}
           </div>
         )}
-        {(offering.classCount > 0 || offering.durationMin) && (
-          <div className="flex items-center gap-2">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4 text-slate-400 shrink-0">
-              <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
-            </svg>
-            {[
-              offering.classCount > 0 ? `${offering.classCount} class${offering.classCount === 1 ? '' : 'es'}` : '',
-              offering.durationMin ? `${offering.durationMin} min each` : '',
-            ].filter(Boolean).join(' · ')}
-          </div>
-        )}
+        {(() => {
+          // For a robotics package, the class count that matters to the family
+          // is the package's (e.g. Explorer = 10), not the offering's full
+          // school-year schedule length (e.g. 36 weekly classes total) — showing
+          // the offering's own classCount here made every package look like a
+          // 36-class commitment regardless of which one was actually selected.
+          const displayClassCount = selectedPackage ? selectedPackage.classCount : offering.classCount
+          return (displayClassCount > 0 || offering.durationMin) && (
+            <div className="flex items-center gap-2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4 text-slate-400 shrink-0">
+                <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+              </svg>
+              {[
+                displayClassCount > 0 ? `${displayClassCount} class${displayClassCount === 1 ? '' : 'es'}` : '',
+                offering.durationMin ? `${offering.durationMin} min each` : '',
+              ].filter(Boolean).join(' · ')}
+            </div>
+          )
+        })()}
         {tuition > 0 && !hideTuition && (
           <div className="flex items-center gap-2 font-semibold text-slate-700">
             <span aria-hidden="true" className="w-4 text-center text-slate-400">$</span>
@@ -90,6 +100,12 @@ function OfferingCard({ offering, program, onSelect, hideTuition }: { offering: 
           </div>
         )}
       </div>
+
+      {packageSchedule && packageSchedule.classDates.length > 0 && (
+        <div className="mb-4">
+          <ClassScheduleDisclosure schedule={packageSchedule} packageName={selectedPackage?.name} />
+        </div>
+      )}
 
       <button
         onClick={() => onSelect(offering)}
@@ -408,7 +424,7 @@ function ProgramDetailContent() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {offerings.map(offering => (
-                <OfferingCard key={offering.id} offering={offering} program={program} onSelect={handleSelectOffering} hideTuition={isRobotics} />
+                <OfferingCard key={offering.id} offering={offering} program={program} onSelect={handleSelectOffering} hideTuition={isRobotics} selectedPackage={selectedPackage} />
               ))}
             </div>
           )}

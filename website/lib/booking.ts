@@ -3,6 +3,7 @@ import {
   query, where, serverTimestamp, limit, orderBy, runTransaction,
 } from 'firebase/firestore'
 import { db } from './firebase'
+import { generateClassSchedule } from './class-schedule.js'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -451,7 +452,43 @@ export function formatOfferingScheduleDetail(offering: any) {
   return 'Schedule to be confirmed'
 }
 
-export function formatOfferingDateRange(offering: any) {
+/**
+ * The exact weekly class-date schedule for a package on a given offering —
+ * skipping Ontario statutory holidays (and any offering-specific closures)
+ * so the schedule always contains exactly the package's purchased class
+ * count of real class dates, not just "classCount weeks after the first
+ * class" (which is wrong whenever a holiday falls on the weekly class day).
+ *
+ * Returns the same shape as `generateClassSchedule` — an empty schedule
+ * (classDates: [], startDate: null, endDate: null) if the offering doesn't
+ * carry enough data to compute one; callers should fall back to "Schedule
+ * to be confirmed" in that case rather than guessing.
+ */
+export function getPackageClassSchedule(offering: any, pkg: any) {
+  return generateClassSchedule({
+    firstClassDate: offering?.firstClassDate ?? null,
+    weekday: offering?.weekday ?? '',
+    classCount: pkg?.classCount,
+    timeZone: offering?.timezone || 'America/Toronto',
+    // Offerings may eventually carry their own non-statutory closures
+    // (facility closures, one-off cancellations) under either name.
+    excludedDates: offering?.excludedDates ?? offering?.closureDates ?? undefined,
+  })
+}
+
+export function formatOfferingDateRange(offering: any, selectedPackage?: any) {
+  if (selectedPackage) {
+    const schedule = getPackageClassSchedule(offering, selectedPackage)
+    if (schedule.startDate && schedule.endDate) {
+      const first = formatDate(schedule.startDate)
+      const last = formatDate(schedule.endDate)
+      return first && last && first !== last ? `${first} – ${last}` : (first || last)
+    }
+    // Fall through to the offering's own dates only if we couldn't compute
+    // an exact package schedule (e.g. offering data is incomplete) — better
+    // than showing nothing, though it may not reflect the package exactly.
+  }
+
   const first = formatDate(offering?.firstClassDate)
   const last = formatDate(offering?.lastClassDate)
   if (first && last && first !== last) return `${first} – ${last}`
