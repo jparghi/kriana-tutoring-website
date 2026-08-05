@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  getActiveOfferings,
-  getPrograms,
+  getProgramsWithOfferings,
   isOfferingRequestWindowOpen,
   isOfferingSoldOut,
 } from "../../lib/booking";
@@ -213,15 +212,11 @@ export function RoboticsPrograms() {
   useEffect(() => {
     async function load() {
       try {
-        const all = await getPrograms({ activeOnly: true });
-        const robotics = all.filter((p: Program) => p.category === ROBOTICS_CATEGORY);
+        const { programs: robotics, offeringsByProgram: map } = await getProgramsWithOfferings({
+          category: ROBOTICS_CATEGORY,
+          activeOnly: true,
+        });
         setPrograms(robotics);
-        const map: Record<string, Offering[]> = {};
-        await Promise.all(
-          robotics.map(async (p: Program) => {
-            map[p.id] = await getActiveOfferings(p);
-          })
-        );
         setOfferingsByProgram(map);
       } finally {
         setLoading(false);
@@ -275,15 +270,17 @@ export function useRoboticsAvailability() {
   useEffect(() => {
     async function load() {
       try {
-        const all = await getPrograms({ activeOnly: true });
-        const robotics = all.filter((p: Program) => p.category === ROBOTICS_CATEGORY);
-        const offeringLists = await Promise.all(robotics.map((p: Program) => getActiveOfferings(p)));
+        const { offeringsByProgram } = await getProgramsWithOfferings({
+          category: ROBOTICS_CATEGORY,
+          activeOnly: true,
+        });
+        const offeringLists = Object.values(offeringsByProgram);
         setHasPublishedSchedule(offeringLists.some((offerings) => offerings.length > 0));
         setHasOpenRequests(offeringLists.some((offerings) => offerings.some(
-          (offering) => isOfferingRequestWindowOpen(offering) && !isOfferingSoldOut(offering)
+          (offering: any) => isOfferingRequestWindowOpen(offering) && !isOfferingSoldOut(offering)
         )));
         setHasOpenWaitlist(offeringLists.some((offerings) => offerings.some(
-          (offering) => isOfferingRequestWindowOpen(offering)
+          (offering: any) => isOfferingRequestWindowOpen(offering)
             && isOfferingSoldOut(offering)
             && offering.waitlistEnabled
         )));

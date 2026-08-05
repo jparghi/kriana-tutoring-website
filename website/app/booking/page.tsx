@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { getPrograms, getActiveOfferings, isOfferingSoldOut, formatOfferingScheduleDetail } from '../../lib/booking'
+import { getProgramsWithOfferings, isOfferingSoldOut, formatOfferingScheduleDetail } from '../../lib/booking'
 import { isRequestOnlyBookingFlow } from '../../lib/booking-flow'
 import { Footer } from '../../components/footer'
 import { getRoboticsPackage, isValidPackageId, getPackagePromoDiscountCents, getDiscountedSubtotalCents } from '../../lib/robotics-packages.js'
@@ -162,12 +162,8 @@ export default function BookingPage() {
 
     async function load() {
       try {
-        const progs = await getPrograms({ activeOnly: true })
+        const { programs: progs, offeringsByProgram: map } = await getProgramsWithOfferings({ activeOnly: true })
         setPrograms(progs)
-        const map: Record<string, any[]> = {}
-        await Promise.all(progs.map(async (p: any) => {
-          map[p.id] = await getActiveOfferings(p)
-        }))
         setOfferingsByProgram(map)
       } finally {
         setLoading(false)

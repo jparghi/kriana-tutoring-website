@@ -19,12 +19,11 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://www.krianatutoring.com"),
   icons: {
     icon: [
-      { url: "/favicon.ico", type: "image/x-icon" },
-      { url: "/images/kriana-favicon.ico", type: "image/x-icon" },
-      { url: "/images/kriana-logo-icon-large.png", type: "image/png", sizes: "1024x1024" }
+      { url: "/images/favicon/logo-full-book-v1.png", type: "image/png", sizes: "1254x1254" },
+      { url: "/favicon.ico", type: "image/x-icon" }
     ],
-    shortcut: [{ url: "/favicon.ico", type: "image/x-icon" }],
-    apple: [{ url: "/images/kriana-logo-icon-large.png", sizes: "180x180" }]
+    shortcut: [{ url: "/images/favicon/logo-full-book-v1.png", type: "image/png" }],
+    apple: [{ url: "/images/favicon/logo-full-book-v1.png", sizes: "1254x1254" }]
   },
   openGraph: {
     title: "Kriana Tutoring | Ottawa's Personalized Tutoring for Kids",

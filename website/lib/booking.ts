@@ -217,6 +217,42 @@ export async function getActiveOfferings(programOrId: string | Record<string, an
   return sortOfferings(offerings.filter(isValidPublicOffering))
 }
 
+function normalizeOfferingsPayload(offerings: any[]) {
+  const normalized = (offerings ?? []).map((data: any) => (
+    data.source === 'legacySession'
+      ? normalizeLegacySession(data.id, data)
+      : normalizeOffering(data.id, data)
+  ))
+  return sortOfferings(normalized.filter(isValidPublicOffering))
+}
+
+/**
+ * Programs plus each one's active offerings, fetched in a single request
+ * instead of one /programs call followed by one /offerings call per program.
+ * Use this anywhere a page renders a list of program cards with schedule
+ * badges (e.g. /booking, /robotics) — the old N+1 pattern was the main
+ * cause of slow loads on those pages.
+ */
+export async function getProgramsWithOfferings({ category, activeOnly = false }: { category?: string; activeOnly?: boolean } = {}) {
+  const payload = await catalogRequest({ resource: 'catalog', ...(category ? { category } : {}) })
+  const programs = (payload?.programs ?? []) as any[]
+  const offeringsByProgram: Record<string, PublicOffering[]> = {}
+  for (const [programId, offerings] of Object.entries(payload?.offeringsByProgram ?? {})) {
+    offeringsByProgram[programId] = normalizeOfferingsPayload(offerings as any[])
+  }
+
+  const sorted = !activeOnly ? programs : [...programs].sort((a, b) => {
+    const oa = typeof a.sortOrder === 'number' ? a.sortOrder : Infinity
+    const ob = typeof b.sortOrder === 'number' ? b.sortOrder : Infinity
+    if (oa !== ob) return oa - ob
+    const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0
+    const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0
+    return tb - ta
+  })
+
+  return { programs: sorted, offeringsByProgram }
+}
+
 export async function getOffering(offeringId: string) {
   const payload = await catalogRequest({ resource: 'offering', id: offeringId })
   const data = payload?.offering
