@@ -57,12 +57,27 @@ const PACKAGES_BY_ID = new Map(ROBOTICS_PACKAGES.map(pkg => [pkg.id, pkg]))
 
 // Sitewide class-package promotion. Not Firestore-driven (unlike per-program
 // discounts) — this campaign applies to the fixed package catalogue itself,
-// so it's toggled here directly. Flip `active` to false when the promo ends;
-// registrations already submitted keep their locked-in packageSnapshot
-// regardless of later changes here.
+// so it's configured here directly. Registrations already submitted keep
+// their locked-in packageSnapshot regardless of later changes here.
+//
+// `active` is a real deadline, not a hand-flipped flag — the campaign ends
+// naturally the night before classes begin (Sunday, September 13, 2026,
+// 11:59 p.m. ET) rather than needing someone to remember to turn it off.
+// It's a getter so it's re-evaluated on every access — this module can stay
+// loaded in a warm server process for days, so a value baked in once at
+// import time would keep the promo "on" past its deadline until the next
+// deploy/cold start. Avoid extending this deadline after the fact: a promo
+// advertised with a firm end date that then keeps sliding undermines the
+// urgency (and the trust) it's meant to create.
+const PROMO_ENDS_AT = '2026-09-13T23:59:59-04:00' // Sunday, Sep 13, 2026, 11:59:59 p.m. ET
+
 export const PACKAGE_PROMO = Object.freeze({
-  active: true,
-  label: 'Back to School — First Class Free',
+  get active() {
+    return Date.now() <= new Date(PROMO_ENDS_AT).getTime()
+  },
+  label: 'Back-to-School Offer: First Class Free',
+  registerByLabel: 'Register by September 13, 2026. Limited spaces available.',
+  endsAt: PROMO_ENDS_AT,
   discountClasses: 1,
 })
 

@@ -10,7 +10,7 @@ import {
 import BookingLayout from '../../../../components/booking/BookingLayout'
 import { BookingStepper } from '../../../../components/booking/BookingStepper'
 import { ClassScheduleDisclosure } from '../../../../components/booking/ClassScheduleDisclosure'
-import { getRoboticsPackage, isValidPackageId, getPackagePromoDiscountCents, getDiscountedSubtotalCents, getBillingCadenceLabel } from '../../../../lib/robotics-packages.js'
+import { PACKAGE_PROMO, getRoboticsPackage, isValidPackageId, getPackagePromoDiscountCents, getDiscountedSubtotalCents, getBillingCadenceLabel } from '../../../../lib/robotics-packages.js'
 
 const ROBOTICS_CATEGORY = 'Robotics'
 
@@ -405,7 +405,7 @@ function RegisterForm() {
                       <span className="line-through">${(selectedPackage.subtotalCents / 100).toFixed(0)}</span>{' '}
                       <span className="font-semibold text-orange-600">${(getDiscountedSubtotalCents(selectedPackage) / 100).toFixed(0)} package subtotal</span>
                     </p>
-                    <p className="mt-1 text-xs font-bold text-orange-600">🏷️ Back to School — first class free (${(getPackagePromoDiscountCents(selectedPackage) / 100).toFixed(0)} off)</p>
+                    <p className="mt-1 text-xs font-bold text-orange-600">🏷️ {PACKAGE_PROMO.label} (${(getPackagePromoDiscountCents(selectedPackage) / 100).toFixed(0)} off)</p>
                   </>
                 ) : (
                   <p className="font-semibold text-slate-800">${(selectedPackage.subtotalCents / 100).toFixed(0)} package subtotal</p>

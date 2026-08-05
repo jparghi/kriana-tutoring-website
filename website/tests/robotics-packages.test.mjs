@@ -87,3 +87,27 @@ test('getBillingCadenceLabel explains upfront vs monthly billing per package', (
   assert.match(getBillingCadenceLabel(getRoboticsPackage('engineer')), /monthly/i)
   assert.equal(getBillingCadenceLabel(null), '')
 })
+
+test('PACKAGE_PROMO has a real deadline (not a hand-flipped flag) and carries a register-by label', () => {
+  assert.equal(typeof PACKAGE_PROMO.endsAt, 'string')
+  assert.ok(!Number.isNaN(new Date(PACKAGE_PROMO.endsAt).getTime()), 'endsAt must be a parseable date')
+  assert.match(PACKAGE_PROMO.registerByLabel, /September 13, 2026/)
+  // `active` is derived from `endsAt` vs. the real current time, not a
+  // static boolean — this assertion is only meaningful before the deadline,
+  // which is fine since it documents the intended pre-deadline state.
+  assert.equal(PACKAGE_PROMO.active, Date.now() <= new Date(PACKAGE_PROMO.endsAt).getTime())
+})
+
+test('PACKAGE_PROMO.active turns off automatically after its deadline, without editing this file', () => {
+  const before = Date
+  try {
+    globalThis.Date = class extends before {
+      static now() {
+        return new before(PACKAGE_PROMO.endsAt).getTime() + 1000
+      }
+    }
+    assert.equal(PACKAGE_PROMO.active, false)
+  } finally {
+    globalThis.Date = before
+  }
+})

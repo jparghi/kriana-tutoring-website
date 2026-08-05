@@ -155,9 +155,12 @@ function PackageChooser({ programId }: { programId: string }) {
 
       <div className="relative">
         {PACKAGE_PROMO.active && (
-          <span className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-3.5 py-1.5 text-xs font-black uppercase tracking-wide text-white shadow-sm">
-            🏷️ {PACKAGE_PROMO.label}
-          </span>
+          <div className="mb-3">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-3.5 py-1.5 text-xs font-black uppercase tracking-wide text-white shadow-sm">
+              🏷️ {PACKAGE_PROMO.label}
+            </span>
+            <p className="mt-1.5 text-xs font-semibold text-orange-600">{PACKAGE_PROMO.registerByLabel}</p>
+          </div>
         )}
         <h2 className="text-xl font-black text-slate-800 sm:text-2xl">Choose Your Class Package</h2>
         <p className="mt-1.5 max-w-2xl text-sm text-slate-500">
