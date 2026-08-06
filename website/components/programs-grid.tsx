@@ -54,7 +54,7 @@ const programs: {
   },
   {
     icon: BuildingIcon,
-    image: "/images/young-engineers/school-programs.png",
+    image: "/images/young-engineers/school-programs-v3.png",
     title: "School Programs",
     description: "After-school programs & workshops for your school.",
     href: "/booking",

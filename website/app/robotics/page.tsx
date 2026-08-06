@@ -51,7 +51,7 @@ const additionalOfferings = [
     description: "After-school robotics programs and workshops for your school.",
     href: SCHOOL_PROGRAM_BOOKING_URL,
     accent: YE_AMBER,
-    image: "/images/young-engineers/school-programs-v2.png",
+    image: "/images/young-engineers/school-programs-v3.png",
   },
 ];
 
