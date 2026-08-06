@@ -8,7 +8,7 @@ import { RoboticsCtaButtons } from "../../components/robotics/robotics-cta-butto
 import { SkillsSection } from "../../components/robotics/skills-section";
 import { MapPinIcon } from "../../components/icons";
 import {
-  BIRTHDAY_PARTY_BOOKING_URL,
+  BIRTHDAY_PARTY_PATH,
   SCHOOL_PROGRAM_BOOKING_URL,
   // SUMMER_CAMP_BOOKING_URL, // unused while "Camps & PA Days" tile is hidden — see additionalOfferings below
   YOUNG_ENGINEERS_URL,
@@ -42,7 +42,7 @@ const additionalOfferings = [
   {
     title: "Birthday Parties",
     description: "Hands-on robotics birthday parties that keep every guest building.",
-    href: BIRTHDAY_PARTY_BOOKING_URL,
+    href: BIRTHDAY_PARTY_PATH,
     accent: YE_RED,
     image: "/images/young-engineers/birthday-party-v2.png",
   },

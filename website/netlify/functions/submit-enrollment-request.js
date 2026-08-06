@@ -321,7 +321,10 @@ function clientIp(event) {
   return String(headers['x-nf-client-connection-ip'] || '').trim()
 }
 
-async function enforceRateLimit(db, event) {
+// Exported so other submission endpoints (e.g. submit-birthday-request.js)
+// share the same IP rate-limit bucket and salt validation instead of
+// reimplementing this transaction.
+export async function enforceRateLimit(db, event) {
   const salt = process.env.ENROLLMENT_RATE_LIMIT_SALT
   if (!salt || salt.length < 32) {
     throw new Error('ENROLLMENT_RATE_LIMIT_SALT must be configured with at least 32 characters')

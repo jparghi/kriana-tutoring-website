@@ -9,6 +9,7 @@ import {
   statusBadgeClass, applyProgramDiscount,
 } from '../../../lib/booking'
 import { isRequestOnlyBookingFlow } from '../../../lib/booking-flow'
+import { BIRTHDAY_PARTY_PATH } from '../../../lib/site-links'
 import BookingLayout from '../../../components/booking/BookingLayout'
 import { BookingStepper } from '../../../components/booking/BookingStepper'
 import { ClassScheduleDisclosure } from '../../../components/booking/ClassScheduleDisclosure'
@@ -248,6 +249,16 @@ function ProgramDetailContent() {
     load()
   }, [programId])
 
+  // Birthday Party is request-based, never a weekly programOffering — this
+  // generic "Weekly Program Schedules" view doesn't apply to it (it would
+  // just show "still being planned" forever). Send visitors to the real,
+  // complete birthday experience page instead.
+  useEffect(() => {
+    if (program?.category === 'Birthday Party') {
+      router.replace(BIRTHDAY_PARTY_PATH)
+    }
+  }, [program, router])
+
   const packageParam = searchParams.get('package') || ''
   const isRobotics = program?.category === ROBOTICS_CATEGORY
   const selectedPackage = isRobotics && isValidPackageId(packageParam) ? getRoboticsPackage(packageParam) : null
@@ -272,6 +283,12 @@ function ProgramDetailContent() {
         Program not found.{' '}
         <Link href="/booking" className="text-[#0c6162] font-semibold hover:underline">Browse programs →</Link>
       </div>
+    </BookingLayout>
+  )
+
+  if (program.category === 'Birthday Party') return (
+    <BookingLayout backTo="/booking" backLabel="All Programs">
+      <div className="flex items-center justify-center h-48 text-slate-400">Redirecting…</div>
     </BookingLayout>
   )
 
