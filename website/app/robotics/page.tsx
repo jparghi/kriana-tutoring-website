@@ -10,10 +10,10 @@ import { MapPinIcon } from "../../components/icons";
 import {
   BIRTHDAY_PARTY_BOOKING_URL,
   SCHOOL_PROGRAM_BOOKING_URL,
-  SUMMER_CAMP_BOOKING_URL,
+  // SUMMER_CAMP_BOOKING_URL, // unused while "Camps & PA Days" tile is hidden — see additionalOfferings below
   YOUNG_ENGINEERS_URL,
 } from "../../lib/site-links";
-import { YE_AMBER, YE_BLUE, YE_RED } from "../../lib/robotics-content";
+import { YE_AMBER, /* YE_BLUE, */ YE_RED } from "../../lib/robotics-content";
 import { breadcrumbSchema, localBusinessSchema, siteUrl, toJsonLd } from "../../lib/seo";
 
 export const metadata: Metadata = {
@@ -31,13 +31,14 @@ export const metadata: Metadata = {
 };
 
 const additionalOfferings = [
-  {
-    title: "Camps & PA Days",
-    description: "STEM-filled camps and PA day workshops for school breaks.",
-    href: SUMMER_CAMP_BOOKING_URL,
-    accent: YE_BLUE,
-    image: "/images/young-engineers/summer-camps-v2.png",
-  },
+  // Camps & PA Days hidden for now — re-enable by uncommenting when ready to promote again.
+  // {
+  //   title: "Camps & PA Days",
+  //   description: "STEM-filled camps and PA day workshops for school breaks.",
+  //   href: SUMMER_CAMP_BOOKING_URL,
+  //   accent: YE_BLUE,
+  //   image: "/images/young-engineers/summer-camps-v2.png",
+  // },
   {
     title: "Birthday Parties",
     description: "Hands-on robotics birthday parties that keep every guest building.",

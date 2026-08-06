@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { BookOpenIcon, BuildingIcon, CalendarStarIcon, RocketIcon, SparkleIcon } from "./icons";
+import { BookOpenIcon, BuildingIcon, CalendarStarIcon, RocketIcon } from "./icons";
 import { SectionHeading } from "./section-heading";
 import { ROBOTICS_PATH } from "../lib/site-links";
 
@@ -33,15 +33,16 @@ const programs: {
     iconBg: "bg-brand-sky/15",
     iconColor: "text-brand-sky",
   },
-  {
-    icon: SparkleIcon,
-    image: "/images/young-engineers/summer-camps.png",
-    title: "Summer Camps",
-    description: "Fun and educational camps filled with STEM, games & creativity.",
-    href: "/booking",
-    iconBg: "bg-brand-amber/20",
-    iconColor: "text-amber-600",
-  },
+  // Summer Camps hidden for now — re-enable by uncommenting when camps are ready to promote again.
+  // {
+  //   icon: SparkleIcon,
+  //   image: "/images/young-engineers/summer-camps.png",
+  //   title: "Summer Camps",
+  //   description: "Fun and educational camps filled with STEM, games & creativity.",
+  //   href: "/booking",
+  //   iconBg: "bg-brand-amber/20",
+  //   iconColor: "text-amber-600",
+  // },
   {
     icon: CalendarStarIcon,
     image: "/images/young-engineers/birthday-party.png",
@@ -55,7 +56,7 @@ const programs: {
     icon: BuildingIcon,
     image: "/images/young-engineers/school-programs.png",
     title: "School Programs",
-    description: "After-school programs, workshops & PA day activities.",
+    description: "After-school programs & workshops for your school.",
     href: "/booking",
     iconBg: "bg-slate-200",
     iconColor: "text-slate-600",
