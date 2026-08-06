@@ -121,7 +121,11 @@ function ProgramCard({ program, offerings, packageId }: { program: any; offering
         )}
 
         <div className="mt-2">
-          <ScheduleBadge offerings={offerings} hasSchedule={hasSchedule} />
+          {/* Birthday Party is request-based, not weekly-scheduled — a "Coming
+              soon" badge would misleadingly imply a schedule is on the way. */}
+          {program.category !== 'Birthday Party' && (
+            <ScheduleBadge offerings={offerings} hasSchedule={hasSchedule} />
+          )}
         </div>
 
         <div className="mt-auto pt-3 flex items-center justify-end gap-2 border-t border-slate-100 mt-3">

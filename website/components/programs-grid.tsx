@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { BookOpenIcon, BuildingIcon, CalendarStarIcon, RocketIcon } from "./icons";
 import { SectionHeading } from "./section-heading";
-import { ROBOTICS_PATH } from "../lib/site-links";
+import { ROBOTICS_PATH, BIRTHDAY_PARTY_PATH } from "../lib/site-links";
 
 type IconComponent = React.ComponentType<React.SVGProps<SVGSVGElement>>;
 
@@ -45,10 +45,10 @@ const programs: {
   // },
   {
     icon: CalendarStarIcon,
-    image: "/images/young-engineers/birthday-party.png",
+    image: "/images/young-engineers/birthday-party-v3.png",
     title: "Birthday Parties",
     description: "Make birthdays unforgettable with hands-on robotics & STEM fun!",
-    href: "/booking",
+    href: BIRTHDAY_PARTY_PATH,
     iconBg: "bg-brand-rose/15",
     iconColor: "text-brand-rose",
   },

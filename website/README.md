@@ -20,9 +20,11 @@ dev` is enough; programs and schedules created in the tutor portal show up at
 Node version juggling required. It reads Firebase Admin credentials straight
 from `.env.local` (see Environment Variables below).
 
-A few other flows (Stripe checkout, e-transfer emails, enrollment webhooks)
-are still real Netlify Functions under `netlify/functions/` and only run
-under `netlify dev`, not plain `next dev`. If you need to test one of those:
+A few other flows (Stripe checkout, e-transfer emails, enrollment webhooks,
+the birthday availability form's `submit-birthday-request`) are still real
+Netlify Functions under `netlify/functions/` and only run under `netlify
+dev`, not plain `next dev`. If you need to test one of those (including
+submitting the form on `/birthday-parties`):
 
 ```bash
 cd website   # .nvmrc and package.json both live here, not the repo root
