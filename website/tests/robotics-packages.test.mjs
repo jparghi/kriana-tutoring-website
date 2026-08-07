@@ -5,6 +5,7 @@ import {
   PACKAGE_PROMO,
   isValidPackageId,
   getRoboticsPackage,
+  getPubliclyVisiblePackages,
   getPackagePromoDiscountCents,
   getDiscountedSubtotalCents,
   getBillingCadenceLabel,
@@ -22,9 +23,23 @@ test('exact catalogue values match the spec', () => {
     ROBOTICS_PACKAGES.map(p => [p.id, p.classCount, p.perClassCents, p.subtotalCents, p.badge, p.billingCadence]),
     [
       ['explorer', 10, 3000, 30000, null, 'upfront'],
-      ['builder', 20, 2800, 56000, 'Most Popular', 'monthly'],
+      ['builder', 20, 2800, 56000, null, 'monthly'],
       ['engineer', 36, 2600, 93600, 'Best Value', 'monthly'],
     ]
+  )
+})
+
+test('Explorer is enabled system-wide but excluded from the public package grid', () => {
+  assert.equal(isValidPackageId('explorer'), true)
+  assert.ok(getRoboticsPackage('explorer'), 'Explorer must still resolve by id for direct/shared links, registration, and checkout')
+  assert.equal(
+    getPubliclyVisiblePackages().some(p => p.id === 'explorer'),
+    false,
+    'Explorer must not appear in the public package grid'
+  )
+  assert.deepEqual(
+    getPubliclyVisiblePackages().map(p => p.id),
+    ['builder', 'engineer'],
   )
 })
 

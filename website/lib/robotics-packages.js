@@ -17,6 +17,13 @@ export const ROBOTICS_PACKAGES = Object.freeze([
     // Paid as a single upfront invoice for all classes, rather than billed
     // month-by-month like the larger packages.
     billingCadence: 'upfront',
+    // Internal fallback / save-the-sale package — intentionally not shown
+    // in the public package grids (PackageChooser, PackagesPricingSection).
+    // Still fully enabled everywhere else: valid packageId for direct/Shared
+    // links, registration, checkout, and existing Explorer registrations
+    // are completely unaffected. Flip this back to true to re-list it
+    // publicly; nothing else needs to change.
+    publicVisible: false,
   }),
   Object.freeze({
     id: 'builder',
@@ -25,9 +32,10 @@ export const ROBOTICS_PACKAGES = Object.freeze([
     perClassCents: 2800,
     subtotalCents: 56000,
     currency: 'CAD',
-    badge: 'Most Popular',
+    badge: null,
     sortOrder: 2,
     billingCadence: 'monthly',
+    publicVisible: true,
   }),
   Object.freeze({
     id: 'engineer',
@@ -39,8 +47,16 @@ export const ROBOTICS_PACKAGES = Object.freeze([
     badge: 'Best Value',
     sortOrder: 3,
     billingCadence: 'monthly',
+    publicVisible: true,
   }),
 ])
+
+/** Packages shown in public-facing package grids. Explorer stays fully
+ * enabled (resolvable by ID, bookable, invoiceable) — it's just excluded
+ * from the default public listing so staff can still offer it directly. */
+export function getPubliclyVisiblePackages() {
+  return ROBOTICS_PACKAGES.filter(pkg => pkg.publicVisible)
+}
 
 // Fails fast (at import time) if any package's arithmetic is inconsistent,
 // rather than silently mis-invoicing a family later.

@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   getProgram, getActiveOfferings, getPackageClassSchedule,
   formatOfferingDateRange, formatOfferingWeeklySchedule, isOfferingRequestWindowOpen, isOfferingSoldOut,
@@ -13,7 +14,7 @@ import { BIRTHDAY_PARTY_PATH } from '../../../lib/site-links'
 import BookingLayout from '../../../components/booking/BookingLayout'
 import { BookingStepper } from '../../../components/booking/BookingStepper'
 import { ClassScheduleDisclosure } from '../../../components/booking/ClassScheduleDisclosure'
-import { ROBOTICS_PACKAGES, PACKAGE_PROMO, getRoboticsPackage, isValidPackageId, getPackagePromoDiscountCents, getDiscountedSubtotalCents, getBillingCadenceLabel } from '../../../lib/robotics-packages.js'
+import { getPubliclyVisiblePackages, PACKAGE_PROMO, getRoboticsPackage, isValidPackageId, getPackagePromoDiscountCents, getDiscountedSubtotalCents, getBillingCadenceLabel } from '../../../lib/robotics-packages.js'
 
 const ROBOTICS_CATEGORY = 'Robotics'
 
@@ -142,10 +143,17 @@ const CATEGORY_COLORS: Record<string, string> = {
   'Tutoring':       'bg-blue-100 text-blue-700',
 }
 
-const PACKAGE_ICONS: Record<string, string> = {
-  explorer: '🚀',
-  builder: '🛠️',
-  engineer: '🤖',
+const PACKAGE_LOGOS: Record<string, string> = {
+  builder: '/images/robotics/packages/builder-package-icon.png',
+  engineer: '/images/robotics/packages/engineer-package-icon.png',
+}
+
+// Short, scannable descriptors for the two publicly-offered learning paths —
+// kept out of lib/robotics-packages.js since it's presentation copy, not
+// pricing/business data.
+const PACKAGE_DESCRIPTORS: Record<string, string[]> = {
+  builder: ['Structured progression', 'Best starting point for most families'],
+  engineer: ['Longer learning journey', 'Greater continuity and progression'],
 }
 
 function PackageChooser({ programId }: { programId: string }) {
@@ -163,16 +171,20 @@ function PackageChooser({ programId }: { programId: string }) {
             <p className="mt-1.5 text-xs font-semibold text-orange-600">{PACKAGE_PROMO.registerByLabel}</p>
           </div>
         )}
-        <h2 className="text-xl font-black text-slate-800 sm:text-2xl">Choose Your Class Package</h2>
+        <h2 className="text-xl font-black text-slate-800 sm:text-2xl">Choose Your Learning Path</h2>
         <p className="mt-1.5 max-w-2xl text-sm text-slate-500">
-          Every package is a complete class bundle — pick the size that fits your child's schedule. Each total shown
-          is the full package subtotal, not a monthly price, plus applicable taxes.
+          Each path gives your child enough consistent, structured time with the curriculum to build real confidence.
+          Totals shown are the full package subtotal, not a monthly price, plus applicable taxes.
         </p>
       </div>
 
-      <div className="relative mt-6 grid gap-5 sm:grid-cols-3">
-        {ROBOTICS_PACKAGES.map(pkg => {
-          const isFeatured = pkg.badge === 'Most Popular'
+      <div className="relative mt-6 grid gap-5 sm:grid-cols-2 sm:max-w-3xl sm:mx-auto">
+        {getPubliclyVisiblePackages().map(pkg => {
+          // Builder keeps the visually-dominant treatment (ring/scale) as
+          // the natural default choice, independent of whether it carries a
+          // text badge — decoupled from `badge` since Builder is currently
+          // shown with no badge at all (see lib/robotics-packages.js).
+          const isFeatured = pkg.id === 'builder'
           const discountCents = getPackagePromoDiscountCents(pkg)
           const discountedTotal = getDiscountedSubtotalCents(pkg)
 
@@ -194,9 +206,32 @@ function PackageChooser({ programId }: { programId: string }) {
                 </span>
               )}
 
-              <span className="text-3xl">{PACKAGE_ICONS[pkg.id] ?? '⭐'}</span>
+              {PACKAGE_LOGOS[pkg.id] ? (
+                <div className="flex h-24 items-center justify-center">
+                  <Image
+                    src={PACKAGE_LOGOS[pkg.id]}
+                    alt={`${pkg.name} robotics package`}
+                    width={180}
+                    height={150}
+                    className="h-24 w-auto object-contain"
+                  />
+                </div>
+              ) : (
+                <span className="text-3xl">⭐</span>
+              )}
               <p className="mt-2 text-lg font-black text-slate-800">{pkg.name}</p>
-              <p className="mt-0.5 text-sm text-slate-500">{pkg.classCount} classes</p>
+              <p className="mt-0.5 text-sm text-slate-500">{pkg.classCount}-Class Learning Path</p>
+
+              {PACKAGE_DESCRIPTORS[pkg.id] && (
+                <ul className="mt-2 space-y-1">
+                  {PACKAGE_DESCRIPTORS[pkg.id].map(point => (
+                    <li key={point} className="flex items-start gap-1.5 text-xs text-slate-500">
+                      <span aria-hidden="true" className="mt-1 h-1 w-1 shrink-0 rounded-full bg-slate-300" />
+                      {point}
+                    </li>
+                  ))}
+                </ul>
+              )}
 
               <div className="mt-4">
                 {discountCents > 0 ? (
@@ -224,6 +259,13 @@ function PackageChooser({ programId }: { programId: string }) {
           )
         })}
       </div>
+
+      <p className="relative mt-6 text-center text-sm text-slate-500">
+        Not sure which learning path is right for your child?{' '}
+        <Link href="/contact#consultation-form" className="font-semibold text-[#0c6162] hover:underline">
+          We&apos;re happy to help.
+        </Link>
+      </p>
     </div>
   )
 }

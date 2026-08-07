@@ -2,10 +2,16 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ROBOTICS_PACKAGES } from "../../lib/robotics-packages.js";
+import Image from "next/image";
+import { getPubliclyVisiblePackages } from "../../lib/robotics-packages.js";
 import { getPrograms } from "../../lib/booking";
 
 const ROBOTICS_CATEGORY = "Robotics";
+
+const PACKAGE_LOGOS: Record<string, string> = {
+  builder: "/images/robotics/packages/builder-package-icon.png",
+  engineer: "/images/robotics/packages/engineer-package-icon.png",
+};
 
 const HIGHLIGHTS = [
   "One-hour instructor-led classes",
@@ -60,9 +66,13 @@ export function PackagesPricingSection() {
           </p>
         </div>
 
-        <div className="mt-10 grid gap-6 sm:grid-cols-3">
-          {ROBOTICS_PACKAGES.map((pkg) => {
-            const isFeatured = pkg.badge === "Most Popular";
+        <div className="mt-10 grid gap-6 sm:grid-cols-2 sm:max-w-2xl sm:mx-auto">
+          {getPubliclyVisiblePackages().map((pkg) => {
+            // Builder keeps the visually-dominant treatment (ring/scale) as
+            // the natural default choice, independent of whether it carries
+            // a text badge — decoupled from `badge` since Builder is
+            // currently shown with no badge at all.
+            const isFeatured = pkg.id === "builder";
             return (
               <div
                 key={pkg.id}
@@ -80,8 +90,20 @@ export function PackagesPricingSection() {
                   </span>
                 )}
 
+                {PACKAGE_LOGOS[pkg.id] && (
+                  <div className="flex h-28 items-center justify-center">
+                    <Image
+                      src={PACKAGE_LOGOS[pkg.id]}
+                      alt={`${pkg.name} robotics package`}
+                      width={200}
+                      height={170}
+                      className="h-28 w-auto object-contain"
+                    />
+                  </div>
+                )}
+
                 <h3 className="mt-2 text-xl font-black text-[#0A2D5A]">{pkg.name}</h3>
-                <p className="mt-1 text-sm text-slate-500">{pkg.classCount} hands-on robotics classes</p>
+                <p className="mt-1 text-sm text-slate-500">{pkg.classCount}-Class Learning Path</p>
 
                 <div className="mt-5">
                   <span className="text-4xl font-black text-[#0A2D5A]">{formatDollars(pkg.subtotalCents)}</span>
@@ -116,6 +138,13 @@ export function PackagesPricingSection() {
             ))}
           </ul>
         </div>
+
+        <p className="mt-8 text-center text-sm text-slate-500">
+          Not sure which learning path is right for your child?{" "}
+          <Link href="/contact#consultation-form" className="font-semibold text-[#0c6162] hover:underline">
+            We&apos;re happy to help.
+          </Link>
+        </p>
       </div>
     </section>
   );
