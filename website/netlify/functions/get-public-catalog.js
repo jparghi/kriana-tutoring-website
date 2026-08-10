@@ -44,6 +44,26 @@ function jsonValue(value) {
   return value
 }
 
+const WEEKDAY_FORMATTER = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Toronto', weekday: 'long' })
+const TIME_FORMATTER = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Toronto', hour: '2-digit', minute: '2-digit', hour12: false })
+
+// Legacy `sessions` docs predate the weekly weekday/startTime/endTime schema
+// (they only ever stored a one-off startDateTime/endDateTime) — derive the
+// same shape here so getPackageClassSchedule() can compute a package's class
+// dates for a legacy-booking program exactly as it does for a modern
+// programOffering. Without this, weekday is '' and the schedule (and the
+// dropdown that only renders when it's non-empty) silently never appears.
+function deriveWeeklyFields(data) {
+  const startDate = typeof data.startDateTime?.toDate === 'function' ? data.startDateTime.toDate() : null
+  if (!startDate) return { weekday: '', startTime: '', endTime: '' }
+  const endDate = typeof data.endDateTime?.toDate === 'function' ? data.endDateTime.toDate() : null
+  return {
+    weekday: WEEKDAY_FORMATTER.format(startDate),
+    startTime: TIME_FORMATTER.format(startDate),
+    endTime: endDate ? TIME_FORMATTER.format(endDate) : '',
+  }
+}
+
 function projection(id, data, fields) {
   return {
     id,
@@ -81,6 +101,8 @@ export function publicLegacySession(document) {
       || !validCapacity(data, 0)) return null
   return {
     ...projection(document.id, data, LEGACY_FIELDS),
+    ...deriveWeeklyFields(data),
+    firstClassDate: jsonValue(data.startDateTime ?? null),
     source: 'legacySession', offeringId: document.id, legacySessionId: document.id,
     isPublished: true,
   }
