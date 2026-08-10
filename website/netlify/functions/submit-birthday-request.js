@@ -3,6 +3,7 @@ import nodemailer from 'nodemailer'
 import { FieldValue, Timestamp } from 'firebase-admin/firestore'
 import { getAdminDb } from './_lib/firebase-admin.js'
 import { RequestRejectedError, enforceRateLimit } from './submit-enrollment-request.js'
+import { emailSignatureHtml } from './_lib/email-signature.js'
 import { applyProgramDiscount } from '../../lib/pricing.js'
 
 const BIRTHDAY_CATEGORY = 'Birthday Party'
@@ -276,6 +277,7 @@ async function sendAcknowledgements({ request, program, requestNumber, requiresC
         </div>
         <p><strong>Your preferred date is not confirmed yet.</strong> Our team will review availability and contact you with the next steps and payment details. No payment is due now.</p>
         <p>Questions? Reply to this email or call <a href="tel:+16134006921">(613) 400-6921</a>.</p>
+        ${emailSignatureHtml()}
       </div>
     </div>`
 

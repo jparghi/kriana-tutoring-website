@@ -2,6 +2,7 @@ import crypto from 'node:crypto'
 import nodemailer from 'nodemailer'
 import { FieldValue, Timestamp } from 'firebase-admin/firestore'
 import { getAdminDb } from './_lib/firebase-admin.js'
+import { emailSignatureHtml } from './_lib/email-signature.js'
 import {
   isValidPackageId, getRoboticsPackage, buildPackageSnapshot,
   getAllowedInstallmentCounts, buildPaymentPreferenceSnapshot,
@@ -498,6 +499,7 @@ async function sendAcknowledgements({ registration, program, session, reference,
         </div>
         <p><strong>No payment is due now.</strong> This request does not yet confirm a place. Our team will review availability and contact you with next steps${isWaitlist ? ' if a place becomes available' : ''}. Staff will follow up with placement and payment details after reviewing your request.</p>
         <p>Questions? Reply to this email or call <a href="tel:+16134006921">(613) 400-6921</a>.</p>
+        ${emailSignatureHtml()}
       </div>
     </div>`
 
