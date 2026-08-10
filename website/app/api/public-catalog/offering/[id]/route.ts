@@ -10,6 +10,8 @@ import {
   NO_STORE,
 } from '../../_lib'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(_request: Request, { params }: { params: { id: string } }) {
   const id = decodeURIComponent(params.id)
   if (!validId(id)) return NextResponse.json({ error: 'Invalid offering ID' }, { status: 400, headers: NO_STORE })

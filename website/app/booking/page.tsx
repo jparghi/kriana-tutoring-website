@@ -285,12 +285,6 @@ export default function BookingPage() {
             </div>
           )}
 
-          <div className="mt-12 text-center text-sm text-slate-500">
-            Looking up a previous booking?{' '}
-            <Link href="/my-bookings" className="text-[#0c6162] font-semibold hover:underline">
-              My Bookings →
-            </Link>
-          </div>
         </div>
       </main>
 
