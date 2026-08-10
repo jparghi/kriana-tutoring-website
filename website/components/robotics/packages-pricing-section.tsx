@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { getPubliclyVisiblePackages } from "../../lib/robotics-packages.js";
+import { getPubliclyVisiblePackages, resolvePackagePricing, PACKAGE_PROMO } from "../../lib/robotics-packages.js";
 import { getPrograms } from "../../lib/booking";
 
 const ROBOTICS_CATEGORY = "Robotics";
@@ -73,6 +73,7 @@ export function PackagesPricingSection() {
             // a text badge — decoupled from `badge` since Builder is
             // currently shown with no badge at all.
             const isFeatured = pkg.id === "builder";
+            const payInFullPricing = resolvePackagePricing(pkg, "pay_in_full")!;
             return (
               <div
                 key={pkg.id}
@@ -105,15 +106,36 @@ export function PackagesPricingSection() {
                 <h3 className="mt-2 text-xl font-black text-[#0A2D5A]">{pkg.name}</h3>
                 <p className="mt-1 text-sm text-slate-500">{pkg.classCount}-Class Learning Path</p>
 
-                <div className="mt-5">
-                  <span className="text-4xl font-black text-[#0A2D5A]">{formatDollars(pkg.subtotalCents)}</span>
-                  <span className="ml-1 text-sm font-semibold text-slate-500">total</span>
+                {/* Parents should read this in order: the bulk per-class rate
+                    that explains why the package is discounted off the
+                    $30/class list rate, then the Back-to-School offer stacked
+                    on top of that, then what the regular (installment) rate
+                    is. */}
+                <p className="mt-5 text-sm font-bold text-slate-700">
+                  {formatDollars(pkg.perClassCents)}/class <span className="font-normal text-slate-400">when paid in full</span>
+                </p>
+                <div className="mt-1">
+                  {payInFullPricing.promotionApplied ? (
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-lg font-semibold text-slate-400 line-through">{formatDollars(payInFullPricing.regularSubtotalCents)}</span>
+                      <span className="text-4xl font-black text-[#0A2D5A]">{formatDollars(payInFullPricing.payableSubtotalCents)}</span>
+                    </div>
+                  ) : (
+                    <span className="text-4xl font-black text-[#0A2D5A]">{formatDollars(payInFullPricing.payableSubtotalCents)}</span>
+                  )}
+                  <span className="ml-1 text-sm font-semibold text-slate-500">+ tax</span>
                 </div>
-                <p className="mt-1 text-sm text-slate-500">{formatDollars(pkg.perClassCents)} per class</p>
-                <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
                   Package subtotal — not a monthly price
                 </p>
-                <p className="text-xs text-slate-400">Plus applicable taxes</p>
+                {payInFullPricing.promotionApplied && (
+                  <p className="mt-1 text-xs font-bold text-orange-600">🏷️ {PACKAGE_PROMO.label}</p>
+                )}
+                {pkg.installmentPerClassCents != null && (
+                  <p className="mt-1 text-xs text-slate-400">
+                    Regular rate {formatDollars(pkg.installmentPerClassCents)}/class · Installments available
+                  </p>
+                )}
 
                 <Link
                   href={`/booking?category=Robotics&package=${pkg.id}`}

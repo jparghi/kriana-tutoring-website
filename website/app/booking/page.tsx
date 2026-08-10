@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { getProgramsWithOfferings, isOfferingSoldOut, formatOfferingScheduleDetail } from '../../lib/booking'
 import { isRequestOnlyBookingFlow } from '../../lib/booking-flow'
 import { Footer } from '../../components/footer'
-import { getRoboticsPackage, isValidPackageId, getPackagePromoDiscountCents, getDiscountedSubtotalCents } from '../../lib/robotics-packages.js'
+import { getRoboticsPackage, isValidPackageId } from '../../lib/robotics-packages.js'
 
 const ROBOTICS_CATEGORY = 'Robotics'
 
@@ -223,16 +223,10 @@ export default function BookingPage() {
               <div>
                 <p className="text-xs font-bold uppercase tracking-wide text-[#0083CB]">Selected Package</p>
                 <p className="mt-0.5 text-sm font-semibold text-slate-800">
-                  {selectedPackage.name} — {selectedPackage.classCount} classes · ${(selectedPackage.perClassCents / 100).toFixed(0)}/class · {
-                    getPackagePromoDiscountCents(selectedPackage) > 0 ? (
-                      <>
-                        <span className="text-slate-400 line-through">${(selectedPackage.subtotalCents / 100).toFixed(0)}</span>{' '}
-                        <span className="font-bold text-orange-600">${(getDiscountedSubtotalCents(selectedPackage) / 100).toFixed(0)}</span> total (plus applicable taxes)
-                      </>
-                    ) : (
-                      <>${(selectedPackage.subtotalCents / 100).toFixed(0)} total (plus applicable taxes)</>
-                    )
-                  }
+                  {selectedPackage.name} — {selectedPackage.classCount} classes · ${(selectedPackage.regularSubtotalCents / 100).toFixed(0)} package price (plus applicable taxes)
+                </p>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  You&apos;ll choose how to pay — including the Back-to-School pay-in-full price, if eligible — after picking a schedule.
                 </p>
               </div>
               <button

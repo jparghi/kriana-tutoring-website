@@ -2,7 +2,10 @@ import crypto from 'node:crypto'
 import nodemailer from 'nodemailer'
 import { FieldValue, Timestamp } from 'firebase-admin/firestore'
 import { getAdminDb } from './_lib/firebase-admin.js'
-import { isValidPackageId, getRoboticsPackage, buildPackageSnapshot } from '../../lib/robotics-packages.js'
+import {
+  isValidPackageId, getRoboticsPackage, buildPackageSnapshot,
+  getAllowedInstallmentCounts, buildPaymentPreferenceSnapshot,
+} from '../../lib/robotics-packages.js'
 
 const ROBOTICS_CATEGORY = 'Robotics'
 
@@ -68,6 +71,39 @@ export function validatePayload(body) {
     return { error: 'Selected class package is not recognized.' }
   }
 
+  // Payment preference (method + installment count only) is a browser input
+  // just like packageId — never a source of trusted amounts. Every dollar
+  // figure is (re)computed server-side from the canonical catalogue in
+  // buildPaymentPreferenceSnapshot, so any financial fields the client might
+  // also send here are simply never read.
+  const rawPaymentPreference = body.paymentPreference
+  let paymentPreference = null
+  if (requestedAction === 'waitlist') {
+    if (rawPaymentPreference != null) {
+      return { error: 'Payment preference does not apply to waitlist requests.' }
+    }
+  } else if (packageId) {
+    if (!rawPaymentPreference || typeof rawPaymentPreference !== 'object' || Array.isArray(rawPaymentPreference)) {
+      return { error: 'Please choose a payment preference before requesting a spot.' }
+    }
+    const method = normalizeText(rawPaymentPreference.method, 20)
+    if (method === 'pay_in_full') {
+      paymentPreference = { method: 'pay_in_full', installmentCount: 1 }
+    } else if (method === 'installments') {
+      const pkg = getRoboticsPackage(packageId)
+      const allowed = pkg ? getAllowedInstallmentCounts(pkg) : []
+      const installmentCount = Number(rawPaymentPreference.installmentCount)
+      if (!allowed.includes(installmentCount)) {
+        return { error: 'Selected installment plan is not available for this package.' }
+      }
+      paymentPreference = { method: 'installments', installmentCount }
+    } else {
+      return { error: 'Selected payment preference is not recognized.' }
+    }
+  } else if (rawPaymentPreference != null) {
+    return { error: 'Payment preference is only available for class packages.' }
+  }
+
   const registration = {
     parentName: normalizeText(input.parentName, 120),
     parentEmail: normalizeText(input.parentEmail, 254).toLowerCase(),
@@ -91,7 +127,7 @@ export function validatePayload(body) {
   }
   if (!registration.consentAccepted) return { error: 'Consent is required before submitting.' }
 
-  return { programId, offeringId, sessionId, clientRequestId, requestedAction, packageId, registration }
+  return { programId, offeringId, sessionId, clientRequestId, requestedAction, packageId, paymentPreference, registration }
 }
 
 function toDateValue(value) {
@@ -399,7 +435,34 @@ function formatAmount(cents) {
   return `$${(Number(cents ?? 0) / 100).toFixed(2)} CAD`
 }
 
-async function sendAcknowledgements({ registration, program, session, reference, isWaitlist, packageSnapshot }) {
+// Renders the full chosen payment plan — every installment's exact amount,
+// not just a rounded "approximately $X each" summary — so the family and
+// staff both see precisely what was agreed to (the last installment is
+// often a cent or two different from the others; see
+// computeInstallmentAmountsCents in lib/robotics-packages.js).
+//
+// The Back-to-School promotion is a pay-in-full incentive only — an
+// installment plan always uses the package's regular price, even while the
+// promotion is active, so these two branches deliberately show different
+// totals (payableSubtotalCents vs. regularSubtotalCents) rather than one
+// shared "effective subtotal".
+function paymentPreferenceHtml(snapshot) {
+  if (!snapshot) return ''
+  if (snapshot.method === 'pay_in_full') {
+    const promoNote = snapshot.promotionApplied
+      ? ` — includes the Back-to-School first-class-free offer (save ${formatAmount(snapshot.promotionDiscountCents)})`
+      : ''
+    return `<p style="margin:0 0 8px"><strong>Payment preference:</strong> Pay in full — ${formatAmount(snapshot.payableSubtotalCents)} (plus applicable taxes)${promoNote}</p>`
+  }
+  const installmentRows = snapshot.installmentAmountsCents
+    .map((cents, i) => `<li>Installment ${i + 1} of ${snapshot.installmentCount}: ${formatAmount(cents)}</li>`)
+    .join('')
+  return `
+          <p style="margin:0 0 4px"><strong>Payment preference:</strong> ${snapshot.installmentCount}-installment plan — regular package subtotal ${formatAmount(snapshot.regularSubtotalCents)} (plus applicable taxes). The Back-to-School offer applies only when paying in full.</p>
+          <ul style="margin:2px 0 8px 18px;padding:0">${installmentRows}</ul>`
+}
+
+async function sendAcknowledgements({ registration, program, session, reference, isWaitlist, packageSnapshot, paymentPreferenceSnapshot }) {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     console.warn('Enrollment request saved; SMTP credentials are not configured, so email was skipped.')
     return
@@ -429,10 +492,11 @@ async function sendAcknowledgements({ registration, program, session, reference,
         <div style="background:#f8fafc;padding:16px;border-radius:10px;margin:18px 0">
           <p style="margin:0 0 8px"><strong>Schedule:</strong> ${schedule}</p>
           ${location ? `<p style="margin:0 0 8px"><strong>Location:</strong> ${location}</p>` : ''}
-          ${packageSnapshot ? `<p style="margin:0 0 8px"><strong>Package:</strong> ${escapeHtml(packageSnapshot.name)} — ${packageSnapshot.classCount} classes · ${formatAmount(packageSnapshot.perClassCents)}/class · ${formatAmount(packageSnapshot.subtotalCents)} package subtotal (plus applicable taxes)</p>` : ''}
+          ${packageSnapshot ? `<p style="margin:0 0 8px"><strong>Package:</strong> ${escapeHtml(packageSnapshot.name)} — ${packageSnapshot.classCount} classes · ${formatAmount(packageSnapshot.perClassCents)}/class · ${formatAmount(packageSnapshot.regularSubtotalCents)} package subtotal (plus applicable taxes)</p>` : ''}
+          ${paymentPreferenceHtml(paymentPreferenceSnapshot)}
           <p style="margin:0"><strong>Reference:</strong> ${safeReference}</p>
         </div>
-        <p><strong>No payment is due now.</strong> This request does not yet confirm a place. Our team will review availability and contact you with next steps${isWaitlist ? ' if a place becomes available' : ''}.</p>
+        <p><strong>No payment is due now.</strong> This request does not yet confirm a place. Our team will review availability and contact you with next steps${isWaitlist ? ' if a place becomes available' : ''}. Staff will follow up with placement and payment details after reviewing your request.</p>
         <p>Questions? Reply to this email or call <a href="tel:+16134006921">(613) 400-6921</a>.</p>
       </div>
     </div>`
@@ -443,7 +507,8 @@ async function sendAcknowledgements({ registration, program, session, reference,
     <p><strong>Reference:</strong> ${safeReference}</p>
     <p><strong>Program:</strong> ${programTitle}</p>
     <p><strong>Schedule:</strong> ${schedule}</p>
-    ${packageSnapshot ? `<p><strong>Package:</strong> ${escapeHtml(packageSnapshot.name)} — ${packageSnapshot.classCount} classes · ${formatAmount(packageSnapshot.perClassCents)}/class · ${formatAmount(packageSnapshot.subtotalCents)} subtotal</p>` : ''}
+    ${packageSnapshot ? `<p><strong>Package:</strong> ${escapeHtml(packageSnapshot.name)} — ${packageSnapshot.classCount} classes · ${formatAmount(packageSnapshot.perClassCents)}/class · ${formatAmount(packageSnapshot.regularSubtotalCents)} subtotal</p>` : ''}
+    ${paymentPreferenceHtml(paymentPreferenceSnapshot)}
     <p><strong>Child:</strong> ${childName} (age ${escapeHtml(registration.childAge)}${registration.childGrade ? `, ${escapeHtml(registration.childGrade)}` : ''})</p>
     <p><strong>Parent:</strong> ${parentName} · ${escapeHtml(registration.parentEmail)} · ${escapeHtml(registration.parentPhone)}</p>
     <p>Review the private registration record in the program management portal for all additional details.</p>`
@@ -613,6 +678,9 @@ async function saveEnrollmentRequest(db, request) {
       quotedTuitionCents: quotedTuition(program, session),
       currency: session.currency || program.currency || 'CAD',
       ...(request.packageId ? { packageSnapshot: buildPackageSnapshot(request.packageId) } : {}),
+      ...(request.paymentPreference
+        ? { paymentPreferenceSnapshot: buildPaymentPreferenceSnapshot(request.packageId, request.paymentPreference) }
+        : {}),
       programSnapshot: {
         title: program.title || '',
         category: program.category || '',
@@ -639,6 +707,9 @@ async function saveEnrollmentRequest(db, request) {
       program,
       session,
       packageSnapshot: request.packageId ? buildPackageSnapshot(request.packageId) : null,
+      paymentPreferenceSnapshot: request.paymentPreference
+        ? buildPaymentPreferenceSnapshot(request.packageId, request.paymentPreference)
+        : null,
     }
   })
 }
@@ -696,6 +767,7 @@ export const handler = async event => {
         reference: saved.reference,
         isWaitlist: false,
         packageSnapshot: saved.packageSnapshot,
+        paymentPreferenceSnapshot: saved.paymentPreferenceSnapshot,
       })
     }
 

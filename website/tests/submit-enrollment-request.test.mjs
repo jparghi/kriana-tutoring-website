@@ -87,8 +87,12 @@ test('validatePayload rejects an unrecognized packageId up front', () => {
   assert.equal(result.error, 'Selected class package is not recognized.')
 })
 
-test('validatePayload accepts a recognized packageId', () => {
-  const result = validatePayload({ ...baseRequest(), packageId: 'builder' })
+test('validatePayload accepts a recognized packageId with a valid payment preference', () => {
+  const result = validatePayload({
+    ...baseRequest(),
+    packageId: 'builder',
+    paymentPreference: { method: 'pay_in_full' },
+  })
   assert.equal(result.error, undefined)
   assert.equal(result.packageId, 'builder')
 })
@@ -171,4 +175,100 @@ test('idempotency digest is stable for identical requests', () => {
   const a = idempotencyDigest(baseRequest({ packageId: 'builder' }))
   const b = idempotencyDigest(baseRequest({ packageId: 'builder' }))
   assert.equal(a, b)
+})
+
+// --- Payment preference (commitment vs. payment scheduling are separate) ---
+
+test('validatePayload requires a payment preference for a robotics enrollment request', () => {
+  const result = validatePayload(baseRequest({ packageId: 'builder' }))
+  assert.equal(result.error, 'Please choose a payment preference before requesting a spot.')
+})
+
+test('validatePayload normalizes pay_in_full to installmentCount 1, ignoring any client-supplied count', () => {
+  const result = validatePayload(baseRequest({
+    packageId: 'builder',
+    paymentPreference: { method: 'pay_in_full', installmentCount: 4 },
+  }))
+  assert.equal(result.error, undefined)
+  assert.deepEqual(result.paymentPreference, { method: 'pay_in_full', installmentCount: 1 })
+})
+
+test('validatePayload accepts every allowed installment count for Builder', () => {
+  for (const count of [2, 3, 4]) {
+    const result = validatePayload(baseRequest({
+      packageId: 'builder',
+      paymentPreference: { method: 'installments', installmentCount: count },
+    }))
+    assert.equal(result.error, undefined, `count ${count} should be accepted`)
+    assert.deepEqual(result.paymentPreference, { method: 'installments', installmentCount: count })
+  }
+})
+
+test('validatePayload accepts every allowed installment count for Engineer', () => {
+  for (const count of [2, 3, 4, 5, 6]) {
+    const result = validatePayload(baseRequest({
+      packageId: 'engineer',
+      paymentPreference: { method: 'installments', installmentCount: count },
+    }))
+    assert.equal(result.error, undefined, `count ${count} should be accepted`)
+    assert.deepEqual(result.paymentPreference, { method: 'installments', installmentCount: count })
+  }
+})
+
+test('validatePayload rejects an installment count unsupported by the selected package', () => {
+  const result = validatePayload(baseRequest({
+    packageId: 'builder',
+    paymentPreference: { method: 'installments', installmentCount: 5 },
+  }))
+  assert.equal(result.error, 'Selected installment plan is not available for this package.')
+})
+
+test('validatePayload rejects installments for Explorer (pay-in-full only)', () => {
+  const result = validatePayload(baseRequest({
+    packageId: 'explorer',
+    paymentPreference: { method: 'installments', installmentCount: 2 },
+  }))
+  assert.equal(result.error, 'Selected installment plan is not available for this package.')
+})
+
+test('validatePayload rejects an unrecognized payment method', () => {
+  const result = validatePayload(baseRequest({
+    packageId: 'builder',
+    paymentPreference: { method: 'crypto', installmentCount: 2 },
+  }))
+  assert.equal(result.error, 'Selected payment preference is not recognized.')
+})
+
+test('validatePayload ignores client-supplied financial amounts on paymentPreference', () => {
+  const result = validatePayload(baseRequest({
+    packageId: 'builder',
+    paymentPreference: {
+      method: 'installments',
+      installmentCount: 3,
+      effectiveSubtotalCents: 1,
+      installmentAmountsCents: [1, 1, 1],
+    },
+  }))
+  assert.equal(result.error, undefined)
+  assert.deepEqual(result.paymentPreference, { method: 'installments', installmentCount: 3 })
+})
+
+test('validatePayload rejects a payment preference on a waitlist request', () => {
+  const result = validatePayload(baseRequest({
+    requestedAction: 'waitlist',
+    packageId: 'builder',
+    paymentPreference: { method: 'pay_in_full' },
+  }))
+  assert.equal(result.error, 'Payment preference does not apply to waitlist requests.')
+})
+
+test('validatePayload allows a waitlist request with no payment preference at all', () => {
+  const result = validatePayload(baseRequest({ requestedAction: 'waitlist', packageId: 'builder' }))
+  assert.equal(result.error, undefined)
+  assert.equal(result.paymentPreference, null)
+})
+
+test('validatePayload rejects a payment preference when no package is selected', () => {
+  const result = validatePayload(baseRequest({ packageId: '', paymentPreference: { method: 'pay_in_full' } }))
+  assert.equal(result.error, 'Payment preference is only available for class packages.')
 })

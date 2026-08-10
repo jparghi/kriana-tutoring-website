@@ -10,7 +10,11 @@ import {
 import BookingLayout from '../../../../components/booking/BookingLayout'
 import { BookingStepper } from '../../../../components/booking/BookingStepper'
 import { ClassScheduleDisclosure } from '../../../../components/booking/ClassScheduleDisclosure'
-import { PACKAGE_PROMO, getRoboticsPackage, isValidPackageId, getPackagePromoDiscountCents, getDiscountedSubtotalCents, getBillingCadenceLabel } from '../../../../lib/robotics-packages.js'
+import {
+  PACKAGE_PROMO, getRoboticsPackage, isValidPackageId,
+  getPaymentOptionsLabel, getAllowedInstallmentCounts,
+  computeInstallmentAmountsCents, resolvePackagePricing,
+} from '../../../../lib/robotics-packages.js'
 
 const ROBOTICS_CATEGORY = 'Robotics'
 
@@ -28,8 +32,7 @@ function Field({ label, children, required, hint }: { label: string; children: R
 
 const inputClass = 'w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-base sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0c6162]/30 focus:border-[#0c6162] transition-all bg-white'
 
-function SubStepper({ step }: { step: number }) {
-  const steps = ['Your Info', 'Child Details', 'Review & Submit']
+function SubStepper({ step, steps }: { step: number; steps: string[] }) {
   return (
     <div className="flex items-center mb-6">
       {steps.map((label, i) => {
@@ -82,6 +85,12 @@ function RegisterForm() {
     childAge: '', childGrade: '', medicalNotes: '', emergencyContact: '',
     specialRequests: '', consentAccepted: false, photoConsent: false,
   })
+  // Preselected to Pay in Full per spec. installmentCount is only meaningful
+  // when method === 'installments'; it's set once the package's allowed
+  // counts are known (see effect below).
+  const [paymentPreference, setPaymentPreference] = useState<{ method: 'pay_in_full' | 'installments'; installmentCount: number }>({
+    method: 'pay_in_full', installmentCount: 1,
+  })
 
   useEffect(() => {
     if (!clientRequestId.current) {
@@ -113,88 +122,6 @@ function RegisterForm() {
 
   function set(field: string, value: any) {
     setFormState(prev => ({ ...prev, [field]: value }))
-  }
-
-  function goNext() {
-    setError('')
-    if (subStep === 1) {
-      if (!form.parentName.trim()) { setError('Please enter your full name.'); return }
-      if (!form.parentEmail.includes('@')) { setError('Please enter a valid email address.'); return }
-      if (!form.parentPhone.trim()) { setError('Please enter your phone number.'); return }
-    }
-    if (subStep === 2) {
-      if (!form.childName.trim()) { setError("Please enter your child's name."); return }
-      if (!form.childAge) { setError("Please enter your child's age."); return }
-    }
-    setSubStep(s => s + 1)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  function goBack() {
-    setError('')
-    setSubStep(s => s - 1)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!form.consentAccepted) { setError('Please accept the consent to continue.'); return }
-    setError('')
-    setSubmitting(true)
-
-    try {
-      const soldOut = offering && isOfferingSoldOut(offering)
-      const useWaitlist = isWaitlistParam || (soldOut && offering?.waitlistEnabled)
-      const response = await fetch('/.netlify/functions/submit-enrollment-request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          programId,
-          ...(offering.source === 'legacySession'
-            ? { sessionId: offering.id }
-            : { offeringId: offering.id }),
-          clientRequestId: clientRequestId.current,
-          requestedAction: useWaitlist ? 'waitlist' : 'enrollment',
-          ...(selectedPackage ? { packageId: selectedPackage.id } : {}),
-          registration: {
-            parentName: form.parentName,
-            parentEmail: form.parentEmail,
-            parentPhone: form.parentPhone,
-            childName: form.childName,
-            childAge: form.childAge,
-            childGrade: form.childGrade,
-            medicalNotes: form.medicalNotes,
-            emergencyContact: form.emergencyContact,
-            specialRequests: form.specialRequests,
-            consentAccepted: form.consentAccepted,
-            photoConsent: form.photoConsent,
-          },
-        }),
-      })
-      const result = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(result.error || 'We could not submit your request. Please try again.')
-
-      if (useWaitlist) {
-        const waitlistParams = new URLSearchParams()
-        if (program?.title) waitlistParams.set('program', program.title)
-        if (result.reference) waitlistParams.set('reference', result.reference)
-        router.push(`/booking/waitlist-confirmed?${waitlistParams.toString()}`)
-        return
-      }
-
-      const requestParams = new URLSearchParams()
-      if (result.registrationNumber) requestParams.set('reference', result.registrationNumber)
-      if (program?.title) requestParams.set('program', program.title)
-      // Carried through so the confirmation page can show the same itemized
-      // class schedule the family just reviewed, without re-deriving it from
-      // scratch or trying to serialize the whole schedule into the URL.
-      if (offering?.source !== 'legacySession') requestParams.set('offeringId', offering.id)
-      if (selectedPackage) requestParams.set('package', selectedPackage.id)
-      router.push(`/booking/request-received?${requestParams.toString()}`)
-    } catch (err: any) {
-      setError(err.message || 'Something went wrong. Please try again.')
-      setSubmitting(false)
-    }
   }
 
   if (loading) return (
@@ -273,6 +200,116 @@ function RegisterForm() {
   const packageSchedule = selectedPackage ? getPackageClassSchedule(offering, selectedPackage) : null
   const isBirthday = program.category === 'Birthday Party'
 
+  // Payment preference is only meaningful for a real class-package commitment
+  // that isn't a free waitlist join — waitlist requests never show or collect
+  // a payment preference.
+  const hasPaymentStep = Boolean(selectedPackage) && !useWaitlist
+  const allowedInstallmentCounts = selectedPackage ? getAllowedInstallmentCounts(selectedPackage) : []
+  // The Back-to-School promotion is a pay-in-full incentive only — an
+  // installment plan always uses the regular price, even while the
+  // promotion is active, so these two pricing results are deliberately
+  // computed independently rather than sharing one "effective subtotal".
+  const payInFullPricing = selectedPackage ? resolvePackagePricing(selectedPackage, 'pay_in_full') : null
+  const installmentsPricing = selectedPackage ? resolvePackagePricing(selectedPackage, 'installments') : null
+  const selectedInstallmentCount = allowedInstallmentCounts.includes(paymentPreference.installmentCount)
+    ? paymentPreference.installmentCount
+    : allowedInstallmentCounts[0]
+  const installmentPreviewAmountsCents = selectedInstallmentCount && installmentsPricing
+    ? computeInstallmentAmountsCents(installmentsPricing.payableSubtotalCents, selectedInstallmentCount)
+    : []
+
+  const stepLabels = ['Your Info', 'Child Details', ...(hasPaymentStep ? ['Payment'] : []), 'Review & Submit']
+  const paymentSubStep = hasPaymentStep ? 3 : -1
+  const reviewSubStep = hasPaymentStep ? 4 : 3
+
+  function goNext() {
+    setError('')
+    if (subStep === 1) {
+      if (!form.parentName.trim()) { setError('Please enter your full name.'); return }
+      if (!form.parentEmail.includes('@')) { setError('Please enter a valid email address.'); return }
+      if (!form.parentPhone.trim()) { setError('Please enter your phone number.'); return }
+    }
+    if (subStep === 2) {
+      if (!form.childName.trim()) { setError("Please enter your child's name."); return }
+      if (!form.childAge) { setError("Please enter your child's age."); return }
+    }
+    setSubStep(s => s + 1)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function goBack() {
+    setError('')
+    setSubStep(s => s - 1)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!form.consentAccepted) { setError('Please accept the consent to continue.'); return }
+    setError('')
+    setSubmitting(true)
+
+    try {
+      const response = await fetch('/.netlify/functions/submit-enrollment-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          programId,
+          ...(offering.source === 'legacySession'
+            ? { sessionId: offering.id }
+            : { offeringId: offering.id }),
+          clientRequestId: clientRequestId.current,
+          requestedAction: useWaitlist ? 'waitlist' : 'enrollment',
+          ...(selectedPackage ? { packageId: selectedPackage.id } : {}),
+          // Only the selected method + count are sent — every dollar amount
+          // is resolved and validated server-side against the canonical
+          // package catalogue, never trusted from the browser.
+          ...(hasPaymentStep ? {
+            paymentPreference: paymentPreference.method === 'installments'
+              ? { method: 'installments', installmentCount: selectedInstallmentCount }
+              : { method: 'pay_in_full', installmentCount: 1 },
+          } : {}),
+          registration: {
+            parentName: form.parentName,
+            parentEmail: form.parentEmail,
+            parentPhone: form.parentPhone,
+            childName: form.childName,
+            childAge: form.childAge,
+            childGrade: form.childGrade,
+            medicalNotes: form.medicalNotes,
+            emergencyContact: form.emergencyContact,
+            specialRequests: form.specialRequests,
+            consentAccepted: form.consentAccepted,
+            photoConsent: form.photoConsent,
+          },
+        }),
+      })
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(result.error || 'We could not submit your request. Please try again.')
+
+      if (useWaitlist) {
+        const waitlistParams = new URLSearchParams()
+        if (program?.title) waitlistParams.set('program', program.title)
+        if (result.reference) waitlistParams.set('reference', result.reference)
+        router.push(`/booking/waitlist-confirmed?${waitlistParams.toString()}`)
+        return
+      }
+
+      const requestParams = new URLSearchParams()
+      if (result.registrationNumber) requestParams.set('reference', result.registrationNumber)
+      if (program?.title) requestParams.set('program', program.title)
+      // Carried through so the confirmation page can show the same itemized
+      // class schedule the family just reviewed, without re-deriving it from
+      // scratch or trying to serialize the whole schedule into the URL.
+      if (offering?.source !== 'legacySession') requestParams.set('offeringId', offering.id)
+      if (selectedPackage) requestParams.set('package', selectedPackage.id)
+      router.push(`/booking/request-received?${requestParams.toString()}`)
+    } catch (err: any) {
+      setError(err.message || 'Something went wrong. Please try again.')
+      setSubmitting(false)
+    }
+  }
+
   return (
     <BookingLayout backTo={subStep === 1 ? `/booking/${programId}` : undefined} backLabel={program.title} maxWidth="max-w-xl">
       <BookingStepper step={2} />
@@ -289,15 +326,8 @@ function RegisterForm() {
           {selectedPackage && !useWaitlist ? (
             <div className="shrink-0 text-right">
               <p className="text-xs font-bold uppercase tracking-wide text-[#0083CB]">{selectedPackage.name}</p>
-              {getPackagePromoDiscountCents(selectedPackage) > 0 ? (
-                <>
-                  <p className="text-xs text-slate-400 line-through">${(selectedPackage.subtotalCents / 100).toFixed(0)}</p>
-                  <p className="text-xl font-black text-orange-600">${(getDiscountedSubtotalCents(selectedPackage) / 100).toFixed(0)}</p>
-                </>
-              ) : (
-                <p className="text-xl font-black text-slate-800">${(selectedPackage.subtotalCents / 100).toFixed(0)}</p>
-              )}
-              <p className="text-xs text-slate-400">{selectedPackage.classCount} classes · package subtotal</p>
+              <p className="text-xl font-black text-slate-800">${(selectedPackage.regularSubtotalCents / 100).toFixed(0)}</p>
+              <p className="text-xs text-slate-400">{selectedPackage.classCount} classes · package price</p>
             </div>
           ) : price > 0 && !useWaitlist && (
             <div className="shrink-0 text-right">
@@ -320,7 +350,7 @@ function RegisterForm() {
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-        <SubStepper step={subStep} />
+        <SubStepper step={subStep} steps={stepLabels} />
         {error && (
           <div className="bg-red-50 border border-red-100 text-red-700 rounded-xl px-4 py-3 text-sm font-medium mb-5">{error}</div>
         )}
@@ -386,7 +416,113 @@ function RegisterForm() {
           </div>
         )}
 
-        {subStep === 3 && (
+        {hasPaymentStep && payInFullPricing && installmentsPricing && subStep === paymentSubStep && (
+          <div className="space-y-4">
+            <div className="mb-5">
+              <h3 className="font-black text-slate-800 text-base">How would you like to pay?</h3>
+              <p className="text-sm text-slate-400 mt-0.5">This sets your preference for after your child&apos;s place is confirmed — no payment is collected now.</p>
+            </div>
+
+            <div className="space-y-3">
+              <label className={`flex items-start gap-3 rounded-xl border p-4 cursor-pointer transition-colors ${
+                paymentPreference.method === 'pay_in_full' ? 'border-[#0c6162] bg-[#0c6162]/5' : 'border-slate-200 hover:border-slate-300'
+              }`}>
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  checked={paymentPreference.method === 'pay_in_full'}
+                  onChange={() => setPaymentPreference({ method: 'pay_in_full', installmentCount: 1 })}
+                  className="mt-0.5 accent-[#0c6162] w-4 h-4 shrink-0"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-bold text-slate-800 text-sm">Pay in Full</p>
+                    {payInFullPricing.promotionApplied && (
+                      <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-orange-700">Best Price</span>
+                    )}
+                  </div>
+                  {selectedPackage && (
+                    <p className="mt-1 text-sm font-semibold text-slate-700">
+                      ${(selectedPackage.perClassCents / 100).toFixed(0)}/class <span className="font-normal text-slate-400">when paid in full</span>
+                    </p>
+                  )}
+                  <p className="mt-0.5 text-sm text-slate-600">
+                    {payInFullPricing.promotionApplied ? (
+                      <>
+                        <span className="text-slate-400 line-through">${(payInFullPricing.regularSubtotalCents / 100).toFixed(2)}</span>{' '}
+                        <span className="font-semibold text-orange-600">${(payInFullPricing.payableSubtotalCents / 100).toFixed(2)}</span> package subtotal
+                      </>
+                    ) : (
+                      <>${(payInFullPricing.payableSubtotalCents / 100).toFixed(2)} package subtotal</>
+                    )}
+                  </p>
+                  {payInFullPricing.promotionApplied && (
+                    <p className="text-xs font-semibold text-orange-600">🏷️ Includes the Back-to-School first-class-free offer.</p>
+                  )}
+                  <p className="text-xs text-slate-400">Plus applicable taxes.</p>
+                </div>
+              </label>
+
+              {allowedInstallmentCounts.length > 0 && (
+                <label className={`flex items-start gap-3 rounded-xl border p-4 cursor-pointer transition-colors ${
+                  paymentPreference.method === 'installments' ? 'border-[#0c6162] bg-[#0c6162]/5' : 'border-slate-200 hover:border-slate-300'
+                }`}>
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    checked={paymentPreference.method === 'installments'}
+                    onChange={() => setPaymentPreference({ method: 'installments', installmentCount: allowedInstallmentCounts[0] })}
+                    className="mt-0.5 accent-[#0c6162] w-4 h-4 shrink-0"
+                  />
+                  <div className="flex-1">
+                    <p className="font-bold text-slate-800 text-sm">Installment Plan</p>
+                    <p className="mt-1 text-sm text-slate-600">
+                      Flexible installment plan — billed at the regular ${((selectedPackage?.installmentPerClassCents ?? 0) / 100).toFixed(0)}/class rate.
+                    </p>
+                    <p className="text-xs text-slate-400">The Back-to-School offer applies only when paying in full.</p>
+
+                    {paymentPreference.method === 'installments' && (
+                      <div className="mt-2 space-y-2">
+                        <select
+                          className={inputClass}
+                          value={selectedInstallmentCount}
+                          onChange={e => setPaymentPreference({ method: 'installments', installmentCount: Number(e.target.value) })}
+                        >
+                          {allowedInstallmentCounts.map(count => (
+                            <option key={count} value={count}>{count} payments</option>
+                          ))}
+                        </select>
+                        <div className="rounded-lg bg-slate-50 px-3 py-2.5 text-sm">
+                          <p className="text-slate-700">
+                            <span className="font-semibold">{selectedInstallmentCount} payments</span>
+                            {' · '}
+                            ${(installmentPreviewAmountsCents[0] / 100).toFixed(2)} per installment before tax
+                          </p>
+                          <p className="text-slate-500 mt-0.5">Package subtotal: ${(installmentsPricing.regularSubtotalCents / 100).toFixed(2)}</p>
+                          <p className="text-xs text-slate-400 mt-1">
+                            This is a way to pay for your child&apos;s complete package, not a monthly membership.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </label>
+              )}
+            </div>
+
+            <div className="bg-[#e6f4f4] border border-[#0c6162]/15 rounded-xl px-4 py-3">
+              <p className="text-sm font-bold text-[#0c6162]">No payment is due today.</p>
+              <p className="text-sm text-slate-600 mt-1">No payment is collected during this request. This only records your preference for after your child&apos;s place is confirmed.</p>
+            </div>
+
+            <div className="flex gap-3 mt-2">
+              <button type="button" onClick={goBack} className="flex-1 py-3.5 rounded-xl text-slate-600 font-bold text-sm border border-slate-200 hover:bg-slate-50 transition-all">← Back</button>
+              <button type="button" onClick={goNext} className="flex-1 py-3.5 rounded-xl text-white font-black text-sm transition-all hover:opacity-90 active:scale-[0.99]" style={{ backgroundColor: '#0c6162' }}>Continue →</button>
+            </div>
+          </div>
+        )}
+
+        {subStep === reviewSubStep && (
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="mb-5">
               <h3 className="font-black text-slate-800 text-base">Review & Confirm</h3>
@@ -398,25 +534,44 @@ function RegisterForm() {
                 <p className="text-xs font-bold uppercase tracking-wide text-[#0083CB]">Selected Package</p>
                 <p className="mt-1 font-black text-slate-800">{selectedPackage.name}</p>
                 <p className="mt-1 text-slate-600">{selectedPackage.classCount} classes</p>
-                <p className="text-slate-600">${(selectedPackage.perClassCents / 100).toFixed(0)} per class</p>
-                {getPackagePromoDiscountCents(selectedPackage) > 0 ? (
-                  <>
-                    <p className="text-slate-500">
-                      <span className="line-through">${(selectedPackage.subtotalCents / 100).toFixed(0)}</span>{' '}
-                      <span className="font-semibold text-orange-600">${(getDiscountedSubtotalCents(selectedPackage) / 100).toFixed(0)} package subtotal</span>
-                    </p>
-                    <p className="mt-1 text-xs font-bold text-orange-600">🏷️ {PACKAGE_PROMO.label} (${(getPackagePromoDiscountCents(selectedPackage) / 100).toFixed(0)} off)</p>
-                  </>
-                ) : (
-                  <p className="font-semibold text-slate-800">${(selectedPackage.subtotalCents / 100).toFixed(0)} package subtotal</p>
-                )}
-                <p className="mt-1.5 text-xs font-semibold text-[#0c6162]">{getBillingCadenceLabel(selectedPackage)}</p>
-                <p className="mt-1 text-xs text-slate-400">Plus applicable taxes. Payment is not collected when requesting a spot.</p>
+                <p className="font-semibold text-slate-800">${(selectedPackage.regularSubtotalCents / 100).toFixed(0)} package price</p>
+                <p className="mt-1.5 text-xs font-semibold text-[#0c6162]">{getPaymentOptionsLabel(selectedPackage)}</p>
+                <p className="mt-1 text-xs text-slate-400">Plus applicable taxes. Payment is not collected when requesting a spot. See your payment preference below for the total based on how you choose to pay.</p>
                 {packageSchedule && packageSchedule.classDates.length > 0 && (
                   <div className="mt-3">
                     <ClassScheduleDisclosure schedule={packageSchedule} packageName={selectedPackage.name} />
                   </div>
                 )}
+              </div>
+            )}
+
+            {hasPaymentStep && payInFullPricing && installmentsPricing && (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm">
+                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Payment Preference</p>
+                {paymentPreference.method === 'pay_in_full' ? (
+                  <>
+                    <p className="mt-1 font-semibold text-slate-800">
+                      Pay in Full — ${(payInFullPricing.payableSubtotalCents / 100).toFixed(2)} (plus applicable taxes)
+                    </p>
+                    <p className={`text-xs font-semibold ${payInFullPricing.promotionApplied ? 'text-orange-600' : 'text-slate-400'}`}>
+                      {payInFullPricing.promotionApplied
+                        ? `${PACKAGE_PROMO.label} applied — save $${(payInFullPricing.promotionDiscountCents / 100).toFixed(2)}`
+                        : 'No promotion applied.'}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="mt-1 font-semibold text-slate-800">
+                      {selectedInstallmentCount} payments — ${(installmentPreviewAmountsCents[0] / 100).toFixed(2)} per installment before tax
+                    </p>
+                    <p className="text-slate-500">Regular package subtotal: ${(installmentsPricing.regularSubtotalCents / 100).toFixed(2)}</p>
+                    <p className="text-xs font-semibold text-slate-400">
+                      Back-to-School promotion not applied — it applies only when paying in full.
+                    </p>
+                  </>
+                )}
+                <p className="mt-1 text-xs text-slate-400">No payment is due today.</p>
+                <button type="button" onClick={() => setSubStep(paymentSubStep)} className="mt-2 text-xs font-semibold text-[#0c6162] hover:underline">Change payment preference</button>
               </div>
             )}
 

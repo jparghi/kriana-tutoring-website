@@ -14,7 +14,7 @@ import { BIRTHDAY_PARTY_PATH } from '../../../lib/site-links'
 import BookingLayout from '../../../components/booking/BookingLayout'
 import { BookingStepper } from '../../../components/booking/BookingStepper'
 import { ClassScheduleDisclosure } from '../../../components/booking/ClassScheduleDisclosure'
-import { getPubliclyVisiblePackages, PACKAGE_PROMO, getRoboticsPackage, isValidPackageId, getPackagePromoDiscountCents, getDiscountedSubtotalCents, getBillingCadenceLabel } from '../../../lib/robotics-packages.js'
+import { getPubliclyVisiblePackages, PACKAGE_PROMO, getRoboticsPackage, isValidPackageId, resolvePackagePricing } from '../../../lib/robotics-packages.js'
 
 const ROBOTICS_CATEGORY = 'Robotics'
 
@@ -185,8 +185,7 @@ function PackageChooser({ programId }: { programId: string }) {
           // text badge — decoupled from `badge` since Builder is currently
           // shown with no badge at all (see lib/robotics-packages.js).
           const isFeatured = pkg.id === 'builder'
-          const discountCents = getPackagePromoDiscountCents(pkg)
-          const discountedTotal = getDiscountedSubtotalCents(pkg)
+          const payInFullPricing = resolvePackagePricing(pkg, 'pay_in_full')!
 
           return (
             <Link
@@ -233,21 +232,32 @@ function PackageChooser({ programId }: { programId: string }) {
                 </ul>
               )}
 
-              <div className="mt-4">
-                {discountCents > 0 ? (
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-sm font-semibold text-slate-400 line-through">${(pkg.subtotalCents / 100).toFixed(0)}</span>
-                    <span className="text-2xl font-black text-orange-600">${(discountedTotal / 100).toFixed(0)}</span>
-                  </div>
+              {/* Parents should read this in order: the bulk per-class rate
+                  that explains why the package is discounted off the $30/class
+                  list rate, then the Back-to-School offer stacked on top of
+                  that, then what the regular (installment) rate is. */}
+              <p className="mt-4 text-sm font-bold text-slate-700">
+                ${(pkg.perClassCents / 100).toFixed(0)}/class <span className="font-normal text-slate-400">when paid in full</span>
+              </p>
+              <div className="mt-1 flex items-baseline gap-2">
+                {payInFullPricing.promotionApplied ? (
+                  <>
+                    <span className="text-sm font-semibold text-slate-400 line-through">${(payInFullPricing.regularSubtotalCents / 100).toFixed(0)}</span>
+                    <span className="text-2xl font-black text-orange-600">${(payInFullPricing.payableSubtotalCents / 100).toFixed(0)}</span>
+                  </>
                 ) : (
-                  <span className="text-2xl font-black text-slate-900">${(pkg.subtotalCents / 100).toFixed(0)}</span>
+                  <span className="text-2xl font-black text-slate-900">${(payInFullPricing.payableSubtotalCents / 100).toFixed(0)}</span>
                 )}
+                <span className="text-xs font-semibold text-slate-500">+ tax</span>
               </div>
-              {discountCents > 0 && (
-                <p className="mt-0.5 text-[11px] font-bold text-orange-600">Includes 1 free class — save ${(discountCents / 100).toFixed(0)}</p>
+              {payInFullPricing.promotionApplied && (
+                <p className="mt-1 text-[11px] font-bold text-orange-600">🏷️ {PACKAGE_PROMO.label}</p>
               )}
-              <p className="text-xs text-slate-400">${(pkg.perClassCents / 100).toFixed(0)}/class · plus applicable taxes</p>
-              <p className="mt-1.5 text-[11px] font-semibold text-[#0c6162]">{getBillingCadenceLabel(pkg)}</p>
+              {pkg.installmentPerClassCents != null && (
+                <p className="mt-1 text-xs text-slate-400">
+                  Regular rate ${(pkg.installmentPerClassCents / 100).toFixed(0)}/class · Installments available
+                </p>
+              )}
 
               <span
                 className="mt-4 inline-flex w-fit items-center gap-1 rounded-full px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition-transform duration-200 group-hover:scale-[1.03]"
@@ -449,16 +459,10 @@ function ProgramDetailContent() {
               <div>
                 <p className="text-xs font-bold uppercase tracking-wide text-[#0083CB]">Selected Package</p>
                 <p className="mt-0.5 text-sm font-semibold text-slate-800">
-                  {selectedPackage.name} — {selectedPackage.classCount} classes · ${(selectedPackage.perClassCents / 100).toFixed(0)}/class · {
-                    getPackagePromoDiscountCents(selectedPackage) > 0 ? (
-                      <>
-                        <span className="text-slate-400 line-through">${(selectedPackage.subtotalCents / 100).toFixed(0)}</span>{' '}
-                        <span className="font-bold text-orange-600">${(getDiscountedSubtotalCents(selectedPackage) / 100).toFixed(0)}</span> total (plus applicable taxes)
-                      </>
-                    ) : (
-                      <>${(selectedPackage.subtotalCents / 100).toFixed(0)} total (plus applicable taxes)</>
-                    )
-                  }
+                  {selectedPackage.name} — {selectedPackage.classCount} classes · ${(selectedPackage.regularSubtotalCents / 100).toFixed(0)} package price (plus applicable taxes)
+                </p>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  You&apos;ll choose how to pay — including the Back-to-School pay-in-full price, if eligible — in the next step.
                 </p>
               </div>
               <Link href={`/booking/${programId}`} className="text-xs font-semibold text-slate-500 hover:text-slate-700">
