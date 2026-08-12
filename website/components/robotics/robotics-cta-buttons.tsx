@@ -23,21 +23,28 @@ export function RoboticsCtaButtons({ variant = "light" }: { variant?: "light" | 
   const { hasPublishedSchedule, hasOpenRequests, hasOpenWaitlist, loading } = useRoboticsAvailability();
   const styles = VARIANTS[variant];
 
+  // While availability is still loading, default to the copy/link for the
+  // site's actual steady state (published, open-for-requests schedules)
+  // rather than a pessimistic "nothing published yet" placeholder — those
+  // two states are now the same in practice, so this avoids the buttons
+  // visibly changing text right after the page paints, which reads as
+  // broken/flickery on a slower connection while the fetch resolves.
+  const primaryLabel = !loading && !hasPublishedSchedule ? "Explore Programs" : "View Weekly Programs";
+  const secondaryHref = !loading && !hasPublishedSchedule ? "/contact#consultation-form" : ROBOTICS_BOOKING_URL;
+  const secondaryLabel = loading
+    ? "View Schedules"
+    : hasOpenRequests
+      ? "View Schedules"
+      : hasOpenWaitlist ? "View Waitlists"
+        : hasPublishedSchedule ? "View Schedules" : "Ask About Programs";
+
   return (
     <div className="flex flex-wrap items-center gap-3">
       <a href="#programs" className={styles.primary}>
-        {loading ? "Explore Programs" : hasPublishedSchedule ? "View Weekly Programs" : "Explore Programs"}
+        {primaryLabel}
       </a>
-      <Link
-        href={hasPublishedSchedule ? ROBOTICS_BOOKING_URL : "/contact#consultation-form"}
-        className={styles.secondary}
-      >
-        {loading
-          ? "Ask a Question"
-          : hasOpenRequests
-            ? "View Schedules"
-            : hasOpenWaitlist ? "View Waitlists"
-              : hasPublishedSchedule ? "View Schedules" : "Ask About Programs"}
+      <Link href={secondaryHref} className={styles.secondary}>
+        {secondaryLabel}
       </Link>
     </div>
   );
