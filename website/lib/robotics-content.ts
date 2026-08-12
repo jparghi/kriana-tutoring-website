@@ -1,4 +1,5 @@
 import { BrainCircuitIcon, CompassIcon, GearIcon, SparkleIcon, TargetIcon, UsersIcon } from "../components/icons";
+import { formatTimeOfDay } from "./booking";
 
 // Young Engineers' own brand palette (pulled from their site's theme CSS),
 // used as accent color so the page reads as a joint Kriana + YE effort.
@@ -36,8 +37,17 @@ export function skillTagsForCategory(category?: string) {
 }
 
 // Confirmed licensed Young Engineers programs (names, ages, durations only —
-// no price/schedule/location yet). Shown as placeholder cards until each is
-// created for real in Firestore via the separate program-management portal.
+// no price/location yet). Shown as placeholder cards until each is created
+// for real in Firestore via the separate program-management portal.
+//
+// `weeklySchedules` is the one exception: it's the recurring day/time batches
+// these two programs actually run each week, published ahead of the real
+// Firestore offerings so families can see them on the program cards. Once
+// real offerings with published class dates exist for a program, their live
+// schedule takes over and this static one is no longer shown (see
+// ProgramCard in robotics-programs.tsx). Each entry's shape matches
+// Firestore's offering.weekday / offering.startTime / offering.endTime so it
+// formats identically via formatTimeOfDay/formatWeeklyClassSchedule.
 export const licensedRoboticsPrograms = [
   {
     id: "smartivo",
@@ -49,6 +59,10 @@ export const licensedRoboticsPrograms = [
     learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/smartivo-enrichment-program/",
     image: "/images/robotics/programs/smartivo.png",
     logo: "/images/robotics/programs/smartivo-logo.png",
+    weeklySchedules: [
+      { label: "Batch 1", weekday: "Monday", startTime: "16:15", endTime: "17:15" },
+      { label: "Batch 2", weekday: "Monday", startTime: "17:30", endTime: "18:30" },
+    ],
   },
   {
     id: "bricks-challenge",
@@ -60,6 +74,10 @@ export const licensedRoboticsPrograms = [
     learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/bricks-challenge-enrichment-program/",
     image: "/images/robotics/programs/bricks-challenge.png",
     logo: "/images/robotics/programs/bricks-challenge-logo.png",
+    weeklySchedules: [
+      { label: "Batch 1", weekday: "Wednesday", startTime: "16:15", endTime: "17:30" },
+      { label: "Batch 2", weekday: "Wednesday", startTime: "17:45", endTime: "19:00" },
+    ],
   },
   // Galileo Technic is a second-level program — hidden for launch, focusing
   // on first-level offerings first. Re-enable when ready to promote it.
@@ -111,6 +129,33 @@ export const licensedRoboticsPrograms = [
   //   logo: "/images/robotics/programs/algoc-logo.png",
   // },
 ];
+
+// Formats a single licensedRoboticsPrograms weekly-schedule batch the same
+// way real Firestore offerings are formatted (see formatOfferingWeeklySchedule
+// in lib/booking.ts), e.g. "Mondays, 4:15 p.m.–5:15 p.m.", so the time format
+// stays identical whether a program's schedule is this static placeholder
+// or a live published offering.
+export function formatWeeklyClassSchedule(
+  schedule?: { weekday?: string; startTime?: string; endTime?: string } | null
+) {
+  if (!schedule?.weekday || !schedule?.startTime) return null;
+  const day = schedule.weekday;
+  const dayLabel = day.endsWith("s") ? day : `${day}s`;
+  const start = formatTimeOfDay(schedule.startTime);
+  const end = schedule.endTime ? formatTimeOfDay(schedule.endTime) : "";
+  return end ? `${dayLabel}, ${start}–${end}` : `${dayLabel}, ${start}`;
+}
+
+// Formats every batch in a licensedRoboticsPrograms `weeklySchedules` list,
+// pairing each formatted time with its batch label (e.g. "Batch 1").
+export function formatWeeklyClassSchedules(
+  schedules?: { label?: string; weekday?: string; startTime?: string; endTime?: string }[] | null
+) {
+  if (!schedules?.length) return [];
+  return schedules
+    .map((schedule) => ({ label: schedule.label, time: formatWeeklyClassSchedule(schedule) }))
+    .filter((entry) => Boolean(entry.time)) as { label?: string; time: string }[];
+}
 
 const PLACEHOLDER_IMAGES = [
   "/images/young-engineers/robotics-and-coding.png",

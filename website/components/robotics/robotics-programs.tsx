@@ -10,6 +10,7 @@ import {
 } from "../../lib/booking";
 import { ROBOTICS_CATEGORY } from "../../lib/site-links";
 import {
+  formatWeeklyClassSchedules,
   imageForCategory,
   licensedRoboticsPrograms,
   placeholderImageForIndex,
@@ -61,6 +62,10 @@ function ProgramCard({
     (offering) => isOfferingRequestWindowOpen(offering) && isOfferingSoldOut(offering) && offering.waitlistEnabled
   );
   const accent = themeColorForCategory(program.category);
+  // Only show the static weekly-time placeholder while there's no real
+  // published offering yet — once one exists, its live schedule (with real
+  // class dates and location) is the source of truth instead.
+  const weeklyBatches = hasSchedule ? [] : formatWeeklyClassSchedules(program.weeklySchedules);
   const cardImage = image ?? program.image ?? imageForCategory(program.category);
   const programId = normalizeProgramName(program.id);
   const programTitle = normalizeProgramName(program.title);
@@ -126,6 +131,25 @@ function ProgramCard({
             {availabilityLabel}
           </span>
         </div>
+
+        {weeklyBatches.length > 0 && (
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-400">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4 shrink-0">
+                <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
+              </svg>
+              Weekly Class
+            </div>
+            <ul className="space-y-0.5 pl-6 text-sm text-slate-600">
+              {weeklyBatches.map((batch) => (
+                <li key={batch.time} className="flex flex-wrap items-baseline gap-x-1.5">
+                  {batch.label && <span className="font-semibold text-slate-800">{batch.label}:</span>}
+                  <span>{batch.time}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {program.description && (
           <div>

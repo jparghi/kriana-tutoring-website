@@ -13,7 +13,7 @@ import {
   // SUMMER_CAMP_BOOKING_URL, // unused while "Camps & PA Days" tile is hidden — see additionalOfferings below
   YOUNG_ENGINEERS_URL,
 } from "../../lib/site-links";
-import { YE_AMBER, /* YE_BLUE, */ YE_RED } from "../../lib/robotics-content";
+import { YE_AMBER, /* YE_BLUE, */ YE_RED, licensedRoboticsPrograms } from "../../lib/robotics-content";
 import { breadcrumbSchema, localBusinessSchema, siteUrl, toJsonLd } from "../../lib/seo";
 
 export const metadata: Metadata = {
@@ -108,10 +108,43 @@ export default function RoboticsPage() {
     url: `${siteUrl}/robotics`,
   };
 
+  // Course schema for the published weekly programs — keeps the recurring
+  // day/time batches in structured data in sync with the same
+  // licensedRoboticsPrograms constant that drives the on-page schedule badge
+  // (lib/robotics-content.ts). One CourseInstance per batch.
+  const courseSchemas = licensedRoboticsPrograms
+    .filter((program) => program.weeklySchedules?.length)
+    .map((program) => ({
+      "@context": "https://schema.org",
+      "@type": "Course",
+      name: `${program.title} — Young Engineers at Kriana Tutoring`,
+      description: program.description,
+      provider: { "@id": localBusinessSchema["@id"] },
+      hasCourseInstance: program.weeklySchedules!.map((batch) => ({
+        "@type": "CourseInstance",
+        name: batch.label,
+        courseMode: "Onsite",
+        courseSchedule: {
+          "@type": "Schedule",
+          repeatFrequency: "P1W",
+          byDay: `https://schema.org/${batch.weekday}`,
+          startTime: batch.startTime,
+          endTime: batch.endTime,
+        },
+      })),
+    }));
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(breadcrumb) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(serviceSchema) }} />
+      {courseSchemas.map((schema) => (
+        <script
+          key={schema.name}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: toJsonLd(schema) }}
+        />
+      ))}
 
       <main className="min-h-screen bg-white text-slate-900">
         {/* Breadcrumb */}

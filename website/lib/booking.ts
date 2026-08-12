@@ -184,7 +184,14 @@ function normalizeLegacySession(id: string, data: Record<string, any>): PublicOf
 }
 
 function sortOfferings(offerings: PublicOffering[]) {
-  return offerings.sort((a, b) => dateValueMillis(a.firstClassDate) - dateValueMillis(b.firstClassDate))
+  return offerings.sort((a, b) => {
+    const dateDiff = dateValueMillis(a.firstClassDate) - dateValueMillis(b.firstClassDate)
+    // Same-term batches (e.g. an earlier/later time slot on the same weekday)
+    // share a firstClassDate, so break the tie by time of day — otherwise the
+    // later batch can display above the earlier one in an arbitrary order.
+    if (dateDiff !== 0) return dateDiff
+    return (a.startTime || '').localeCompare(b.startTime || '')
+  })
 }
 
 function isValidPublicOffering(offering: PublicOffering) {
