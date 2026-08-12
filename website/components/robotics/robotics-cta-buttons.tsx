@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRoboticsAvailability } from "./robotics-programs";
+import { useRoboticsAvailability, type CatalogData } from "./robotics-programs";
 import { ROBOTICS_BOOKING_URL } from "../../lib/site-links";
 
 const VARIANTS = {
@@ -19,8 +19,14 @@ const VARIANTS = {
   },
 };
 
-export function RoboticsCtaButtons({ variant = "light" }: { variant?: "light" | "dark" }) {
-  const { hasPublishedSchedule, hasOpenRequests, hasOpenWaitlist, loading } = useRoboticsAvailability();
+export function RoboticsCtaButtons({
+  variant = "light",
+  initialData,
+}: {
+  variant?: "light" | "dark";
+  initialData?: CatalogData;
+}) {
+  const { hasPublishedSchedule, hasOpenRequests, hasOpenWaitlist, loading } = useRoboticsAvailability(initialData);
   const styles = VARIANTS[variant];
 
   // While availability is still loading, default to the copy/link for the

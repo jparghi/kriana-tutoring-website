@@ -15,6 +15,15 @@ import {
 } from "../../lib/site-links";
 import { YE_AMBER, /* YE_BLUE, */ YE_RED, licensedRoboticsPrograms } from "../../lib/robotics-content";
 import { breadcrumbSchema, localBusinessSchema, siteUrl, toJsonLd } from "../../lib/seo";
+import { getCatalogServer } from "../../lib/catalog.server";
+import { ROBOTICS_CATEGORY } from "../../lib/site-links";
+
+// Regenerate the cached page at most once a minute, matching the public
+// catalogue API's own Cache-Control window (see CACHE_HEADERS in
+// app/api/public-catalog/_lib.ts) — fresh enough for staff schedule changes
+// to show up quickly, but most visitors get an instantly-served cached page
+// instead of paying for a Firestore round trip on every request.
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "Robotics & Coding Classes in Kanata | Young Engineers at Kriana",
@@ -90,7 +99,9 @@ const faqs = [
   },
 ];
 
-export default function RoboticsPage() {
+export default async function RoboticsPage() {
+  const catalogData = await getCatalogServer({ category: ROBOTICS_CATEGORY, activeOnly: true });
+
   const breadcrumb = breadcrumbSchema([
     { name: "Home", url: siteUrl },
     { name: "Robotics & Coding", url: `${siteUrl}/robotics` },
@@ -209,7 +220,7 @@ export default function RoboticsPage() {
                 Offered locally by Kriana Tutoring
               </p>
               <div className="mt-7">
-                <RoboticsCtaButtons variant="light" />
+                <RoboticsCtaButtons variant="light" initialData={catalogData} />
               </div>
             </div>
           </div>
@@ -263,7 +274,7 @@ export default function RoboticsPage() {
               Explore hands-on programs designed for different ages, interests and experience levels.
             </p>
             <div className="mt-10">
-              <RoboticsPrograms />
+              <RoboticsPrograms initialData={catalogData} />
             </div>
           </div>
         </section>

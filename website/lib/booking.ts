@@ -239,14 +239,16 @@ function normalizeOfferingsPayload(offerings: any[]) {
 }
 
 /**
- * Programs plus each one's active offerings, fetched in a single request
- * instead of one /programs call followed by one /offerings call per program.
- * Use this anywhere a page renders a list of program cards with schedule
- * badges (e.g. /booking, /robotics) — the old N+1 pattern was the main
- * cause of slow loads on those pages.
+ * Turns a raw `{ programs, offeringsByProgram }` catalogue payload (the same
+ * shape /api/public-catalog/catalog returns) into the normalized, sorted
+ * shape components render. Pulled out of getProgramsWithOfferings so a
+ * server-fetched payload (no HTTP round trip — see lib/catalog.server.ts)
+ * goes through the exact same normalization as a client-fetched one.
  */
-export async function getProgramsWithOfferings({ category, activeOnly = false }: { category?: string; activeOnly?: boolean } = {}) {
-  const payload = await catalogRequest(category ? `catalog/${encodeURIComponent(category)}` : 'catalog')
+export function normalizeCatalogPayload(
+  payload: { programs?: any[]; offeringsByProgram?: Record<string, any[]> } | null | undefined,
+  { activeOnly = false }: { activeOnly?: boolean } = {}
+) {
   const programs = (payload?.programs ?? []) as any[]
   const offeringsByProgram: Record<string, PublicOffering[]> = {}
   for (const [programId, offerings] of Object.entries(payload?.offeringsByProgram ?? {})) {
@@ -263,6 +265,18 @@ export async function getProgramsWithOfferings({ category, activeOnly = false }:
   })
 
   return { programs: sorted, offeringsByProgram }
+}
+
+/**
+ * Programs plus each one's active offerings, fetched in a single request
+ * instead of one /programs call followed by one /offerings call per program.
+ * Use this anywhere a page renders a list of program cards with schedule
+ * badges (e.g. /booking, /robotics) — the old N+1 pattern was the main
+ * cause of slow loads on those pages.
+ */
+export async function getProgramsWithOfferings({ category, activeOnly = false }: { category?: string; activeOnly?: boolean } = {}) {
+  const payload = await catalogRequest(category ? `catalog/${encodeURIComponent(category)}` : 'catalog')
+  return normalizeCatalogPayload(payload, { activeOnly })
 }
 
 export async function getOffering(offeringId: string) {

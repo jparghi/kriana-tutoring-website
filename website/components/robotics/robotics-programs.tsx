@@ -19,6 +19,22 @@ import {
 
 type Program = Record<string, any>;
 type Offering = Record<string, any>;
+export type CatalogData = { programs: Program[]; offeringsByProgram: Record<string, Offering[]> };
+
+function computeAvailability(offeringsByProgram: Record<string, Offering[]>) {
+  const offeringLists = Object.values(offeringsByProgram);
+  return {
+    hasPublishedSchedule: offeringLists.some((offerings) => offerings.length > 0),
+    hasOpenRequests: offeringLists.some((offerings) => offerings.some(
+      (offering: any) => isOfferingRequestWindowOpen(offering) && !isOfferingSoldOut(offering)
+    )),
+    hasOpenWaitlist: offeringLists.some((offerings) => offerings.some(
+      (offering: any) => isOfferingRequestWindowOpen(offering)
+        && isOfferingSoldOut(offering)
+        && offering.waitlistEnabled
+    )),
+  };
+}
 
 function normalizeProgramName(value?: string) {
   return (value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -228,12 +244,19 @@ function ProgramCard({
   );
 }
 
-export function RoboticsPrograms() {
-  const [programs, setPrograms] = useState<Program[]>([]);
-  const [offeringsByProgram, setOfferingsByProgram] = useState<Record<string, Offering[]>>({});
-  const [loading, setLoading] = useState(true);
+export function RoboticsPrograms({ initialData }: { initialData?: CatalogData } = {}) {
+  const [programs, setPrograms] = useState<Program[]>(initialData?.programs ?? []);
+  const [offeringsByProgram, setOfferingsByProgram] = useState<Record<string, Offering[]>>(
+    initialData?.offeringsByProgram ?? {}
+  );
+  const [loading, setLoading] = useState(!initialData);
 
   useEffect(() => {
+    // The server component that renders this page already fetched fresh
+    // data and passed it in — skip the redundant client-side fetch that
+    // used to run after hydration and made the programs visibly pop in.
+    if (initialData) return;
+
     async function load() {
       try {
         const { programs: robotics, offeringsByProgram: map } = await getProgramsWithOfferings({
@@ -247,7 +270,7 @@ export function RoboticsPrograms() {
       }
     }
     load();
-  }, []);
+  }, [initialData]);
 
   if (loading) {
     return (
@@ -285,35 +308,34 @@ export function RoboticsPrograms() {
   );
 }
 
-export function useRoboticsAvailability() {
-  const [hasPublishedSchedule, setHasPublishedSchedule] = useState(false);
-  const [hasOpenRequests, setHasOpenRequests] = useState(false);
-  const [hasOpenWaitlist, setHasOpenWaitlist] = useState(false);
-  const [loading, setLoading] = useState(true);
+export function useRoboticsAvailability(initialData?: CatalogData) {
+  const initial = initialData ? computeAvailability(initialData.offeringsByProgram) : null;
+  const [hasPublishedSchedule, setHasPublishedSchedule] = useState(initial?.hasPublishedSchedule ?? false);
+  const [hasOpenRequests, setHasOpenRequests] = useState(initial?.hasOpenRequests ?? false);
+  const [hasOpenWaitlist, setHasOpenWaitlist] = useState(initial?.hasOpenWaitlist ?? false);
+  const [loading, setLoading] = useState(!initialData);
 
   useEffect(() => {
+    // Same as RoboticsPrograms above — if the page already handed us server-
+    // fetched data, there's nothing left to fetch client-side.
+    if (initialData) return;
+
     async function load() {
       try {
         const { offeringsByProgram } = await getProgramsWithOfferings({
           category: ROBOTICS_CATEGORY,
           activeOnly: true,
         });
-        const offeringLists = Object.values(offeringsByProgram);
-        setHasPublishedSchedule(offeringLists.some((offerings) => offerings.length > 0));
-        setHasOpenRequests(offeringLists.some((offerings) => offerings.some(
-          (offering: any) => isOfferingRequestWindowOpen(offering) && !isOfferingSoldOut(offering)
-        )));
-        setHasOpenWaitlist(offeringLists.some((offerings) => offerings.some(
-          (offering: any) => isOfferingRequestWindowOpen(offering)
-            && isOfferingSoldOut(offering)
-            && offering.waitlistEnabled
-        )));
+        const availability = computeAvailability(offeringsByProgram);
+        setHasPublishedSchedule(availability.hasPublishedSchedule);
+        setHasOpenRequests(availability.hasOpenRequests);
+        setHasOpenWaitlist(availability.hasOpenWaitlist);
       } finally {
         setLoading(false);
       }
     }
     load();
-  }, []);
+  }, [initialData]);
 
   return { hasPublishedSchedule, hasOpenRequests, hasOpenWaitlist, loading };
 }
