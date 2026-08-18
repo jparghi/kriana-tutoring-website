@@ -395,7 +395,7 @@ function RegisterForm() {
             </Field>
             <div className="grid grid-cols-2 gap-4">
               <Field label="Age" required>
-                <input required type="number" min={1} max={18} className={inputClass} value={form.childAge} onChange={e => set('childAge', e.target.value)} placeholder="8" />
+                <input required type="number" min={4} max={12} className={inputClass} value={form.childAge} onChange={e => set('childAge', e.target.value)} placeholder="8" />
               </Field>
               <Field label="Grade">
                 <input className={inputClass} value={form.childGrade} onChange={e => set('childGrade', e.target.value)} placeholder="Grade 3" />

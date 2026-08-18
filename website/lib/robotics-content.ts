@@ -67,7 +67,7 @@ export const licensedRoboticsPrograms = [
   {
     id: "bricks-challenge",
     title: "Bricks Challenge",
-    ageRange: "6-10",
+    ageRange: "6-12",
     durationMin: 75,
     description:
       "An educational program that introduces children to the principles of STEM and basic subjects of classical mechanics through the use of building blocks and mechanical parts.",
@@ -108,7 +108,7 @@ export const licensedRoboticsPrograms = [
   {
     id: "algo-play",
     title: "Algo Play",
-    ageRange: "6-10",
+    ageRange: "6-12",
     durationMin: 75,
     description:
       "A program designed to introduce children to essential coding fundamentals such as conditioning, loops, multithreading, debugging and more through tangible or screen GoAlgo coding application.",
