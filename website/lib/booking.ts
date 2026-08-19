@@ -153,6 +153,10 @@ function normalizeOffering(id: string, data: Record<string, any>): PublicOfferin
     heldCount,
     tuitionCents: Number(data.tuitionCents ?? data.priceCents ?? data.tuition?.totalCents ?? 0),
     currency: data.currency ?? data.tuition?.currency ?? 'CAD',
+    // Pass-through only. Regular cohort offerings simply don't carry this
+    // field (stays undefined) — no migration required. The $10 Young
+    // Engineers Demo offerings are the one type that sets it to 'demo'.
+    offeringType: data.offeringType,
   }
 }
 

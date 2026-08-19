@@ -7,6 +7,8 @@ import {
   isValidPackageId, getRoboticsPackage, buildPackageSnapshot,
   getAllowedInstallmentCounts, buildPaymentPreferenceSnapshot,
 } from '../../lib/robotics-packages.js'
+import { DEMO_ELIGIBLE_PROGRAM_IDS } from '../../lib/demo-eligibility.js'
+import { computeChildEligibilityKeyHash } from '../../lib/demo-eligibility-crypto.js'
 
 const ROBOTICS_CATEGORY = 'Robotics'
 
@@ -633,6 +635,61 @@ async function saveWaitlistRequest(db, request) {
   })
 }
 
+// ─── Additive: automatic $10 demo-credit application ──────────────────────
+//
+// This is the ONLY point of contact between the request_only enrollment
+// flow and the separate $10 Young Engineers Demo Registration product. It is
+// deliberately self-contained and called from exactly one well-contained
+// point inside saveEnrollmentRequest's transaction, and it must NEVER change
+// registrationStatus, paymentStatus, amountDue, or amountPaid — those stay
+// exactly 'Pending Review' / 'Not Requested' / 0 / 0 as they are today. A
+// lookup failure (most commonly: DEMO_ELIGIBILITY_KEY_SALT not configured in
+// an environment that hasn't enabled the demo product) is swallowed and
+// logged rather than allowed to fail the enrollment request itself — this is
+// a pure convenience, never a requirement for a regular enrollment request
+// to succeed.
+//
+// Must be called BEFORE any transaction writes: Firestore transactions
+// require all reads to complete before the first write.
+async function findAvailableDemoCredit(db, tx, programId, packageId, registration) {
+  if (!packageId || !DEMO_ELIGIBLE_PROGRAM_IDS.includes(programId)) return null
+  try {
+    const hash = computeChildEligibilityKeyHash(registration)
+    const snap = await tx.get(
+      db.collection('demoCredits')
+        .where('childEligibilityKeyHash', '==', hash)
+        .where('status', '==', 'available')
+        .limit(2)
+    )
+    // Zero matches: nothing to apply. More than one: ambiguous — leave for
+    // manual staff matching rather than guessing which credit applies.
+    if (snap.size !== 1) return null
+    const doc = snap.docs[0]
+    return { ref: doc.ref, id: doc.id, data: doc.data() }
+  } catch (err) {
+    console.warn('Automatic demo-credit lookup skipped:', err.message)
+    return null
+  }
+}
+
+/** Computed only when a demo credit was found AND a payment preference
+ * snapshot exists (always true for a robotics package submission — see
+ * validatePayload). Returns null if no credit applies or the subtotal isn't
+ * a valid amount to apply a credit against. */
+function computeDemoCreditApplication(demoCredit, paymentPreferenceSnapshot) {
+  if (!demoCredit) return null
+  const subtotalBeforeCreditCents = paymentPreferenceSnapshot?.payableSubtotalCents
+  if (!Number.isSafeInteger(subtotalBeforeCreditCents) || subtotalBeforeCreditCents < 0) return null
+  const creditAmountCents = Math.min(demoCredit.data.amountCents ?? 1000, subtotalBeforeCreditCents)
+  const finalAmountCents = subtotalBeforeCreditCents - creditAmountCents
+  return {
+    demoRegistrationId: demoCredit.data.demoRegistrationId ?? null,
+    creditAmountCents,
+    subtotalBeforeCreditCents,
+    finalAmountCents,
+  }
+}
+
 async function saveEnrollmentRequest(db, request) {
   const { programId, offeringId, sessionId, registration } = request
   const programRef = db.collection('programs').doc(programId)
@@ -661,6 +718,14 @@ async function saveEnrollmentRequest(db, request) {
       : 0
     const nextSequence = nonNegativeCounter(previousSequence + 1, 'The registration number sequence')
     const number = `${prefix}-${year}-${String(nextSequence).padStart(4, '0')}`
+    const paymentPreferenceSnapshot = request.paymentPreference
+      ? buildPaymentPreferenceSnapshot(request.packageId, request.paymentPreference)
+      : null
+
+    // Additive automatic demo-credit lookup — a read, so it must happen here,
+    // before the writes below. See findAvailableDemoCredit's doc comment.
+    const demoCredit = await findAvailableDemoCredit(db, tx, programId, request.packageId, registration)
+    const demoCreditApplication = computeDemoCreditApplication(demoCredit, paymentPreferenceSnapshot)
 
     tx.set(counterRef, { seq: nextSequence, updatedAt: FieldValue.serverTimestamp() }, { merge: true })
     tx.create(registrationRef, {
@@ -680,9 +745,11 @@ async function saveEnrollmentRequest(db, request) {
       quotedTuitionCents: quotedTuition(program, session),
       currency: session.currency || program.currency || 'CAD',
       ...(request.packageId ? { packageSnapshot: buildPackageSnapshot(request.packageId) } : {}),
-      ...(request.paymentPreference
-        ? { paymentPreferenceSnapshot: buildPaymentPreferenceSnapshot(request.packageId, request.paymentPreference) }
-        : {}),
+      ...(paymentPreferenceSnapshot ? { paymentPreferenceSnapshot } : {}),
+      // Additive only — never changes registrationStatus, paymentStatus,
+      // amountDue, or amountPaid above. Absent entirely unless exactly one
+      // available demo credit matched this child.
+      ...(demoCreditApplication ? { creditApplied: demoCreditApplication } : {}),
       programSnapshot: {
         title: program.title || '',
         category: program.category || '',
@@ -692,6 +759,17 @@ async function saveEnrollmentRequest(db, request) {
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     })
+    if (demoCredit && demoCreditApplication) {
+      tx.update(demoCredit.ref, {
+        status: 'applied',
+        matchMethod: 'automatic',
+        appliedAt: FieldValue.serverTimestamp(),
+        appliedToRegistrationId: registrationRef.id,
+        subtotalBeforeCreditCents: demoCreditApplication.subtotalBeforeCreditCents,
+        creditAppliedCents: demoCreditApplication.creditAmountCents,
+        finalAmountCents: demoCreditApplication.finalAmountCents,
+      })
+    }
     if (requestKeyRef) {
       tx.set(requestKeyRef, {
         registrationId: registrationRef.id,

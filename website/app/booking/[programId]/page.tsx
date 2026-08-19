@@ -315,6 +315,12 @@ function ProgramDetailContent() {
   const isRobotics = program?.category === ROBOTICS_CATEGORY
   const selectedPackage = isRobotics && isValidPackageId(packageParam) ? getRoboticsPackage(packageParam) : null
 
+  // A demo offering (offeringType === 'demo') is a distinct product from the
+  // regular weekly cohort offerings, sold from the /booking listing page —
+  // it must never appear in this page's "Weekly Program Schedules" list
+  // (which offers the Explorer/Builder/Engineer package flow).
+  const regularOfferings = offerings.filter(o => o.offeringType !== 'demo')
+
   function handleSelectOffering(offering: any) {
     const params = new URLSearchParams()
     if (offering.source === 'legacySession') params.set('sessionId', offering.id)
@@ -344,7 +350,7 @@ function ProgramDetailContent() {
     </BookingLayout>
   )
 
-  const nextOffering = offerings[0]
+  const nextOffering = regularOfferings[0]
   const listedTuition = Number(
     nextOffering?.tuitionCents
       || (program.isDepositOnly ? program.depositAmount : program.price)
@@ -380,7 +386,22 @@ function ProgramDetailContent() {
             )}
           </div>
 
-          <h1 className="text-2xl md:text-3xl font-black text-slate-800 mb-3">{program.title}</h1>
+          <h1 className="text-2xl md:text-3xl font-black text-slate-800 mb-1">{program.title}</h1>
+
+          {/* Same program.learnMoreUrl field used on the demo registration
+              form and the robotics program cards — generic across every
+              program, no per-program code needed. */}
+          {program.learnMoreUrl && (
+            <a
+              href={program.learnMoreUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mb-3 inline-flex items-center gap-1 text-sm font-bold text-[#0c6162] hover:underline"
+            >
+              Learn more about {program.title}
+              <span aria-hidden="true">↗</span>
+            </a>
+          )}
 
           {program.description && (
             <p className="text-slate-600 mb-6 leading-relaxed text-base">{program.description}</p>
@@ -424,7 +445,7 @@ function ProgramDetailContent() {
             )}
           </div>
 
-          {isRequestOnlyBookingFlow && offerings.length > 0 && (
+          {isRequestOnlyBookingFlow && regularOfferings.length > 0 && (
             <div className="mt-4 bg-[#e6f4f4] border border-[#0c6162]/15 rounded-xl px-4 py-3">
               <p className="text-sm text-[#0c6162] font-medium">
                 No payment is due when you request a spot. We will confirm availability, placement and payment details separately.
@@ -473,10 +494,10 @@ function ProgramDetailContent() {
 
           <h2 className="text-lg font-black text-slate-800 mb-4">
             Weekly Program Schedules
-            <span className="ml-2 text-sm font-normal text-slate-400">({offerings.length} published)</span>
+            <span className="ml-2 text-sm font-normal text-slate-400">({regularOfferings.length} published)</span>
           </h2>
 
-          {offerings.length === 0 ? (
+          {regularOfferings.length === 0 ? (
             <div className="bg-white rounded-2xl border border-slate-100 p-10 text-center">
               <p className="font-semibold text-slate-600">The next schedule is still being planned</p>
               <p className="text-sm text-slate-400 mt-1">There is no registration form until real dates and times are published.</p>
@@ -489,7 +510,7 @@ function ProgramDetailContent() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {offerings.map(offering => (
+              {regularOfferings.map(offering => (
                 <OfferingCard key={offering.id} offering={offering} program={program} onSelect={handleSelectOffering} hideTuition={isRobotics} selectedPackage={selectedPackage} />
               ))}
             </div>

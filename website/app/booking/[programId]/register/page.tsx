@@ -32,6 +32,166 @@ function Field({ label, children, required, hint }: { label: string; children: R
 
 const inputClass = 'w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-base sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0c6162]/30 focus:border-[#0c6162] transition-all bg-white'
 
+// ─── $10 Young Engineers Demo Registration ─────────────────────────────────
+//
+// Intentionally minimal — a 5-field form (parentName, parentEmail,
+// parentPhone, childName, childAge) plus required consent. No medicalNotes,
+// emergencyContact, specialRequests, childGrade, or photoConsent — those
+// belong to the separate request_only enrollment form and are not part of
+// this product's spec. This component only renders when the program page's
+// demo CTA linked here (which itself only appears when
+// NEXT_PUBLIC_ENABLE_DEMO_PAYMENTS === 'true' and a published demo offering
+// exists), so in production today this code path is unreachable — but it
+// must still be correct and complete for when the flag is flipped on.
+function DemoRegisterForm({ programId, program, offering }: { programId: string; program: any; offering: any }) {
+  const router = useRouter()
+  const clientRequestId = useRef('')
+  const [form, setFormState] = useState({
+    parentName: '', parentEmail: '', parentPhone: '', childName: '', childAge: '', consentAccepted: false,
+  })
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!clientRequestId.current) {
+      clientRequestId.current = globalThis.crypto?.randomUUID?.()
+        ?? `demo-request-${Date.now()}-${Math.random().toString(36).slice(2)}`
+    }
+  }, [])
+
+  function set(field: string, value: any) {
+    setFormState(prev => ({ ...prev, [field]: value }))
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!form.consentAccepted) { setError('Please accept the consent to continue.'); return }
+    setError('')
+    setSubmitting(true)
+
+    try {
+      const registerResponse = await fetch('/.netlify/functions/submit-demo-registration', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          programId,
+          demoOfferingId: offering.id,
+          clientRequestId: clientRequestId.current,
+          registration: {
+            parentName: form.parentName,
+            parentEmail: form.parentEmail,
+            parentPhone: form.parentPhone,
+            childName: form.childName,
+            childAge: form.childAge,
+            consentAccepted: form.consentAccepted,
+          },
+        }),
+      })
+      const registerResult = await registerResponse.json().catch(() => ({}))
+      if (!registerResponse.ok) throw new Error(registerResult.error || 'We could not submit your demo registration. Please try again.')
+
+      const sessionResponse = await fetch('/.netlify/functions/create-demo-payment-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ demoRegistrationId: registerResult.demoRegistrationId }),
+      })
+      const sessionResult = await sessionResponse.json().catch(() => ({}))
+      if (!sessionResponse.ok || !sessionResult.url) throw new Error(sessionResult.error || 'We could not start your $10 payment. Please try again.')
+
+      // Real Stripe Checkout redirect.
+      window.location.href = sessionResult.url
+    } catch (err: any) {
+      setError(err.message || 'Something went wrong. Please try again.')
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <BookingLayout backTo={`/booking/${programId}`} backLabel={program.title} maxWidth="max-w-xl">
+      <BookingStepper step={2} />
+
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-5">
+        <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg, #F2A100, #ED174B)' }} />
+        <div className="px-5 py-4 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-0.5">$10 Demo Class</p>
+            <h2 className="font-black text-slate-800">{program.title}</h2>
+            {/* Demo class scheduling is deliberately open-ended — staff follow
+                up directly with families to arrange the time, rather than the
+                demo being tied to one published weekly slot like a regular
+                cohort offering. Never render offering.title/weekly-schedule
+                here. */}
+            <p className="text-sm text-slate-500 mt-0.5">Our team will follow up to schedule your child&apos;s demo class.</p>
+            {/* Driven by program.learnMoreUrl (from robotics-content.ts, via
+                the public-catalog allowlist) — works for any demo-eligible
+                program without per-program code, same link used on the
+                robotics program cards. */}
+            {program.learnMoreUrl && (
+              <a
+                href={program.learnMoreUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-1.5 inline-flex items-center gap-1 text-xs font-bold text-[#0c6162] hover:underline"
+              >
+                Learn more about {program.title}
+                <span aria-hidden="true">↗</span>
+              </a>
+            )}
+          </div>
+          <div className="shrink-0 text-right">
+            <p className="text-xl font-black text-slate-800">$10 CAD</p>
+            <p className="text-xs text-slate-400">one-time demo charge</p>
+          </div>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
+        <div className="mb-1">
+          <h3 className="font-black text-slate-800 text-base">Register for the $10 Demo Class</h3>
+          <p className="text-sm text-slate-400 mt-0.5">Just a few details to hold your child&apos;s demo spot.</p>
+        </div>
+
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+          <p className="text-sm font-bold text-amber-700">Try for $10 — Demo is FREE when you enroll.</p>
+          <p className="text-sm text-amber-700 mt-1">The $10 is credited toward regular enrollment after your child attends.</p>
+        </div>
+
+        {error && (
+          <div className="bg-red-50 border border-red-100 text-red-700 rounded-xl px-4 py-3 text-sm font-medium">{error}</div>
+        )}
+
+        <Field label="Full Name" required>
+          <input required className={inputClass} value={form.parentName} onChange={e => set('parentName', e.target.value)} placeholder="Jane Smith" autoComplete="name" />
+        </Field>
+        <Field label="Email Address" required>
+          <input required type="email" className={inputClass} value={form.parentEmail} onChange={e => set('parentEmail', e.target.value)} placeholder="jane@example.com" autoComplete="email" />
+        </Field>
+        <Field label="Phone Number" required>
+          <input required type="tel" className={inputClass} value={form.parentPhone} onChange={e => set('parentPhone', e.target.value)} placeholder="(613) 555-0000" autoComplete="tel" />
+        </Field>
+        <Field label="Child's Full Name" required>
+          <input required className={inputClass} value={form.childName} onChange={e => set('childName', e.target.value)} placeholder="Alex Smith" />
+        </Field>
+        <Field label="Child's Age" required>
+          <input required type="number" min={1} max={18} className={inputClass} value={form.childAge} onChange={e => set('childAge', e.target.value)} placeholder="8" />
+        </Field>
+
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input type="checkbox" required checked={form.consentAccepted} onChange={e => set('consentAccepted', e.target.checked)} className="mt-0.5 accent-[#0c6162] w-4 h-4 shrink-0" />
+          <span className="text-sm text-slate-600">
+            I confirm this information is accurate and consent to Kriana using it to register my child for this $10 demo class and contact me. <span className="text-red-500">*</span>
+          </span>
+        </label>
+
+        <button type="submit" disabled={submitting} className="w-full py-4 rounded-xl text-white font-black text-base transition-all disabled:opacity-50 active:scale-[0.98] shadow-sm" style={{ backgroundColor: '#F2A100' }}>
+          {submitting ? 'Redirecting to payment…' : 'Continue to $10 Payment →'}
+        </button>
+        <p className="text-center text-xs text-slate-400">You&apos;ll be redirected to Stripe to securely complete your $10 CAD payment.</p>
+      </form>
+    </BookingLayout>
+  )
+}
+
 function SubStepper({ step, steps }: { step: number; steps: string[] }) {
   return (
     <div className="flex items-center mb-6">
@@ -70,6 +230,7 @@ function RegisterForm() {
   const selectedOfferingId = offeringId || legacySessionId
   const isWaitlistParam = searchParams.get('waitlist') === '1'
   const packageIdParam = searchParams.get('package') ?? ''
+  const isDemoRegistration = searchParams.get('registrationType') === 'demo'
   const router = useRouter()
   const clientRequestId = useRef('')
 
@@ -141,6 +302,15 @@ function RegisterForm() {
 
   const isRobotics = program.category === ROBOTICS_CATEGORY
   const selectedPackage = isRobotics && isValidPackageId(packageIdParam) ? getRoboticsPackage(packageIdParam) : null
+
+  // The $10 demo registration is a completely separate product from the
+  // Explorer/Builder/Engineer package flow — it never requires a package
+  // selection, so it bypasses the "please choose a package first" guard
+  // below entirely, and renders its own minimal 5-field form instead of the
+  // multi-step package/payment-preference wizard.
+  if (isDemoRegistration) {
+    return <DemoRegisterForm programId={programId} program={program} offering={offering} />
+  }
 
   // Robotics registrations are always package-based — never silently default
   // to a package if one wasn't actually chosen on the program page.

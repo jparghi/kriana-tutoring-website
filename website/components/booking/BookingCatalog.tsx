@@ -6,8 +6,42 @@ import { isOfferingSoldOut, formatOfferingScheduleDetail } from '../../lib/booki
 import { isRequestOnlyBookingFlow } from '../../lib/booking-flow'
 import { Footer } from '../footer'
 import { getRoboticsPackage, isValidPackageId } from '../../lib/robotics-packages.js'
+import { isDemoEligibleProgramId } from '../../lib/demo-eligibility.js'
 
 const ROBOTICS_CATEGORY = 'Robotics'
+const DEMO_CLASS_CATEGORY = 'Demo Class'
+
+// Fail-closed browser flag, mirrored server-side by ENABLE_DEMO_PAYMENTS in
+// every demo Netlify Function — hiding these cards is presentation only; the
+// server endpoints independently refuse to operate when their own flag is
+// unset. This feature ships disabled (unset) in this delivery.
+const DEMO_PAYMENTS_ENABLED = process.env.NEXT_PUBLIC_ENABLE_DEMO_PAYMENTS === 'true'
+
+// Synthetic, non-Firestore "program" entries for the /booking grid — one per
+// demo-eligible program that currently has a published demo offering. These
+// are a distinct product from the program's regular listing (never linked
+// from /booking/[programId]) and are filtered/rendered exactly like a normal
+// program card via the shared CATEGORY_ACCENTS['Demo Class'] styling.
+function buildDemoCards(programs: any[], offeringsByProgram: Record<string, any[]>) {
+  if (!DEMO_PAYMENTS_ENABLED) return []
+  return programs
+    .filter(p => isDemoEligibleProgramId(p.id))
+    .map(p => {
+      const demoOffering = (offeringsByProgram[p.id] ?? []).find((o: any) => o.offeringType === 'demo')
+      if (!demoOffering) return null
+      return {
+        id: `${p.id}-demo`,
+        title: `${p.title} — $10 Demo`,
+        category: DEMO_CLASS_CATEGORY,
+        imageUrl: p.imageUrl,
+        ageRange: p.ageRange,
+        isDemoCard: true,
+        demoProgramId: p.id,
+        demoOfferingId: demoOffering.id,
+      }
+    })
+    .filter(Boolean)
+}
 
 const CATEGORY_ACCENTS: Record<string, { bg: string; text: string; bar: string }> = {
   'Demo Class':      { bg: 'bg-sky-50',    text: 'text-sky-700',    bar: '#0EA5E9' },
@@ -72,8 +106,9 @@ function ScheduleBadge({ offerings, hasSchedule }: { offerings: any[]; hasSchedu
 }
 
 function ProgramCard({ program, offerings, packageId }: { program: any; offerings: any[]; packageId?: string }) {
-  const hasSchedule = offerings.length > 0
-  const allSoldOut = hasSchedule && offerings.every(isOfferingSoldOut)
+  const isDemoCard = Boolean(program.isDemoCard)
+  const hasSchedule = isDemoCard || offerings.length > 0
+  const allSoldOut = !isDemoCard && hasSchedule && offerings.every(isOfferingSoldOut)
   const accent = CATEGORY_ACCENTS[program.category] ?? DEFAULT_ACCENT
   const ageGrade = [
     program.ageRange ? `Ages ${program.ageRange}` : '',
@@ -121,20 +156,31 @@ function ProgramCard({ program, offerings, packageId }: { program: any; offering
         )}
 
         <div className="mt-2">
-          {/* Birthday Party is request-based, not weekly-scheduled — a "Coming
-              soon" badge would misleadingly imply a schedule is on the way. */}
-          {program.category !== 'Birthday Party' && (
-            <ScheduleBadge offerings={offerings} hasSchedule={hasSchedule} />
+          {isDemoCard ? (
+            <div>
+              <span className="inline-flex items-center gap-1 text-[10px] font-black text-sky-700 bg-sky-100 px-2 py-1 rounded-full">
+                $10 CAD
+              </span>
+              <p className="mt-1 text-[10px] leading-tight text-slate-500">Demo is FREE when you enroll.</p>
+            </div>
+          ) : (
+            /* Birthday Party is request-based, not weekly-scheduled — a "Coming
+               soon" badge would misleadingly imply a schedule is on the way. */
+            program.category !== 'Birthday Party' && (
+              <ScheduleBadge offerings={offerings} hasSchedule={hasSchedule} />
+            )
           )}
         </div>
 
         <div className="mt-auto pt-3 flex items-center justify-end gap-2 border-t border-slate-100 mt-3">
           <Link
-            href={packageId && program.category === ROBOTICS_CATEGORY ? `/booking/${program.id}?package=${packageId}` : `/booking/${program.id}`}
+            href={isDemoCard
+              ? `/booking/${program.demoProgramId}/register?offeringId=${program.demoOfferingId}&registrationType=demo`
+              : packageId && program.category === ROBOTICS_CATEGORY ? `/booking/${program.id}?package=${packageId}` : `/booking/${program.id}`}
             className="inline-flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-white shadow-sm transition-all duration-200 active:scale-95 hover:shadow-[0_4px_12px_rgba(12,97,98,0.35)]"
-            style={{ backgroundColor: '#0c6162' }}
+            style={{ backgroundColor: isDemoCard ? '#0EA5E9' : '#0c6162' }}
           >
-            {hasSchedule ? (isRequestOnlyBookingFlow ? 'View' : 'Book') : 'View'}
+            {isDemoCard ? 'Try for $10' : hasSchedule ? (isRequestOnlyBookingFlow ? 'View' : 'Book') : 'View'}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-3 w-3 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5">
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
@@ -171,8 +217,10 @@ export function BookingCatalog({
     }
   }, [])
 
-  const categories = ['All', ...Array.from(new Set(programs.map((p: any) => p.category).filter(Boolean)))]
-  const filtered = selectedCategory === 'All' ? programs : programs.filter((p: any) => p.category === selectedCategory)
+  const demoCards = buildDemoCards(programs, offeringsByProgram)
+  const programsAndDemos = [...programs, ...demoCards]
+  const categories = ['All', ...Array.from(new Set(programsAndDemos.map((p: any) => p.category).filter(Boolean)))]
+  const filtered = selectedCategory === 'All' ? programsAndDemos : programsAndDemos.filter((p: any) => p.category === selectedCategory)
   const selectedPackage = selectedPackageId ? getRoboticsPackage(selectedPackageId) : null
 
   return (

@@ -7,6 +7,9 @@ const PROGRAM_FIELDS = [
   'bookingModel', 'offeringModelVersion', 'legacyBookingEnabled',
   'discountActive', 'discountLabel', 'discountType', 'discountValue',
   'sortOrder', 'createdAt',
+  // $10 Young Engineers Demo Registration eligibility flag — see
+  // lib/demo-eligibility.js and submit-demo-registration.js.
+  'demoEligible',
 ]
 const OFFERING_FIELDS = [
   'programId', 'title', 'termName', 'location', 'timezone', 'weekday',
@@ -14,6 +17,9 @@ const OFFERING_FIELDS = [
   'currency', 'isPublished', 'waitlistEnabled', 'enrollmentOpenAt',
   'enrollmentCloseAt', 'firstClassDate', 'lastClassDate', 'status',
   'confirmedCount', 'heldCount',
+  // Distinguishes a $10 demo offering ('demo') from a regular cohort
+  // offering (field absent). See lib/booking.ts's normalizeOffering.
+  'offeringType',
 ]
 const LEGACY_FIELDS = [
   'programId', 'title', 'location', 'startDateTime', 'endDateTime',

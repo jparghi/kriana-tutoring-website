@@ -135,6 +135,26 @@ for (const pkg of ROBOTICS_PACKAGES) {
 
 const PACKAGES_BY_ID = new Map(ROBOTICS_PACKAGES.map(pkg => [pkg.id, pkg]))
 
+// The $10 Young Engineers Demo Class is a separate, standalone product — not
+// a class package. It is intentionally NOT added to ROBOTICS_PACKAGES: that
+// array's import-time arithmetic self-check (classCount * perClassCents ===
+// regularSubtotalCents) assumes a multi-class package, which a single $10
+// session would violate. Price is always resolved server-side from here,
+// never from anything the browser sends.
+export const DEMO_PACKAGE = Object.freeze({
+  id: 'demo',
+  name: '$10 Demo Class',
+  priceCents: 1000,
+  currency: 'CAD',
+})
+
+/** Canonical, server-safe source of the $10 demo price. Mirrors the
+ * "resolve pricing from a code-configured source, never the client" pattern
+ * used by resolvePackagePricing above. */
+export function getDemoPricing() {
+  return { priceCents: DEMO_PACKAGE.priceCents, currency: DEMO_PACKAGE.currency }
+}
+
 // Sitewide class-package promotion. Not Firestore-driven (unlike per-program
 // discounts) — this campaign applies to the fixed package catalogue itself,
 // so it's configured here directly. Registrations already submitted keep
