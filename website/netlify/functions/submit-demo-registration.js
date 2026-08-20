@@ -239,6 +239,22 @@ export async function saveDemoRegistration(db, request) {
       throw new RequestRejectedError(409, 'This demo class is full. Please contact us for another option.')
     }
 
+    // (g) Public registration number, DEMO-{year}-{seq}, same counters/
+    // {prefix}-{year} sequence pattern as submit-enrollment-request.js. Read
+    // BEFORE any writes below — Firestore transactions require every read to
+    // happen before the first write, and the fake-transaction harness in
+    // tests/submit-demo-registration.test.mjs doesn't enforce that ordering,
+    // so a violation here only surfaces against real Firestore.
+    const year = new Date().getFullYear()
+    const counterRef = db.collection('counters').doc(`DEMO-${year}`)
+    const counter = await tx.get(counterRef)
+    const previousSequence = counter.exists ? Number(counter.data().seq) : 0
+    if (!Number.isSafeInteger(previousSequence) || previousSequence < 0) {
+      throw new RequestRejectedError(409, 'The demo registration number sequence requires staff review. Please contact us.')
+    }
+    const nextSequence = previousSequence + 1
+    const registrationNumber = `DEMO-${year}-${String(nextSequence).padStart(4, '0')}`
+
     // (d) Create the lock. tx.create() (not tx.set()) is the concurrency
     // primitive: Firestore fails the whole transaction if this document
     // already exists, which is what makes this dedup check atomic under
@@ -254,17 +270,6 @@ export async function saveDemoRegistration(db, request) {
       updatedAt: FieldValue.serverTimestamp(),
     })
 
-    // (g) Public registration number, DEMO-{year}-{seq}, same counters/
-    // {prefix}-{year} sequence pattern as submit-enrollment-request.js.
-    const year = new Date().getFullYear()
-    const counterRef = db.collection('counters').doc(`DEMO-${year}`)
-    const counter = await tx.get(counterRef)
-    const previousSequence = counter.exists ? Number(counter.data().seq) : 0
-    if (!Number.isSafeInteger(previousSequence) || previousSequence < 0) {
-      throw new RequestRejectedError(409, 'The demo registration number sequence requires staff review. Please contact us.')
-    }
-    const nextSequence = previousSequence + 1
-    const registrationNumber = `DEMO-${year}-${String(nextSequence).padStart(4, '0')}`
     tx.set(counterRef, { seq: nextSequence, updatedAt: FieldValue.serverTimestamp() }, { merge: true })
 
     // (h) Create the demo registration record. Price is ALWAYS resolved from

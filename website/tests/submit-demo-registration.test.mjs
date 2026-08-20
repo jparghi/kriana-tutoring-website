@@ -107,9 +107,18 @@ class FakeTx {
   constructor(store) {
     this.store = store
     this.writes = { creates: [], updates: [], sets: [], deletes: [] }
+    this.hasWritten = false
   }
   key(ref) { return `${ref.collectionName}/${ref.id}` }
   async get(ref) {
+    // Real Firestore transactions require every read to happen before the
+    // first write — this is exactly the ordering bug that shipped past this
+    // suite once already (a counter read placed after tx.create/tx.update
+    // calls), so this check now mirrors production instead of silently
+    // allowing it.
+    if (this.hasWritten) {
+      throw new Error('Firestore transactions require all reads to be executed before all writes.')
+    }
     if (ref.__isQuery) {
       const docs = []
       for (const [key, data] of this.store.entries()) {
@@ -127,6 +136,7 @@ class FakeTx {
     return { exists: data != null, data: () => data }
   }
   create(ref, data) {
+    this.hasWritten = true
     const k = this.key(ref)
     if (this.store.get(k) != null) {
       throw new Error(`FakeTx.create: ${k} already exists (this IS the atomicity primitive being tested)`)
@@ -135,17 +145,20 @@ class FakeTx {
     this.writes.creates.push({ ref, data })
   }
   update(ref, data) {
+    this.hasWritten = true
     const k = this.key(ref)
     this.store.set(k, { ...(this.store.get(k) || {}), ...data })
     this.writes.updates.push({ ref, data })
   }
   set(ref, data, opts) {
+    this.hasWritten = true
     const k = this.key(ref)
     const base = opts?.merge ? (this.store.get(k) || {}) : {}
     this.store.set(k, { ...base, ...data })
     this.writes.sets.push({ ref, data, opts })
   }
   delete(ref) {
+    this.hasWritten = true
     this.store.delete(this.key(ref))
     this.writes.deletes.push({ ref })
   }

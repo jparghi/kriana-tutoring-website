@@ -99,6 +99,11 @@ async function handlePaymentFailedOrExpired(tx, db, stripeEvent, terminalPayment
   // (paid) or already failed must never be re-cancelled by a stray event.
   if (registration.paymentStatus !== 'pending') return
 
+  // Read BEFORE any write below — Firestore transactions require every read
+  // to happen before the first write in the transaction.
+  const creditRef = db.collection('demoCredits').doc(demoRegistrationId)
+  const creditSnap = await tx.get(creditRef)
+
   tx.update(ref, {
     paymentStatus: terminalPaymentStatus,
     demoStatus: 'cancelled',
@@ -106,8 +111,6 @@ async function handlePaymentFailedOrExpired(tx, db, stripeEvent, terminalPayment
   })
   await releaseHeldSeat(tx, db, registration.demoOfferingId)
 
-  const creditRef = db.collection('demoCredits').doc(demoRegistrationId)
-  const creditSnap = await tx.get(creditRef)
   if (creditSnap.exists && creditSnap.data().status === 'pending_attendance') {
     tx.update(creditRef, { status: 'void', updatedAt: FieldValue.serverTimestamp() })
   }
@@ -130,10 +133,13 @@ async function handleChargeRefunded(tx, db, stripeEvent) {
   const doc = query.docs[0]
   const registration = doc.data()
 
-  tx.update(doc.ref, { paymentStatus: 'refunded', updatedAt: FieldValue.serverTimestamp() })
-
+  // Read BEFORE any write below — same read-before-write requirement as
+  // handlePaymentFailedOrExpired above.
   const creditRef = db.collection('demoCredits').doc(doc.id)
   const creditSnap = await tx.get(creditRef)
+
+  tx.update(doc.ref, { paymentStatus: 'refunded', updatedAt: FieldValue.serverTimestamp() })
+
   if (creditSnap.exists) {
     const creditStatus = creditSnap.data().status
     if (creditStatus === 'pending_attendance' || creditStatus === 'available') {
@@ -157,11 +163,9 @@ export async function reconcileDemoWebhookEvent(db, stripeEvent) {
     const processedSnap = await tx.get(processedRef)
     if (processedSnap.exists) return // Duplicate delivery — no-op.
 
-    tx.set(processedRef, {
-      type: stripeEvent.type,
-      processedAt: FieldValue.serverTimestamp(),
-    })
-
+    // Marking the event processed is itself a write, so it must come AFTER
+    // every read below it — Firestore transactions require all reads before
+    // any write. Each handler does its own reads first internally.
     if (stripeEvent.type === 'checkout.session.completed' || stripeEvent.type === 'payment_intent.succeeded') {
       await handlePaymentSucceeded(tx, db, stripeEvent)
     } else if (stripeEvent.type === 'checkout.session.expired') {
@@ -171,6 +175,11 @@ export async function reconcileDemoWebhookEvent(db, stripeEvent) {
     } else if (stripeEvent.type === 'charge.refunded') {
       await handleChargeRefunded(tx, db, stripeEvent)
     }
+
+    tx.set(processedRef, {
+      type: stripeEvent.type,
+      processedAt: FieldValue.serverTimestamp(),
+    })
   })
 }
 
