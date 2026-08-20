@@ -90,16 +90,17 @@ function DemoRegisterForm({ programId, program, offering }: { programId: string;
       const registerResult = await registerResponse.json().catch(() => ({}))
       if (!registerResponse.ok) throw new Error(registerResult.error || 'We could not submit your demo registration. Please try again.')
 
-      const sessionResponse = await fetch('/.netlify/functions/create-demo-payment-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ demoRegistrationId: registerResult.demoRegistrationId }),
+      // Payment is collected via e-transfer, not Stripe — send the family to
+      // the instructions page with everything it needs already in hand, no
+      // extra fetch (and no Firestore read, which demoRegistrations doesn't
+      // allow client-side per firestore.rules).
+      const params = new URLSearchParams({
+        reference: registerResult.registrationNumber ?? '',
+        demoRegistrationId: registerResult.demoRegistrationId ?? '',
+        programId,
+        program: program.title,
       })
-      const sessionResult = await sessionResponse.json().catch(() => ({}))
-      if (!sessionResponse.ok || !sessionResult.url) throw new Error(sessionResult.error || 'We could not start your $10 payment. Please try again.')
-
-      // Real Stripe Checkout redirect.
-      window.location.href = sessionResult.url
+      router.push(`/booking/demo-etransfer?${params.toString()}`)
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.')
       setSubmitting(false)
@@ -184,9 +185,9 @@ function DemoRegisterForm({ programId, program, offering }: { programId: string;
         </label>
 
         <button type="submit" disabled={submitting} className="w-full py-4 rounded-xl text-white font-black text-base transition-all disabled:opacity-50 active:scale-[0.98] shadow-sm" style={{ backgroundColor: '#F2A100' }}>
-          {submitting ? 'Redirecting to payment…' : 'Continue to $10 Payment →'}
+          {submitting ? 'Submitting…' : 'Register & Get E-Transfer Instructions →'}
         </button>
-        <p className="text-center text-xs text-slate-400">You&apos;ll be redirected to Stripe to securely complete your $10 CAD payment.</p>
+        <p className="text-center text-xs text-slate-400">You&apos;ll receive instructions to send your $10 CAD payment by e-transfer.</p>
       </form>
     </BookingLayout>
   )

@@ -1,23 +1,19 @@
 // Expires stale, unpaid $10 Young Engineers Demo Registration holds.
 //
 // A demo registration reserves a held seat (offering.heldCount) at creation
-// time but is not paid until Stripe Checkout completes. If a family abandons
-// checkout, this job releases the hold after 30 minutes so the seat becomes
-// available again, rather than leaving it stuck forever waiting for a
-// webhook that will never arrive.
+// time but isn't paid until the family sends their e-transfer and staff
+// confirms it (see confirmDemoEtransferPayment in the platform repo). If a
+// family never sends the e-transfer, this job releases the hold after 48
+// hours — long enough for normal e-transfer turnaround — so the seat becomes
+// available again rather than staying stuck forever.
 //
-// NOT currently wired into a schedule: this repository's netlify.toml has no
-// `[functions."..."] schedule` / scheduled-functions section at all (checked
-// — see submit-enrollment-request.js's sibling `expire-enrollment-offers`,
-// which is scheduled from the platform repo, not this one). This function is
-// written and correct but needs either (a) a schedule entry added to this
-// repo's netlify.toml, or (b) to be invoked from the platform repo's
-// scheduled functions, exactly like the task brief anticipates. Wiring that
-// up is a deployment/ops step outside this code change.
+// Scheduled via netlify.toml's `[functions."expire-demo-payment-holds"]`
+// block (hourly cron), mirroring the platform repo's
+// `expire-enrollment-offers` pattern.
 import { FieldValue, Timestamp } from 'firebase-admin/firestore'
 import { getAdminDb } from './_lib/firebase-admin.js'
 
-const HOLD_TIMEOUT_MS = 30 * 60 * 1000
+const HOLD_TIMEOUT_MS = 48 * 60 * 60 * 1000
 const MAX_PER_RUN = 200
 
 function demoPaymentsEnabled() {

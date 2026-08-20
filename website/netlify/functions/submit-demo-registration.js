@@ -8,12 +8,17 @@
 // submit-enrollment-request.js, by explicit design (see the task brief) —
 // nothing else about that file's behavior is touched.
 //
-// Fail-closed gate: this endpoint (and create-demo-payment-session.js,
-// demo-payment-webhook.js) only operate when ENABLE_DEMO_PAYMENTS === 'true'.
-// An absent, misspelled, or falsy value always serves a 503 before any other
-// work happens — mirroring the BOOKING_FLOW_MODE fail-closed philosophy in
-// lib/booking-flow.ts. This feature ships disabled in this delivery; see
-// docs/stripe-integration.md.
+// Fail-closed gate: this endpoint only operates when ENABLE_DEMO_PAYMENTS
+// === 'true'. An absent, misspelled, or falsy value always serves a 503
+// before any other work happens — mirroring the BOOKING_FLOW_MODE
+// fail-closed philosophy in lib/booking-flow.ts.
+//
+// Payment is collected via e-transfer, confirmed manually by staff in the
+// platform repo's admin app (see manage-demo-registration.js /
+// _lib/demo-lifecycle.js's confirmDemoEtransferPayment) — not via Stripe.
+// create-demo-payment-session.js and demo-payment-webhook.js are unused
+// dead code from an earlier Stripe-based delivery, kept in case Stripe is
+// reintroduced for this product later.
 import crypto from 'node:crypto'
 import { FieldValue, Timestamp } from 'firebase-admin/firestore'
 import { getAdminDb } from './_lib/firebase-admin.js'
@@ -271,7 +276,7 @@ export async function saveDemoRegistration(db, request) {
       demoStatus: 'registered',
       conversionStatus: 'not_converted',
       convertedRegistrationId: null,
-      paymentProvider: 'stripe',
+      paymentProvider: 'etransfer',
       paymentSessionId: null,
       paymentIntentId: null,
       paymentStatus: 'pending',
