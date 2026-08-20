@@ -10,6 +10,7 @@ import {
 } from "../../lib/booking";
 import { ROBOTICS_CATEGORY } from "../../lib/site-links";
 import {
+  findLicensedRoboticsProgram,
   formatWeeklyClassSchedules,
   imageForCategory,
   licensedRoboticsPrograms,
@@ -41,19 +42,24 @@ function normalizeProgramName(value?: string) {
 }
 
 function withLicensedProgramAssets(program: Program): Program {
-  const id = normalizeProgramName(program.id);
-  const title = normalizeProgramName(program.title);
-  const licensedProgram = licensedRoboticsPrograms.find(
-    (item) => normalizeProgramName(item.id) === id || normalizeProgramName(item.title) === title
-  );
+  const licensedProgram = findLicensedRoboticsProgram(program);
 
   if (!licensedProgram) return program;
 
   return {
-    ...licensedProgram,
     ...program,
     image: program.image || licensedProgram.image,
     logo: program.logo || licensedProgram.logo,
+    ageRange: program.ageRange || licensedProgram.ageRange,
+    durationMin: program.durationMin ?? licensedProgram.durationMin,
+    description: program.description || licensedProgram.description,
+    learnMoreUrl: program.learnMoreUrl || licensedProgram.learnMoreUrl,
+    weeklySchedules: program.weeklySchedules || licensedProgram.weeklySchedules,
+    // Schedule and availability may come from Firestore, but public
+    // curriculum claims stay in the reviewed licensed-program catalogue.
+    marketingEyebrow: licensedProgram.marketingEyebrow,
+    skillTags: licensedProgram.skillTags,
+    futureReadyCopy: licensedProgram.futureReadyCopy,
   };
 }
 
@@ -141,6 +147,11 @@ function ProgramCard({
       </div>
 
       <div className="flex flex-1 flex-col gap-3 p-6">
+        {program.marketingEyebrow && (
+          <p className="text-[11px] font-black uppercase tracking-[0.18em]" style={{ color: accent }}>
+            {program.marketingEyebrow}
+          </p>
+        )}
         <div className="flex items-start justify-between gap-3">
           <h3 className="text-lg font-bold text-slate-900">{program.title}</h3>
           <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${availabilityClasses}`}>
@@ -167,6 +178,24 @@ function ProgramCard({
           </div>
         )}
 
+        {program.futureReadyCopy && (
+          <p className="text-sm font-medium leading-relaxed text-slate-700">{program.futureReadyCopy}</p>
+        )}
+
+        {Array.isArray(program.skillTags) && program.skillTags.length > 0 && (
+          <ul className="flex flex-wrap gap-2" aria-label={`${program.title} learning foundations`}>
+            {program.skillTags.map((tag: string) => (
+              <li
+                key={tag}
+                className="rounded-full border px-2.5 py-1 text-[11px] font-bold"
+                style={{ borderColor: `${accent}40`, backgroundColor: `${accent}0D`, color: accent }}
+              >
+                {tag}
+              </li>
+            ))}
+          </ul>
+        )}
+
         {program.description && (
           <div>
             <p
@@ -182,7 +211,7 @@ function ProgramCard({
               className="mt-1 text-xs font-bold"
               style={{ color: accent }}
             >
-              {descriptionExpanded ? "Show less" : "Read more"}
+              {descriptionExpanded ? "Show less" : "See curriculum details"}
             </button>
           </div>
         )}

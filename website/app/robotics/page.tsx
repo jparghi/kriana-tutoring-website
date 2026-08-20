@@ -28,16 +28,24 @@ export const revalidate = 60;
 export const metadata: Metadata = {
   title: "Robotics & Coding Classes in Kanata | Young Engineers at Kriana",
   description:
-    "Explore hands-on robotics, engineering and coding programs for children in Kanata and Stittsville, offered locally by Kriana Tutoring.",
+    "Explore hands-on Young Engineers robotics, engineering and coding programs in Kanata and Stittsville that build computational thinking and AI-ready foundations.",
   alternates: { canonical: `${siteUrl}/robotics` },
   openGraph: {
     title: "Robotics & Coding Classes in Kanata | Young Engineers at Kriana",
     description:
-      "Explore hands-on robotics, engineering and coding programs for children in Kanata and Stittsville, offered locally by Kriana Tutoring.",
+      "Hands-on robotics, engineering and coding programs that build computational thinking and AI-ready foundations for children in Kanata and Stittsville.",
     url: `${siteUrl}/robotics`,
     type: "website",
   },
 };
+
+const futureReadyJourney = [
+  { title: "Build", description: "Turn an idea into a hands-on model." },
+  { title: "Program", description: "Give each creation clear instructions." },
+  { title: "Test", description: "Observe what works and recognize patterns." },
+  { title: "Debug", description: "Find the problem and adjust the solution." },
+  { title: "Improve", description: "Refine the design through creative thinking." },
+];
 
 const additionalOfferings = [
   // Camps & PA Days hidden for now — re-enable by uncommenting when ready to promote again.
@@ -82,6 +90,10 @@ const faqs = [
     a: "Any device requirements will be listed on the specific program page. Most in-person classes provide the equipment children need on-site.",
   },
   {
+    q: "Do these programs teach artificial intelligence or machine learning?",
+    a: "Smartivo, Bricks Challenge and Algo Play build age-appropriate foundations such as coding logic, algorithms, engineering design and debugging. These skills are relevant to robotics, automation and AI, but the programs are not presented as formal machine-learning courses.",
+  },
+  {
     q: "Where are classes held?",
     a: "Class locations are listed with each published weekly schedule and confirmed when we review your request.",
   },
@@ -112,7 +124,7 @@ export default async function RoboticsPage() {
     "@type": "Service",
     name: "Young Engineers Robotics & Coding",
     description:
-      "Hands-on Young Engineers robotics, engineering and coding programs offered locally by Kriana Tutoring.",
+      "Hands-on Young Engineers robotics, engineering and coding programs that build computational thinking and AI-ready foundations, offered locally by Kriana Tutoring.",
     provider: { "@id": localBusinessSchema["@id"] },
     areaServed: ["Kanata", "Stittsville", "Ottawa"],
     serviceType: "Robotics and coding classes for children",
@@ -206,18 +218,21 @@ export default async function RoboticsPage() {
               </a>
 
               <p className="mt-6 text-xs font-black uppercase tracking-[0.28em] text-[#0083CB]">
-                Now in Kanata &amp; Stittsville
+                Young Engineers at Kriana
               </p>
               <h1 className="mt-3 text-balance text-4xl font-black leading-[1.03] text-[#ED174B] sm:text-5xl">
-                Young Engineers Enrichment Programs
+                Build. Code. Think Ahead.
               </h1>
               <p className="mt-5 max-w-lg text-base leading-7 text-slate-700 sm:text-lg">
-                Interactive robotics, engineering and coding programs that turn science and mathematics into an
-                exciting, hands-on adventure.
+                Hands-on engineering, robotics and coding programs that build the logic, creativity and
+                problem-solving skills children need for an AI-powered future.
+              </p>
+              <p className="mt-4 inline-flex rounded-full border border-[#0083CB]/25 bg-[#0083CB]/10 px-3 py-1.5 text-xs font-black uppercase tracking-[0.14em] text-[#0A2D5A]">
+                Coding · Robotics · AI-Ready Foundations
               </p>
               <p className="mt-4 flex items-center gap-2 text-sm font-bold text-[#0A2D5A]">
                 <MapPinIcon className="h-4 w-4 shrink-0 text-[#ED174B]" />
-                Offered locally by Kriana Tutoring
+                Serving Kanata &amp; Stittsville
               </p>
               <div className="mt-7">
                 <RoboticsCtaButtons variant="light" initialData={catalogData} />
@@ -271,10 +286,66 @@ export default async function RoboticsPage() {
           <div className="relative mx-auto max-w-6xl">
             <h2 className="text-2xl font-semibold text-[#0A2D5A] sm:text-3xl">Find the Right Engineering Challenge</h2>
             <p className="mt-3 max-w-2xl text-base text-slate-600">
-              Explore hands-on programs designed for different ages, interests and experience levels.
+              Explore hands-on programs that develop age-appropriate coding, engineering and future-ready thinking.
             </p>
             <div className="mt-10">
               <RoboticsPrograms initialData={catalogData} />
+            </div>
+          </div>
+        </section>
+
+        {/* Future-ready learning journey: foundations, not a direct ML curriculum. */}
+        <section className="relative overflow-hidden bg-white px-6 py-16 sm:px-10">
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.05]"
+            style={{
+              backgroundImage:
+                "linear-gradient(rgba(0,131,203,0.7) 1px,transparent 1px),linear-gradient(90deg,rgba(0,131,203,0.7) 1px,transparent 1px)",
+              backgroundSize: "40px 40px",
+            }}
+          />
+          <div className="relative mx-auto max-w-6xl">
+            <div className="mx-auto max-w-3xl text-center">
+              <p className="text-xs font-black uppercase tracking-[0.28em] text-[#0083CB]">AI-ready foundations</p>
+              <h2 className="mt-3 text-2xl font-semibold text-[#0A2D5A] sm:text-3xl">
+                From Hands-On Building to Future-Ready Thinking
+              </h2>
+              <p className="mt-4 text-base leading-7 text-slate-600">
+                AI-ready thinking starts with learning how to break challenges into steps, recognize patterns, test
+                ideas, find errors and improve solutions. Young Engineers develops these foundations through
+                age-appropriate building and coding—not a formal machine-learning curriculum.
+              </p>
+            </div>
+
+            <ol className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+              {futureReadyJourney.map((stage, index) => (
+                <li
+                  key={stage.title}
+                  className="relative rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                >
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0083CB] text-sm font-black text-white">
+                    {index + 1}
+                  </span>
+                  <h3 className="mt-4 text-base font-black text-[#0A2D5A]">{stage.title}</h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-slate-600">{stage.description}</p>
+                  {index < futureReadyJourney.length - 1 && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute -right-3 top-1/2 z-10 hidden -translate-y-1/2 rounded-full bg-[#F2A100] px-1.5 py-0.5 text-sm font-black text-white lg:block"
+                    >
+                      →
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ol>
+
+            <div className="mx-auto mt-8 flex max-w-4xl flex-wrap justify-center gap-2" aria-label="Future-ready skills">
+              {["Computational Thinking", "Algorithmic Reasoning", "Coding Logic", "Engineering Design", "Debugging", "Pattern Recognition", "Creative Problem-Solving"].map((skill) => (
+                <span key={skill} className="rounded-full bg-[#0A2D5A] px-3 py-1.5 text-xs font-bold text-white">
+                  {skill}
+                </span>
+              ))}
             </div>
           </div>
         </section>

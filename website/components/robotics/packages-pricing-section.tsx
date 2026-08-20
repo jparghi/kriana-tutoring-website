@@ -14,12 +14,12 @@ const PACKAGE_LOGOS: Record<string, string> = {
 };
 
 const HIGHLIGHTS = [
-  "One-hour instructor-led classes",
+  "Instructor-led classes designed for each program and age group",
   "Small class sizes",
   "Hands-on engineering activities",
   "LEGO®-style building blocks",
   "A new model or engineering concept in each class",
-  "Little to no screen time — when screens are used, it's for short educational demonstrations only",
+  "A balanced mix of hands-on building and age-appropriate coding; device use varies by program",
   "Building kits stay at the learning centre and are not taken home",
 ];
 

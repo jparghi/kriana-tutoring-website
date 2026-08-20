@@ -7,6 +7,7 @@ import { isRequestOnlyBookingFlow } from '../../lib/booking-flow'
 import { Footer } from '../footer'
 import { getRoboticsPackage, isValidPackageId } from '../../lib/robotics-packages.js'
 import { isDemoEligibleProgramId } from '../../lib/demo-eligibility.js'
+import { findLicensedRoboticsProgram } from '../../lib/robotics-content'
 
 const ROBOTICS_CATEGORY = 'Robotics'
 const DEMO_CLASS_CATEGORY = 'Demo Class'
@@ -46,6 +47,7 @@ function buildDemoCards(programs: any[], offeringsByProgram: Record<string, any[
 const CATEGORY_ACCENTS: Record<string, { bg: string; text: string; bar: string }> = {
   'Demo Class':      { bg: 'bg-sky-50',    text: 'text-sky-700',    bar: '#0EA5E9' },
   'Robotics':         { bg: 'bg-purple-50', text: 'text-purple-700', bar: '#7C3AED' },
+  'Robotics & Coding': { bg: 'bg-indigo-50', text: 'text-indigo-700', bar: '#3730A3' },
   'Workshop':         { bg: 'bg-teal-50',   text: 'text-teal-700',   bar: '#00B8A9' },
   'Birthday Party':   { bg: 'bg-pink-50',   text: 'text-pink-700',   bar: '#ED174B' },
   'Summer Camp':      { bg: 'bg-orange-50', text: 'text-orange-700', bar: '#F2A100' },
@@ -55,6 +57,11 @@ const CATEGORY_ACCENTS: Record<string, { bg: string; text: string; bar: string }
   'Tutoring':         { bg: 'bg-blue-50',   text: 'text-blue-700',   bar: '#0083CB' },
 }
 const DEFAULT_ACCENT = { bg: 'bg-slate-100', text: 'text-slate-600', bar: '#94A3B8' }
+
+function programTag(program: any) {
+  if (program.isDemoCard) return DEMO_CLASS_CATEGORY
+  return findLicensedRoboticsProgram(program)?.bookingTag ?? program.category
+}
 
 function CategoryBadge({ category }: { category: string }) {
   const accent = CATEGORY_ACCENTS[category] ?? DEFAULT_ACCENT
@@ -109,7 +116,8 @@ function ProgramCard({ program, offerings, packageId }: { program: any; offering
   const isDemoCard = Boolean(program.isDemoCard)
   const hasSchedule = isDemoCard || offerings.length > 0
   const allSoldOut = !isDemoCard && hasSchedule && offerings.every(isOfferingSoldOut)
-  const accent = CATEGORY_ACCENTS[program.category] ?? DEFAULT_ACCENT
+  const displayTag = programTag(program)
+  const accent = CATEGORY_ACCENTS[displayTag] ?? DEFAULT_ACCENT
   const ageGrade = [
     program.ageRange ? `Ages ${program.ageRange}` : '',
     program.gradeRange ?? '',
@@ -129,7 +137,7 @@ function ProgramCard({ program, offerings, packageId }: { program: any; offering
             />
           </div>
           <div className="absolute left-1.5 top-2.5">
-            <CategoryBadge category={program.category} />
+            <CategoryBadge category={displayTag} />
           </div>
           {allSoldOut && (
             <span className="absolute right-1.5 top-2.5 shrink-0 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full shadow-sm">Sold Out</span>
@@ -141,7 +149,7 @@ function ProgramCard({ program, offerings, packageId }: { program: any; offering
       <div className="flex flex-1 flex-col p-3">
         {!program.imageUrl && (
           <div className="mb-1.5 flex items-start justify-between gap-1.5">
-            <CategoryBadge category={program.category} />
+            <CategoryBadge category={displayTag} />
             {allSoldOut && (
               <span className="shrink-0 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">Sold Out</span>
             )}

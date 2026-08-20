@@ -54,8 +54,13 @@ export const licensedRoboticsPrograms = [
     title: "Smartivo",
     ageRange: "4-6",
     durationMin: 60,
+    bookingTag: "Robotics & Coding",
+    marketingEyebrow: "Early Coding Foundations",
+    skillTags: ["Sequencing", "Coding Logic", "AI-Ready Thinking"],
+    futureReadyCopy:
+      "Children bring robots to life through playful coding missions while building sequencing, logic and computational-thinking foundations.",
     description:
-      "Smartivo is an early coding program where young children explore the basics of programming through playful, story-based missions. Using either tangible coding blocks or GoAlgo App, kids bring robots to life-making them move, light up, and react to their commands. Each session combines logic and fun to build confidence and foundational coding skills like command sequencing, conditions, loops and multithreading in an age-appropriate way.",
+      "Using tangible coding blocks or the GoAlgo app, children explore commands, conditions, loops and multithreading through age-appropriate, story-based missions.",
     learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/smartivo-enrichment-program/",
     image: "/images/robotics/programs/smartivo.png",
     logo: "/images/robotics/programs/smartivo-logo.png",
@@ -69,6 +74,11 @@ export const licensedRoboticsPrograms = [
     title: "Bricks Challenge",
     ageRange: "6-12",
     durationMin: 75,
+    bookingTag: "Robotics",
+    marketingEyebrow: "Engineering & Problem-Solving",
+    skillTags: ["Mechanics", "Design Thinking", "Creative Problem-Solving"],
+    futureReadyCopy:
+      "Children build and test mechanical models while developing engineering thinking, creativity and systematic problem-solving.",
     description:
       "An educational program that introduces children to the principles of STEM and basic subjects of classical mechanics through the use of building blocks and mechanical parts.",
     learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/bricks-challenge-enrichment-program/",
@@ -110,8 +120,13 @@ export const licensedRoboticsPrograms = [
     title: "Algo Play",
     ageRange: "6-12",
     durationMin: 75,
+    bookingTag: "Robotics & Coding",
+    marketingEyebrow: "Algorithms & Coding",
+    skillTags: ["Algorithms", "Debugging", "Robotics & AI Foundations"],
+    futureReadyCopy:
+      "Children explore algorithms, loops, conditions and debugging—the coding logic behind robotics, automation and future AI technologies.",
     description:
-      "A program designed to introduce children to essential coding fundamentals such as conditioning, loops, multithreading, debugging and more through tangible or screen GoAlgo coding application.",
+      "Using tangible coding tools or the GoAlgo app, children develop essential coding fundamentals including conditions, loops, multithreading and debugging.",
     learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/algoplay-enrichment-program/",
     image: "/images/robotics/programs/algo-play.png",
     logo: "/images/robotics/programs/algo-play-logo.png",
@@ -167,11 +182,26 @@ export function placeholderImageForIndex(i: number) {
   return PLACEHOLDER_IMAGES[i % PLACEHOLDER_IMAGES.length];
 }
 
+// Marketing claims remain local and curriculum-reviewed even when schedule,
+// capacity, and registration data comes from Firestore. Prefer the stable
+// licensed-program id; title matching is retained only for older Firestore
+// documents whose generated document ids do not match the licensed ids.
+export function findLicensedRoboticsProgram(program?: { id?: string; title?: string } | null) {
+  if (!program) return null;
+  const normalize = (value?: string) => (value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const id = normalize(program.id);
+  const title = normalize(program.title);
+
+  return licensedRoboticsPrograms.find((item) => normalize(item.id) === id)
+    ?? licensedRoboticsPrograms.find((item) => normalize(item.title) === title)
+    ?? null;
+}
+
 export const skillsBuilt = [
   {
-    title: "Engineering Thinking",
+    title: "Computational Thinking",
     icon: CompassIcon,
-    description: "Breaking a challenge into steps and reasoning through a design.",
+    description: "Breaking a challenge into clear steps and building a logical path to a solution.",
   },
   {
     title: "Problem-Solving",
@@ -189,13 +219,13 @@ export const skillsBuilt = [
     description: "Building and troubleshooting alongside classmates.",
   },
   {
-    title: "Mechanical Understanding",
+    title: "Engineering Design",
     icon: GearIcon,
-    description: "Learning how gears, motors and structures work together.",
+    description: "Learning how gears, motors and structures work together through building and testing.",
   },
   {
-    title: "Coding & Logical Thinking",
+    title: "Coding, Algorithms & Debugging",
     icon: BrainCircuitIcon,
-    description: "Using age-appropriate programming to control a creation.",
+    description: "Using age-appropriate programming, patterns and debugging to control a creation.",
   },
 ];
