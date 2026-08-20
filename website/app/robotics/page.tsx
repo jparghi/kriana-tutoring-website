@@ -91,7 +91,7 @@ const faqs = [
   },
   {
     q: "Do these programs teach artificial intelligence or machine learning?",
-    a: "Smartivo, Bricks Challenge and Algo Play build age-appropriate foundations such as coding logic, algorithms, engineering design and debugging. These skills are relevant to robotics, automation and AI, but the programs are not presented as formal machine-learning courses.",
+    a: "Selected Young Engineers coding activities now introduce AI and machine learning through GoAlgo. Students can train and test gesture-recognition tools, connect detected gestures to their code and use AI Chat for coding support. Availability varies by program and lesson.",
   },
   {
     q: "Where are classes held?",
@@ -294,7 +294,76 @@ export default async function RoboticsPage() {
           </div>
         </section>
 
-        {/* Future-ready learning journey: foundations, not a direct ML curriculum. */}
+        {/* New GoAlgo AI and machine-learning tools */}
+        <section className="relative overflow-hidden bg-[#0A2D5A] px-6 py-16 text-white sm:px-10">
+          <div
+            className="pointer-events-none absolute inset-0 opacity-10"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at center, rgba(255,255,255,0.9) 1.5px, transparent 1.5px)",
+              backgroundSize: "24px 24px",
+            }}
+          />
+          <div className="relative mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-14">
+            <div>
+              <span className="inline-flex rounded-full bg-[#F2A100] px-3 py-1.5 text-xs font-black uppercase tracking-[0.16em] text-[#0A2D5A]">
+                New in coding
+              </span>
+              <h2 className="mt-4 text-3xl font-black leading-tight sm:text-4xl">
+                AI &amp; Machine Learning Are Now Live
+              </h2>
+              <p className="mt-5 text-base leading-7 text-white/80 sm:text-lg">
+                In selected Young Engineers coding activities, students can train AI to recognize body and facial
+                gestures, turn those gestures into events and connect them directly to their own code.
+              </p>
+              <p className="mt-5 text-lg font-black text-[#F2A100]">
+                The AI detects. The code reacts. The student makes it happen.
+              </p>
+
+              <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                <div className="rounded-2xl border border-white/15 bg-white/10 p-4">
+                  <h3 className="font-bold">Machine Learning in Action</h3>
+                  <p className="mt-1 text-sm leading-6 text-white/75">
+                    Train and test gesture recognition, then use its output in student-created programs.
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-white/15 bg-white/10 p-4">
+                  <h3 className="font-bold">AI-Assisted Coding</h3>
+                  <p className="mt-1 text-sm leading-6 text-white/75">
+                    GoAlgo AI Chat supports students with commands, events and programming logic.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-7">
+                <RoboticsCtaButtons variant="dark" initialData={catalogData} />
+              </div>
+              <p className="mt-4 text-xs leading-5 text-white/60">
+                AI features are included in selected lessons. Program availability may vary.
+              </p>
+            </div>
+
+            <div>
+              <div className="relative aspect-video overflow-hidden rounded-[1.75rem] border border-white/15 bg-black shadow-[0_30px_70px_rgba(0,0,0,0.35)]">
+                <video
+                  className="h-full w-full"
+                  controls
+                  playsInline
+                  preload="metadata"
+                  aria-label="AI and machine learning in Young Engineers coding programs"
+                >
+                  <source src="/videos/goalgo-ai-machine-learning.mp4" type="video/mp4" />
+                  Your browser does not support embedded video.
+                </video>
+              </div>
+              <p className="mt-3 text-center text-xs text-white/60">
+                Watch the new Young Engineers AI tools in action.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Future-ready learning journey */}
         <section className="relative overflow-hidden bg-white px-6 py-16 sm:px-10">
           <div
             className="pointer-events-none absolute inset-0 opacity-[0.05]"
@@ -313,7 +382,7 @@ export default async function RoboticsPage() {
               <p className="mt-4 text-base leading-7 text-slate-600">
                 AI-ready thinking starts with learning how to break challenges into steps, recognize patterns, test
                 ideas, find errors and improve solutions. Young Engineers develops these foundations through
-                age-appropriate building and coding—not a formal machine-learning curriculum.
+                age-appropriate building and coding, with AI and machine-learning tools appearing in selected lessons.
               </p>
             </div>
 
