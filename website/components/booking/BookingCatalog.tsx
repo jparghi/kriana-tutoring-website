@@ -96,7 +96,7 @@ function ScheduleBadge({ offerings, hasSchedule }: { offerings: any[]; hasSchedu
         {offerings.length} schedule{offerings.length !== 1 ? 's' : ''}
       </button>
 
-      <div className="pointer-events-none invisible absolute left-1/2 top-full z-20 mt-2 w-52 -translate-x-1/2 translate-y-1 rounded-xl border border-slate-200 bg-white p-3 opacity-0 shadow-xl transition-all duration-150 group-hover/sched:visible group-hover/sched:translate-y-0 group-hover/sched:opacity-100">
+      <div className="pointer-events-none invisible absolute left-1/2 top-full z-30 mt-2 w-52 -translate-x-1/2 translate-y-1 rounded-xl border border-slate-200 bg-white p-3 opacity-0 shadow-xl transition-all duration-150 group-hover/sched:visible group-hover/sched:translate-y-0 group-hover/sched:opacity-100">
         <div className="absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-l border-t border-slate-200 bg-white" />
         <p className="mb-2 text-[9px] font-bold uppercase tracking-wider text-slate-400">Upcoming Schedule</p>
         <ul className="space-y-2">
@@ -124,7 +124,7 @@ function ProgramCard({ program, offerings, packageId }: { program: any; offering
   ].filter(Boolean).join(' · ')
 
   return (
-    <div className="group flex flex-col overflow-visible rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_28px_rgba(15,23,42,0.1)]">
+    <div className="group relative z-0 flex flex-col overflow-visible rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:z-10 hover:-translate-y-1 hover:shadow-[0_12px_28px_rgba(15,23,42,0.1)] focus-within:z-10">
       {program.imageUrl ? (
         <div className="relative overflow-hidden rounded-t-xl">
           <div className="h-1 w-full shrink-0" style={{ backgroundColor: accent.bar }} />
