@@ -24,6 +24,10 @@ function doc(data, exists = true) {
   return { exists, data: () => data }
 }
 
+// Any real allowlisted program ID works here — the fixtures below don't care
+// which one, they just need to pass isDemoEligibleProgramId().
+const TEST_PROGRAM_ID = DEMO_ELIGIBLE_PROGRAM_IDS[0]
+
 const NOW = Date.now()
 const FUTURE = new Date(NOW + 30 * 24 * 60 * 60 * 1000).toISOString()
 const PAST = new Date(NOW - 30 * 24 * 60 * 60 * 1000).toISOString()
@@ -42,7 +46,7 @@ function baseRegistration(overrides = {}) {
 
 function baseRequest(overrides = {}) {
   return {
-    programId: 'smartivo',
+    programId: TEST_PROGRAM_ID,
     demoOfferingId: 'demo-off-1',
     clientRequestId: 'client-request-id-12345',
     registration: baseRegistration(),
@@ -62,7 +66,7 @@ function demoProgram(overrides = {}) {
 
 function demoOffering(overrides = {}) {
   return {
-    programId: 'smartivo',
+    programId: TEST_PROGRAM_ID,
     offeringType: 'demo',
     publicCatalogVersion: 1,
     isPublished: true,
@@ -233,7 +237,7 @@ test('demo rejected for an ineligible program (not in the code allowlist)', () =
 })
 
 test('demo rejected when the Firestore demoEligible flag is false, even for an allowlisted program id (defense in depth)', () => {
-  const request = baseRequest({ programId: 'smartivo' })
+  const request = baseRequest({ programId: TEST_PROGRAM_ID })
   assert.throws(
     () => validateDemoCatalogueRequest(request, doc(demoProgram({ demoEligible: false })), doc(demoOffering())),
     RequestRejectedError,
@@ -293,7 +297,7 @@ test('idempotencyDigest is stable for identical requests', () => {
 
 test('saveDemoRegistration succeeds and writes registered/pending_attendance records at $10 CAD', async () => {
   const { db } = makeFakeDb({
-    'programs/smartivo': demoProgram(),
+    [`programs/${TEST_PROGRAM_ID}`]: demoProgram(),
     'programOfferings/demo-off-1': demoOffering(),
   })
   const result = await saveDemoRegistration(db, baseRequest())
@@ -323,7 +327,7 @@ test('saveDemoRegistration creates the eligibility lock via tx.create (atomic de
   // simulated without a Firestore emulator, so this test instead locks in
   // that the correct primitive is used.
   const { db } = makeFakeDb({
-    'programs/smartivo': demoProgram(),
+    [`programs/${TEST_PROGRAM_ID}`]: demoProgram(),
     'programOfferings/demo-off-1': demoOffering(),
   })
   await saveDemoRegistration(db, baseRequest())
@@ -337,7 +341,7 @@ test('saveDemoRegistration rejects a duplicate demo for the same child when a lo
   const registration = baseRegistration()
   const hash = computeChildEligibilityKeyHash(registration)
   const { db } = makeFakeDb({
-    'programs/smartivo': demoProgram(),
+    [`programs/${TEST_PROGRAM_ID}`]: demoProgram(),
     'programOfferings/demo-off-1': demoOffering(),
     [`demoEligibilityLocks/${hash}`]: { demoRegistrationId: 'existing-reg', createdAt: null },
   })
@@ -351,7 +355,7 @@ test('saveDemoRegistration returns the existing result for a repeated clientRequ
   const request = baseRequest()
   const digest = idempotencyDigest(request)
   const { db } = makeFakeDb({
-    'programs/smartivo': demoProgram(),
+    [`programs/${TEST_PROGRAM_ID}`]: demoProgram(),
     'programOfferings/demo-off-1': demoOffering(),
     [`demoRequestKeys/${digest}`]: {
       demoRegistrationId: 'already-saved-id',
