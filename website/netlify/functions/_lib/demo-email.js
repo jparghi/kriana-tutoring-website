@@ -29,6 +29,24 @@ function formatAmount(cents, currency) {
   return `$${(Number(cents ?? 0) / 100).toFixed(2)} ${currency || 'CAD'}`
 }
 
+// Fixed-event date/time formatting for a single-occurrence demo campaign
+// offering, e.g. the /demo funnel. Duplicated (not imported) from
+// lib/booking.ts's formatEventDateTime, matching this file's own stated
+// pattern of copying rather than importing across the submission-flow
+// boundary. Returns '' if the offering doesn't carry fixed event fields.
+function formatEventDateTime(offering) {
+  const rawStart = offering?.eventStartAt
+  if (!rawStart) return ''
+  const start = rawStart?.toDate ? rawStart.toDate() : new Date(rawStart)
+  const timeZone = offering?.timezone || 'America/Toronto'
+  const rawEnd = offering?.eventEndAt
+  const end = rawEnd ? (rawEnd?.toDate ? rawEnd.toDate() : new Date(rawEnd)) : null
+  const dateLabel = start.toLocaleDateString('en-CA', { timeZone, weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+  const startTime = start.toLocaleTimeString('en-CA', { timeZone, hour: 'numeric', minute: '2-digit' })
+  const endTime = end ? end.toLocaleTimeString('en-CA', { timeZone, hour: 'numeric', minute: '2-digit' }) : ''
+  return endTime ? `${dateLabel}, ${startTime}–${endTime}` : `${dateLabel}, ${startTime}`
+}
+
 // Same source of truth and same message-format derivation as
 // app/booking/demo-etransfer/page.tsx — keep both in sync if either changes.
 // NEXT_PUBLIC_ETRANSFER_EMAIL is a normal env var at runtime here (the
@@ -38,7 +56,7 @@ const ETRANSFER_EMAIL = process.env.NEXT_PUBLIC_ETRANSFER_EMAIL || 'info@krianat
 const ETRANSFER_HOLD_HOURS = 48
 
 function etransferMessage(programTitle, reference) {
-  return `Kriana Demo${programTitle ? ` - ${programTitle}` : ''}${reference ? ` - ${reference}` : ''}`
+  return `${programTitle || 'Kriana Demo'}${reference ? ` - ${reference}` : ''}`
 }
 
 /**
@@ -59,10 +77,18 @@ export async function sendDemoAcknowledgement({ registration, program, offering,
   const childName = escapeHtml(registration.childName)
   const safeReference = escapeHtml(reference)
   const priceLabel = formatAmount(1000, 'CAD')
+  const eventTitle = escapeHtml(offering?.eventTitle || '')
+  const eventWhen = escapeHtml(formatEventDateTime(offering))
+  const eventLocation = escapeHtml(offering?.location || '')
   const fromAddress = `"Kriana Tutoring" <${process.env.SMTP_USER}>`
   const adminEmail = process.env.ADMIN_EMAIL || 'info@krianatutoring.com'
   const etransferEmail = escapeHtml(ETRANSFER_EMAIL)
-  const etransferMessageText = escapeHtml(etransferMessage(program?.title, reference))
+  // Uses the event title (not the internal program name) as the identifiable
+  // part of the e-transfer note — parents registered for "Young Engineers
+  // Demo Class — Kanata", not for a specific product like "Smartivo", and
+  // the note only needs to be unique/identifiable, not tied to the backend
+  // program record.
+  const etransferMessageText = escapeHtml(etransferMessage(offering?.eventTitle || program?.title, reference))
 
   const parentHtml = `
     <div style="max-width:600px;margin:24px auto;font-family:Arial,sans-serif;color:#1e293b">
@@ -72,9 +98,11 @@ export async function sendDemoAcknowledgement({ registration, program, offering,
       </div>
       <div style="border:1px solid #e2e8f0;border-top:0;padding:28px;border-radius:0 0 16px 16px">
         <p>Hi ${parentName},</p>
-        <p>We received your $10 demo class registration for <strong>${childName}</strong> to try <strong>${programTitle}</strong>.</p>
+        <p>We received your $10 demo class registration for <strong>${childName}</strong> for <strong>${eventTitle || 'your $10 demo class'}</strong>.</p>
         <div style="background:#f8fafc;padding:16px;border-radius:10px;margin:18px 0">
-          <p style="margin:0 0 8px"><strong>Program:</strong> ${programTitle}</p>
+          ${eventTitle ? `<p style="margin:0 0 8px"><strong>Event:</strong> ${eventTitle}</p>` : ''}
+          ${eventWhen ? `<p style="margin:0 0 8px"><strong>When:</strong> ${eventWhen}</p>` : ''}
+          ${eventLocation ? `<p style="margin:0 0 8px"><strong>Location:</strong> ${eventLocation}</p>` : ''}
           <p style="margin:0 0 8px"><strong>Charge:</strong> ${priceLabel}</p>
           <p style="margin:0"><strong>Reference:</strong> ${safeReference}</p>
         </div>
@@ -87,7 +115,7 @@ export async function sendDemoAcknowledgement({ registration, program, offering,
           <p style="margin:0 0 4px"><strong>Amount:</strong> ${priceLabel}</p>
           <p style="margin:0"><strong>Message / Note:</strong> ${etransferMessageText}</p>
         </div>
-        <p>No further action is needed after sending — our team will verify your e-transfer, send a confirmation, and follow up to schedule your child&apos;s demo class.</p>
+        <p>No further action is needed after sending — our team will verify your e-transfer and confirm your seat by email. Your child&apos;s spot is temporarily held until then.</p>
         <p>Questions? Reply to this email or call <a href="tel:+16134006921">(613) 400-6921</a>.</p>
         ${emailSignatureHtml()}
       </div>
@@ -96,6 +124,8 @@ export async function sendDemoAcknowledgement({ registration, program, offering,
   const adminHtml = `
     <h2>New $10 demo class registration</h2>
     <p><strong>Reference:</strong> ${safeReference}</p>
+    ${eventTitle ? `<p><strong>Event:</strong> ${eventTitle}</p>` : ''}
+    ${eventWhen ? `<p><strong>When:</strong> ${eventWhen}</p>` : ''}
     <p><strong>Program:</strong> ${programTitle}</p>
     <p><strong>Charge:</strong> ${priceLabel}</p>
     <p><strong>Child:</strong> ${childName} (age ${escapeHtml(registration.childAge)})</p>
@@ -105,8 +135,8 @@ export async function sendDemoAcknowledgement({ registration, program, offering,
 
   const transport = createTransport()
   const results = await Promise.allSettled([
-    transport.sendMail({ from: fromAddress, to: registration.parentEmail, subject: `$10 demo class registration received — ${program?.title || 'Kriana program'}`, html: parentHtml }),
-    transport.sendMail({ from: fromAddress, to: adminEmail, subject: `New $10 demo registration — ${program?.title || 'Program'} — ${registration.childName}`, html: adminHtml }),
+    transport.sendMail({ from: fromAddress, to: registration.parentEmail, subject: `$10 Demo Class Registration Received — ${offering?.eventTitle || program?.title || 'Kriana program'}`, html: parentHtml }),
+    transport.sendMail({ from: fromAddress, to: adminEmail, subject: `New $10 demo registration — ${offering?.eventTitle || program?.title || 'Program'} — ${registration.childName}`, html: adminHtml }),
   ])
   for (const result of results) {
     if (result.status === 'rejected') console.error('Demo registration acknowledgement email failed:', result.reason)

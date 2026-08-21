@@ -1,14 +1,40 @@
 'use client'
 
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import BookingLayout from '../../../components/booking/BookingLayout'
 import { BookingStepper } from '../../../components/booking/BookingStepper'
+import { trackEvent } from '../../../lib/analytics'
 
 const ETRANSFER_EMAIL = process.env.NEXT_PUBLIC_ETRANSFER_EMAIL || 'info@krianatutoring.com'
 const HOLD_HOURS = 48
 const DEMO_AMOUNT_LABEL = '$10.00 CAD'
+const CONTACT_PHONE_DISPLAY = '613-400-6921'
+const CONTACT_PHONE_HREF = 'tel:+16134006921'
+
+function googleCalendarUrl({ eventTitle, eventLocation }: { eventTitle: string; eventLocation: string }) {
+  // Fixed to the September 12, 2026 campaign date/time — this page only
+  // ever renders for the demo e-transfer flow, and the offering's exact
+  // start/end aren't passed through as machine-readable values today (only
+  // the pre-formatted eventDate/eventTime display strings are). Uses the
+  // Google Calendar template link (no new dependency), which works from a
+  // tap in any mobile browser, including Facebook/Instagram in-app browsers.
+  const dates = '20260912T103000/20260912T113000'
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: eventTitle || 'Young Engineers Demo Class',
+    dates,
+    location: eventLocation || 'Hazeldean Library, 50 Castlefrank Road, Ottawa, ON K2L 2N5',
+    ctz: 'America/Toronto',
+  })
+  return `https://calendar.google.com/calendar/render?${params.toString()}`
+}
+
+function googleMapsUrl(eventLocation: string) {
+  const query = eventLocation || 'Hazeldean Library, 50 Castlefrank Road, Ottawa, ON K2L 2N5'
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
+}
 
 // Landed on directly after submit-demo-registration.js succeeds (see
 // DemoRegisterForm in app/booking/[programId]/register/page.tsx) — every
@@ -64,7 +90,21 @@ function DemoETransferContent() {
   const reference = searchParams.get('reference') ?? ''
   const programId = searchParams.get('programId') ?? ''
   const program = searchParams.get('program') ?? ''
-  const message = `Kriana Demo${program ? ` - ${program}` : ''}${reference ? ` - ${reference}` : ''}`
+  const eventTitle = searchParams.get('eventTitle') ?? ''
+  const eventDate = searchParams.get('eventDate') ?? ''
+  const eventTime = searchParams.get('eventTime') ?? ''
+  const eventLocation = searchParams.get('eventLocation') ?? ''
+  // Event title (not the internal program name) is the identifiable part of
+  // the e-transfer note — must match the same field in the acknowledgement
+  // email (see demo-email.js's etransferMessage()) so the note the parent
+  // sees here is the same one they see in their inbox.
+  const messageLabel = eventTitle || program
+  const message = `${messageLabel || 'Kriana Demo'}${reference ? ` - ${reference}` : ''}`
+
+  useEffect(() => {
+    trackEvent('demo_payment_instructions_viewed', { offeringId: null })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <BookingLayout maxWidth="max-w-xl">
@@ -102,15 +142,48 @@ function DemoETransferContent() {
           <div className="bg-slate-50 rounded-xl">
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wide px-4 pt-4 pb-2">Registration Summary</p>
             <div className="px-4 pb-4">
-              <InfoRow label="Program" value={program} />
+              <InfoRow label="Event" value={eventTitle || program} />
+              <InfoRow label="Date" value={eventDate} />
+              <InfoRow label="Time" value={eventTime} />
+              <InfoRow label="Location" value={eventLocation} />
               <InfoRow label="Reference" value={reference} />
             </div>
           </div>
 
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <a
+              href={googleCalendarUrl({ eventTitle, eventLocation })}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
+              Add to Calendar
+            </a>
+            {eventLocation && (
+              <a
+                href={googleMapsUrl(eventLocation)}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                Open in Maps
+              </a>
+            )}
+          </div>
+
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+            <p className="text-sm font-bold text-amber-700">Try for $10 — Demo is FREE when you enroll.</p>
+            <p className="text-sm text-amber-700 mt-1">
+              Once your seat is confirmed and your child attends, your $10 is credited toward regular Young Engineers enrollment. No-shows do not receive this credit.
+            </p>
+          </div>
+
           <div className="mt-5 p-4 bg-slate-50 rounded-xl border border-slate-100">
             <p className="text-xs text-slate-500 leading-relaxed">
-              No further action needed after sending — our team will verify your e-transfer and send a confirmation email, then follow up to schedule your child&apos;s demo class.
-              Questions? <a href="mailto:info@krianatutoring.com" className="text-[#0c6162] font-semibold hover:underline">info@krianatutoring.com</a>
+              Your child&apos;s spot is temporarily held. No further action needed after sending — our team will verify your e-transfer and confirm your seat by email.
+              Questions or need to reach us? Call or text <a href={CONTACT_PHONE_HREF} className="text-[#0c6162] font-semibold hover:underline">{CONTACT_PHONE_DISPLAY}</a> or email <a href="mailto:info@krianatutoring.com" className="text-[#0c6162] font-semibold hover:underline">info@krianatutoring.com</a>
             </p>
           </div>
         </div>
