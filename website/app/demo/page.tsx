@@ -6,7 +6,12 @@ import { DemoLandingAnalytics } from "./DemoLandingAnalytics"
 import { DemoRegisterCta } from "./DemoRegisterCta"
 import { ShareInviteButton } from "./ShareInviteButton"
 
-export const revalidate = 60
+// Always render per-request, never at build time — this page depends on
+// live campaign/offering state (capacity, publish status, registration
+// window) that must never go stale, and must never attempt a Firestore call
+// during the Netlify build itself (which fails there; Firestore access is
+// only expected to work in the deployed request-serving environment).
+export const dynamic = 'force-dynamic'
 
 const PAGE_TITLE = "$10 Young Engineers Demo Class in Kanata | Kriana Tutoring"
 const PAGE_DESCRIPTION = "Reserve a hands-on Young Engineers demo for ages 6–12 at Hazeldean Library in Kanata. Your $10 demo fee is credited when you enroll."
