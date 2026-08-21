@@ -12,6 +12,7 @@ import {
   computeChildEligibilityKeyHash,
   saveDemoRegistration,
   idempotencyDigest,
+  sanitizeAttribution,
   handler as submitDemoHandler,
 } from '../netlify/functions/submit-demo-registration.js'
 import { RequestRejectedError } from '../netlify/functions/submit-enrollment-request.js'
@@ -50,6 +51,15 @@ function baseRequest(overrides = {}) {
     demoOfferingId: 'demo-off-1',
     clientRequestId: 'client-request-id-12345',
     registration: baseRegistration(),
+    marketingAttribution: sanitizeAttribution({
+      landingPath: '/demo',
+      source: 'facebook',
+      medium: 'paid_social',
+      campaign: 'demo_sep_2026',
+      content: null,
+      term: null,
+      referrer: 'https://www.facebook.com/some/path',
+    }),
     ...overrides,
   }
 }
@@ -60,6 +70,7 @@ function demoProgram(overrides = {}) {
     isActive: true,
     publicCatalogVersion: 1,
     demoEligible: true,
+    ageRange: '6-12',
     ...overrides,
   }
 }
@@ -76,6 +87,11 @@ function demoOffering(overrides = {}) {
     heldCount: 0,
     enrollmentOpenAt: PAST,
     enrollmentCloseAt: FUTURE,
+    eventTitle: 'Young Engineers Demo Class — Kanata',
+    eventStartAt: '2026-09-12T10:30:00-04:00',
+    eventEndAt: '2026-09-12T11:30:00-04:00',
+    timezone: 'America/Toronto',
+    location: 'Hazeldean Library, 50 Castlefrank Road, Ottawa, ON K2L 2N5',
     ...overrides,
   }
 }
@@ -226,6 +242,60 @@ test('validatePayload rejects an invalid clientRequestId', () => {
   assert.equal(result.error, 'Request identifier is invalid.')
 })
 
+// ─── sanitizeAttribution ────────────────────────────────────────────────
+
+test('sanitizeAttribution keeps a valid, complete attribution object', () => {
+  const result = sanitizeAttribution({
+    landingPath: '/demo',
+    source: 'facebook',
+    medium: 'paid_social',
+    campaign: 'demo_sep_2026',
+    content: 'vertical_video_01',
+    term: null,
+    referrer: 'https://www.facebook.com/some/path?query=1',
+  })
+  assert.equal(result.landingPath, '/demo')
+  assert.equal(result.source, 'facebook')
+  assert.equal(result.medium, 'paid_social')
+  assert.equal(result.campaign, 'demo_sep_2026')
+  assert.equal(result.content, 'vertical_video_01')
+  assert.equal(result.term, null)
+  // Referrer is sanitized to origin only — no path or query string kept.
+  assert.equal(result.referrer, 'https://www.facebook.com')
+})
+
+for (const bad of [null, undefined, 'a string', ['array'], 42]) {
+  test(`sanitizeAttribution never throws and returns an all-null object for ${JSON.stringify(bad)}`, () => {
+    const result = sanitizeAttribution(bad)
+    assert.equal(result.landingPath, null)
+    assert.equal(result.source, null)
+    assert.equal(result.referrer, null)
+  })
+}
+
+test('sanitizeAttribution truncates an oversized field rather than rejecting it', () => {
+  const result = sanitizeAttribution({ source: 'x'.repeat(500) })
+  assert.equal(result.source.length, 80)
+})
+
+test('sanitizeAttribution treats a malformed referrer as null, never throws', () => {
+  const result = sanitizeAttribution({ referrer: 'not-a-valid-url' })
+  assert.equal(result.referrer, null)
+})
+
+test('sanitizeAttribution only sets landingPath to "/demo" when the raw value is exactly that', () => {
+  assert.equal(sanitizeAttribution({ landingPath: '/booking/xyz' }).landingPath, null)
+  assert.equal(sanitizeAttribution({ landingPath: '/demo' }).landingPath, '/demo')
+})
+
+test('validatePayload with a garbage marketingAttribution still returns a valid, non-error result', () => {
+  for (const bad of ['a string', ['array'], 42, { foo: 'bar' }]) {
+    const result = validatePayload(baseRequest({ marketingAttribution: bad }))
+    assert.equal(result.error, undefined)
+    assert.equal(result.marketingAttribution.source, null)
+  }
+})
+
 // ─── validateDemoCatalogueRequest ──────────────────────────────────────────
 
 test('demo accepted for each of the 3 eligible programs', () => {
@@ -325,11 +395,36 @@ test('saveDemoRegistration succeeds and writes registered/pending_attendance rec
   assert.equal(registrationCreate.data.currency, 'CAD')
   assert.equal(registrationCreate.data.registrationType, 'demo')
 
+  // Event/offering snapshot — so a later admin edit to the offering never
+  // rewrites what this registration's confirmation page/email already said.
+  assert.equal(registrationCreate.data.eventSnapshot.eventTitle, 'Young Engineers Demo Class — Kanata')
+  assert.equal(registrationCreate.data.eventSnapshot.location, 'Hazeldean Library, 50 Castlefrank Road, Ottawa, ON K2L 2N5')
+  assert.equal(registrationCreate.data.eventSnapshot.ageRange, '6-12')
+  assert.equal(registrationCreate.data.eventSnapshot.registrationReference, result.reference)
+
+  // Sanitized marketing attribution, captured server-side.
+  assert.equal(registrationCreate.data.marketingAttribution.source, 'facebook')
+  assert.equal(registrationCreate.data.marketingAttribution.campaign, 'demo_sep_2026')
+  assert.ok('capturedAt' in registrationCreate.data.marketingAttribution)
+
   const creditCreate = db.lastWrites.creates.find(c => c.ref.collectionName === 'demoCredits')
   assert.ok(creditCreate)
   assert.equal(creditCreate.data.status, 'pending_attendance')
   assert.equal(creditCreate.data.amountCents, 1000)
   assert.equal(creditCreate.ref.id, registrationCreate.ref.id, 'demoCredits doc id must equal the demoRegistration id (1:1)')
+})
+
+test('saveDemoRegistration succeeds with no marketingAttribution at all — missing attribution never blocks registration', async () => {
+  const { db } = makeFakeDb({
+    [`programs/${TEST_PROGRAM_ID}`]: demoProgram(),
+    'programOfferings/demo-off-1': demoOffering(),
+  })
+  const request = baseRequest({ marketingAttribution: sanitizeAttribution(undefined) })
+  const result = await saveDemoRegistration(db, request)
+  assert.equal(result.duplicate, false)
+  const registrationCreate = db.lastWrites.creates.find(c => c.ref.collectionName === 'demoRegistrations')
+  assert.equal(registrationCreate.data.marketingAttribution.source, null)
+  assert.equal(registrationCreate.data.marketingAttribution.landingPath, null)
 })
 
 test('saveDemoRegistration creates the eligibility lock via tx.create (atomic dedup), never tx.set', async () => {

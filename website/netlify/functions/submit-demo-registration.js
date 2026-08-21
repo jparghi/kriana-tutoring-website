@@ -49,6 +49,42 @@ function normalizeText(value, maxLength) {
   return value.trim().replace(/\s+/g, ' ').slice(0, maxLength)
 }
 
+// ─── Marketing attribution (for the /demo campaign funnel) ────────────────
+//
+// Never trust the shape of the client object — it always comes back with
+// every field present (possibly null), never throws, and a missing/invalid
+// value must never block registration. The `ref` query param (used for
+// flyer/QR links) is folded into `source` client-side before this function
+// ever sees it, so the stored shape matches the story's schema exactly.
+
+const ATTRIBUTION_FIELD_MAX = 80
+const ALLOWED_ATTRIBUTION_KEYS = ['source', 'medium', 'campaign', 'content', 'term']
+
+export function sanitizeAttribution(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return { landingPath: null, source: null, medium: null, campaign: null, content: null, term: null, referrer: null }
+  }
+
+  const out = { landingPath: raw.landingPath === '/demo' ? '/demo' : null }
+  for (const key of ALLOWED_ATTRIBUTION_KEYS) {
+    const value = raw[key]
+    out[key] = typeof value === 'string' && value.trim() ? normalizeText(value, ATTRIBUTION_FIELD_MAX) : null
+  }
+
+  if (typeof raw.referrer === 'string' && raw.referrer) {
+    try {
+      const url = new URL(raw.referrer)
+      out.referrer = `${url.protocol}//${url.host}`.slice(0, 200)
+    } catch {
+      out.referrer = null
+    }
+  } else {
+    out.referrer = null
+  }
+
+  return out
+}
+
 // ─── Payload validation (5-field spec only — no medical notes, no grade, no
 // emergency contact, no photo consent) ───────────────────────────────────
 
@@ -90,7 +126,9 @@ export function validatePayload(body) {
   }
   if (!registration.consentAccepted) return { error: 'Consent is required before submitting.' }
 
-  return { programId, demoOfferingId, clientRequestId, registration }
+  const marketingAttribution = sanitizeAttribution(body.marketingAttribution)
+
+  return { programId, demoOfferingId, clientRequestId, registration, marketingAttribution }
 }
 
 // ─── Capacity / window helpers (same safety math as submit-enrollment-request.js) ───
@@ -297,6 +335,26 @@ export async function saveDemoRegistration(db, request) {
       consentAccepted: true,
       requestConsentVersion: DEMO_CONSENT_VERSION,
       requestConsentRecordedAt: FieldValue.serverTimestamp(),
+      // Snapshotted from the offering/program docs validated above, so a
+      // later admin edit to the offering (e.g. changing the event time)
+      // never rewrites what this registration's confirmation/e-transfer
+      // page and emails already told the family.
+      eventSnapshot: {
+        eventTitle: offering.eventTitle ?? null,
+        eventStartAt: offering.eventStartAt ?? null,
+        eventEndAt: offering.eventEndAt ?? null,
+        timezone: offering.timezone ?? null,
+        location: offering.location ?? null,
+        ageRange: program.ageRange ?? null,
+        registrationReference: registrationNumber,
+      },
+      // Sanitized in validatePayload via sanitizeAttribution() — never the
+      // raw client object. Missing/invalid attribution never blocks this
+      // write; every field is simply null.
+      marketingAttribution: {
+        ...request.marketingAttribution,
+        capturedAt: FieldValue.serverTimestamp(),
+      },
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     })

@@ -6,7 +6,9 @@ import Link from 'next/link'
 import {
   getProgram, getOffering, getPackageClassSchedule, formatOfferingDateRange, formatOfferingWeeklySchedule,
   isOfferingRequestWindowOpen, isOfferingSoldOut, programUsesOfferings, applyProgramDiscount,
+  formatEventDateTime, formatEventTimeRange,
 } from '../../../../lib/booking'
+import { trackEvent, ALLOWED_ATTRIBUTION_PARAMS } from '../../../../lib/analytics'
 import BookingLayout from '../../../../components/booking/BookingLayout'
 import { BookingStepper } from '../../../../components/booking/BookingStepper'
 import { ClassScheduleDisclosure } from '../../../../components/booking/ClassScheduleDisclosure'
@@ -45,6 +47,7 @@ const inputClass = 'w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text
 // must still be correct and complete for when the flag is flipped on.
 function DemoRegisterForm({ programId, program, offering }: { programId: string; program: any; offering: any }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const clientRequestId = useRef('')
   const [form, setFormState] = useState({
     parentName: '', parentEmail: '', parentPhone: '', childName: '', childAge: '', consentAccepted: false,
@@ -57,7 +60,35 @@ function DemoRegisterForm({ programId, program, offering }: { programId: string;
       clientRequestId.current = globalThis.crypto?.randomUUID?.()
         ?? `demo-request-${Date.now()}-${Math.random().toString(36).slice(2)}`
     }
+    trackEvent('demo_registration_started', { offeringId: offering?.id ?? null })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Reads the same allowlisted params /demo appended to this page's CTA
+  // link, plus the browser referrer's origin (never a full URL — no path or
+  // query string). Missing/invalid attribution never blocks registration:
+  // if nothing is present, every field below is simply null and the server
+  // stores an all-null marketingAttribution object.
+  function buildAttribution() {
+    const params: Record<string, string> = {}
+    for (const key of ALLOWED_ATTRIBUTION_PARAMS) {
+      const value = searchParams.get(key)
+      if (value) params[key] = value
+    }
+    let referrer: string | null = null
+    try { referrer = document.referrer ? new URL(document.referrer).origin : null } catch { referrer = null }
+
+    const hasAnyParam = Object.keys(params).length > 0
+    return {
+      landingPath: hasAnyParam ? '/demo' : null,
+      source: params.utm_source ?? params.ref ?? null,
+      medium: params.utm_medium ?? null,
+      campaign: params.utm_campaign ?? null,
+      content: params.utm_content ?? null,
+      term: params.utm_term ?? null,
+      referrer,
+    }
+  }
 
   function set(field: string, value: any) {
     setFormState(prev => ({ ...prev, [field]: value }))
@@ -85,10 +116,13 @@ function DemoRegisterForm({ programId, program, offering }: { programId: string;
             childAge: form.childAge,
             consentAccepted: form.consentAccepted,
           },
+          marketingAttribution: buildAttribution(),
         }),
       })
       const registerResult = await registerResponse.json().catch(() => ({}))
       if (!registerResponse.ok) throw new Error(registerResult.error || 'We could not submit your demo registration. Please try again.')
+
+      trackEvent('demo_registration_submitted', { offeringId: offering?.id ?? null })
 
       // Payment is collected via e-transfer, not Stripe — send the family to
       // the instructions page with everything it needs already in hand, no
@@ -99,6 +133,10 @@ function DemoRegisterForm({ programId, program, offering }: { programId: string;
         demoRegistrationId: registerResult.demoRegistrationId ?? '',
         programId,
         program: program.title,
+        eventTitle: offering.eventTitle ?? '',
+        eventDate: formatEventDateTime(offering),
+        eventTime: formatEventTimeRange(offering),
+        eventLocation: offering.location ?? '',
       })
       router.push(`/booking/demo-etransfer?${params.toString()}`)
     } catch (err: any) {
@@ -117,12 +155,16 @@ function DemoRegisterForm({ programId, program, offering }: { programId: string;
           <div>
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-0.5">$10 Demo Class</p>
             <h2 className="font-black text-slate-800">{program.title}</h2>
-            {/* Demo class scheduling is deliberately open-ended — staff follow
-                up directly with families to arrange the time, rather than the
-                demo being tied to one published weekly slot like a regular
-                cohort offering. Never render offering.title/weekly-schedule
-                here. */}
-            <p className="text-sm text-slate-500 mt-0.5">Our team will follow up to schedule your child&apos;s demo class.</p>
+            {/* This campaign's demo has a fixed date/time/location (set on
+                the offering doc by an admin) — never say "we'll follow up
+                to schedule," which is wrong once an offering carries a
+                fixed event. Falls back to a generic line if the offering
+                doesn't carry event fields. */}
+            <p className="text-sm text-slate-500 mt-0.5">
+              {formatEventDateTime(offering)
+                ? `${formatEventDateTime(offering)}${offering.location ? ` · ${offering.location}` : ''}`
+                : "Our team will follow up to confirm your child's demo class details."}
+            </p>
             {/* Driven by program.learnMoreUrl (from robotics-content.ts, via
                 the public-catalog allowlist) — works for any demo-eligible
                 program without per-program code, same link used on the
@@ -180,7 +222,7 @@ function DemoRegisterForm({ programId, program, offering }: { programId: string;
         <label className="flex items-start gap-3 cursor-pointer">
           <input type="checkbox" required checked={form.consentAccepted} onChange={e => set('consentAccepted', e.target.checked)} className="mt-0.5 accent-[#0c6162] w-4 h-4 shrink-0" />
           <span className="text-sm text-slate-600">
-            I confirm this information is accurate and consent to Kriana using it to register my child for this $10 demo class and contact me. <span className="text-red-500">*</span>
+            I confirm this information is accurate and consent to Kriana using it to register my child for {offering.eventTitle || 'this $10 demo class'} and contact me about this registration. <span className="text-red-500">*</span>
           </span>
         </label>
 

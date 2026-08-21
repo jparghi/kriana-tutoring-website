@@ -469,6 +469,35 @@ export function formatOfferingScheduleDetail(offering: any) {
 }
 
 /**
+ * Fixed-event date/time formatting for a single-occurrence demo campaign
+ * offering (e.g. the /demo funnel) — as opposed to formatOfferingScheduleDetail,
+ * which describes a recurring weekly cohort. Reads eventStartAt/eventEndAt/
+ * timezone directly (set by an admin when creating the campaign's offering
+ * doc); returns '' if the offering doesn't carry fixed event fields, so
+ * callers can fall back to their own "schedule to be confirmed" copy.
+ */
+export function formatEventDateTime(offering: any) {
+  const start = toDateValue(offering?.eventStartAt)
+  if (!start) return ''
+  const timeZone = offering?.timezone || 'America/Toronto'
+  const end = toDateValue(offering?.eventEndAt)
+  const dateLabel = start.toLocaleDateString('en-CA', { timeZone, weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+  const startTime = start.toLocaleTimeString('en-CA', { timeZone, hour: 'numeric', minute: '2-digit' })
+  const endTime = end ? end.toLocaleTimeString('en-CA', { timeZone, hour: 'numeric', minute: '2-digit' }) : ''
+  return endTime ? `${dateLabel}, ${startTime}–${endTime}` : `${dateLabel}, ${startTime}`
+}
+
+export function formatEventTimeRange(offering: any) {
+  const start = toDateValue(offering?.eventStartAt)
+  if (!start) return ''
+  const timeZone = offering?.timezone || 'America/Toronto'
+  const end = toDateValue(offering?.eventEndAt)
+  const startTime = start.toLocaleTimeString('en-CA', { timeZone, hour: 'numeric', minute: '2-digit' })
+  const endTime = end ? end.toLocaleTimeString('en-CA', { timeZone, hour: 'numeric', minute: '2-digit' }) : ''
+  return endTime ? `${startTime}–${endTime}` : startTime
+}
+
+/**
  * The exact weekly class-date schedule for a package on a given offering —
  * skipping Ontario statutory holidays (and any offering-specific closures)
  * so the schedule always contains exactly the package's purchased class
