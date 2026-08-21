@@ -145,6 +145,12 @@ export default async function DemoPage({
                     controls
                   />
                 </div>
+                {/* Immediate CTA for visitors already primed by the ad video — the full CTA card below reinforces it */}
+                <DemoRegisterCta
+                  href={ctaHref}
+                  offeringId={offeringId}
+                  className="mt-4 block w-full rounded-xl bg-[#F2A100] px-5 py-3 text-center text-sm font-black text-white shadow-sm transition-all active:scale-[0.98] lg:hidden"
+                />
               </div>
 
               {/* Headline, essentials, and the CTA — right under the info, not buried below */}
