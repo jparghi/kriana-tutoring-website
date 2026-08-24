@@ -6,7 +6,7 @@ import { servicePages } from "./tutoring/data";
 const baseUrl = "https://www.krianatutoring.com";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const staticRoutes = ["", "/about", "/birthday-parties", "/blog", "/contact", "/practice-tests", "/register", "/robotics", "/tutoring", "/worksheets"];
+  const staticRoutes = ["", "/about", "/birthday", "/blog", "/contact", "/practice-tests", "/register", "/robotics", "/tutoring", "/worksheets"];
 
   const staticEntries = staticRoutes.map((route) => ({
     url: `${baseUrl}${route}`,

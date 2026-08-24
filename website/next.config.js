@@ -25,6 +25,11 @@ const nextConfig = {
         source: "/services/:slug",
         destination: "/tutoring/:slug",
         permanent: true
+      },
+      {
+        source: "/birthday-parties",
+        destination: "/birthday",
+        permanent: true
       }
     ];
   }

@@ -27,12 +27,12 @@ export const metadata: Metadata = {
   title: "Robotics Birthday Parties in Kanata | Young Engineers",
   description:
     "Book a 75-minute Young Engineers robotics birthday experience in Kanata or Stittsville for up to eight children. Launch price $219 plus tax.",
-  alternates: { canonical: `${siteUrl}/birthday-parties` },
+  alternates: { canonical: `${siteUrl}/birthday` },
   openGraph: {
     title: "Robotics Birthday Parties in Kanata | Young Engineers",
     description:
       "Book a 75-minute Young Engineers robotics birthday experience in Kanata or Stittsville for up to eight children. Launch price $219 plus tax.",
-    url: `${siteUrl}/birthday-parties`,
+    url: `${siteUrl}/birthday`,
     type: "website",
   },
 };
@@ -109,7 +109,7 @@ const faqs = [
   },
 ];
 
-export default async function BirthdayPartiesPage() {
+export default async function BirthdayPage() {
   const program = await getBirthdayProgram();
   const regularCents = program ? Number(program.price) || FALLBACK_REGULAR_CENTS : FALLBACK_REGULAR_CENTS;
   const discount = program ? applyProgramDiscount(regularCents, program) : null;
@@ -120,7 +120,7 @@ export default async function BirthdayPartiesPage() {
   const breadcrumb = breadcrumbSchema([
     { name: "Home", url: siteUrl },
     { name: "Robotics & Coding", url: `${siteUrl}/robotics` },
-    { name: "Birthday Parties", url: `${siteUrl}/birthday-parties` },
+    { name: "Birthday Parties", url: `${siteUrl}/birthday` },
   ]);
 
   const serviceSchema = {
@@ -132,12 +132,12 @@ export default async function BirthdayPartiesPage() {
     provider: { "@id": localBusinessSchema["@id"] },
     areaServed: ["Kanata", "Stittsville", "Ottawa"],
     serviceType: "Robotics birthday party",
-    url: `${siteUrl}/birthday-parties`,
+    url: `${siteUrl}/birthday`,
     offers: {
       "@type": "Offer",
       price: (launchCents / 100).toFixed(2),
       priceCurrency: "CAD",
-      url: `${siteUrl}/birthday-parties`,
+      url: `${siteUrl}/birthday`,
     },
   };
 

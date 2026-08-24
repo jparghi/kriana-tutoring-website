@@ -5,7 +5,7 @@ import { PROGRAM_CATEGORIES } from "./booking";
 
 export const BOOKING_PATH = "/booking";
 export const ROBOTICS_PATH = "/robotics";
-export const BIRTHDAY_PARTY_PATH = "/birthday-parties";
+export const BIRTHDAY_PARTY_PATH = "/birthday";
 
 export const ROBOTICS_CATEGORY: (typeof PROGRAM_CATEGORIES)[number] = "Robotics";
 
