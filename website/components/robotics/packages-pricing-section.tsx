@@ -27,7 +27,7 @@ function formatDollars(cents: number) {
   return `$${(cents / 100).toFixed(0)}`;
 }
 
-export function PackagesPricingSection() {
+export function PackagesPricingSection({ programId }: { programId: string }) {
   const [promoLabel, setPromoLabel] = useState<string | null>(null);
 
   useEffect(() => {
@@ -67,7 +67,7 @@ export function PackagesPricingSection() {
         </div>
 
         <div className="mt-10 grid gap-6 sm:grid-cols-2 sm:max-w-2xl sm:mx-auto">
-          {getPubliclyVisiblePackages().map((pkg) => {
+          {getPubliclyVisiblePackages(programId).map((pkg: any) => {
             // Builder keeps the visually-dominant treatment (ring/scale) as
             // the natural default choice, independent of whether it carries
             // a text badge — decoupled from `badge` since Builder is

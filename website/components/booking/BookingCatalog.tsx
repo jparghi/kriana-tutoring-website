@@ -218,9 +218,12 @@ export function BookingCatalog({
     if (categoryParam) setSelectedCategory(categoryParam)
 
     // A robotics package selection only ever applies to the Robotics category —
-    // never carry it into an unrelated category filter.
+    // never carry it into an unrelated category filter. No specific program
+    // is chosen yet at this category-wide step, so package pricing here
+    // always resolves against the default (non-program-specific) catalogue —
+    // the family sees program-specific pricing once they pick a program.
     const packageParam = params.get('package')
-    if (categoryParam === ROBOTICS_CATEGORY && packageParam && isValidPackageId(packageParam)) {
+    if (categoryParam === ROBOTICS_CATEGORY && packageParam && isValidPackageId('', packageParam)) {
       setSelectedPackageId(packageParam)
     }
   }, [])
@@ -229,7 +232,7 @@ export function BookingCatalog({
   const programsAndDemos = [...programs, ...demoCards]
   const categories = ['All', ...Array.from(new Set(programsAndDemos.map((p: any) => p.category).filter(Boolean)))]
   const filtered = selectedCategory === 'All' ? programsAndDemos : programsAndDemos.filter((p: any) => p.category === selectedCategory)
-  const selectedPackage = selectedPackageId ? getRoboticsPackage(selectedPackageId) : null
+  const selectedPackage = selectedPackageId ? getRoboticsPackage('', selectedPackageId) : null
 
   return (
     <>

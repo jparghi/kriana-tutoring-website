@@ -344,7 +344,7 @@ function RegisterForm() {
   )
 
   const isRobotics = program.category === ROBOTICS_CATEGORY
-  const selectedPackage = isRobotics && isValidPackageId(packageIdParam) ? getRoboticsPackage(packageIdParam) : null
+  const selectedPackage = isRobotics && isValidPackageId(programId, packageIdParam) ? getRoboticsPackage(programId, packageIdParam) : null
 
   // The $10 demo registration is a completely separate product from the
   // Explorer/Builder/Engineer package flow — it never requires a package
@@ -511,6 +511,7 @@ function RegisterForm() {
       const requestParams = new URLSearchParams()
       if (result.registrationNumber) requestParams.set('reference', result.registrationNumber)
       if (program?.title) requestParams.set('program', program.title)
+      requestParams.set('programId', programId)
       // Carried through so the confirmation page can show the same itemized
       // class schedule the family just reviewed, without re-deriving it from
       // scratch or trying to serialize the whole schedule into the URL.

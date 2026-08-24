@@ -70,7 +70,7 @@ export function validatePayload(body) {
   if (!/^[a-zA-Z0-9_-]{8,100}$/.test(clientRequestId)) {
     return { error: 'Request identifier is invalid.' }
   }
-  if (packageId && !isValidPackageId(packageId)) {
+  if (packageId && !isValidPackageId(programId, packageId)) {
     return { error: 'Selected class package is not recognized.' }
   }
 
@@ -93,7 +93,7 @@ export function validatePayload(body) {
     if (method === 'pay_in_full') {
       paymentPreference = { method: 'pay_in_full', installmentCount: 1 }
     } else if (method === 'installments') {
-      const pkg = getRoboticsPackage(packageId)
+      const pkg = getRoboticsPackage(programId, packageId)
       const allowed = pkg ? getAllowedInstallmentCounts(pkg) : []
       const installmentCount = Number(rawPaymentPreference.installmentCount)
       if (!allowed.includes(installmentCount)) {
@@ -337,7 +337,7 @@ export function validateCatalogueRequest(request, programDoc, sessionDoc) {
         'Class packages are only available for current class schedules. Please choose a current offering.',
       )
     }
-    const selectedPackage = getRoboticsPackage(request.packageId)
+    const selectedPackage = getRoboticsPackage(request.programId, request.packageId)
     if (!selectedPackage) {
       throw new RequestRejectedError(400, 'Selected class package is not recognized.')
     }
@@ -608,7 +608,7 @@ async function saveWaitlistRequest(db, request) {
       bookingFlowMode: 'request_only',
       quotedTuitionCents: quotedTuition(program, session),
       currency: session.currency || program.currency || 'CAD',
-      ...(request.packageId ? { packageSnapshot: buildPackageSnapshot(request.packageId) } : {}),
+      ...(request.packageId ? { packageSnapshot: buildPackageSnapshot(request.programId, request.packageId) } : {}),
       programSnapshot: { title: program.title || '' },
       scheduleSnapshot: scheduleSnapshot(session, program),
       createdAt: FieldValue.serverTimestamp(),
@@ -630,7 +630,7 @@ async function saveWaitlistRequest(db, request) {
       duplicate: false,
       program,
       session,
-      packageSnapshot: request.packageId ? buildPackageSnapshot(request.packageId) : null,
+      packageSnapshot: request.packageId ? buildPackageSnapshot(request.programId, request.packageId) : null,
     }
   })
 }
@@ -719,7 +719,7 @@ async function saveEnrollmentRequest(db, request) {
     const nextSequence = nonNegativeCounter(previousSequence + 1, 'The registration number sequence')
     const number = `${prefix}-${year}-${String(nextSequence).padStart(4, '0')}`
     const paymentPreferenceSnapshot = request.paymentPreference
-      ? buildPaymentPreferenceSnapshot(request.packageId, request.paymentPreference)
+      ? buildPaymentPreferenceSnapshot(request.programId, request.packageId, request.paymentPreference)
       : null
 
     // Additive automatic demo-credit lookup — a read, so it must happen here,
@@ -744,7 +744,7 @@ async function saveEnrollmentRequest(db, request) {
       amountPaid: 0,
       quotedTuitionCents: quotedTuition(program, session),
       currency: session.currency || program.currency || 'CAD',
-      ...(request.packageId ? { packageSnapshot: buildPackageSnapshot(request.packageId) } : {}),
+      ...(request.packageId ? { packageSnapshot: buildPackageSnapshot(request.programId, request.packageId) } : {}),
       ...(paymentPreferenceSnapshot ? { paymentPreferenceSnapshot } : {}),
       // Additive only — never changes registrationStatus, paymentStatus,
       // amountDue, or amountPaid above. Absent entirely unless exactly one
@@ -786,9 +786,9 @@ async function saveEnrollmentRequest(db, request) {
       duplicate: false,
       program,
       session,
-      packageSnapshot: request.packageId ? buildPackageSnapshot(request.packageId) : null,
+      packageSnapshot: request.packageId ? buildPackageSnapshot(request.programId, request.packageId) : null,
       paymentPreferenceSnapshot: request.paymentPreference
-        ? buildPaymentPreferenceSnapshot(request.packageId, request.paymentPreference)
+        ? buildPaymentPreferenceSnapshot(request.programId, request.packageId, request.paymentPreference)
         : null,
     }
   })

@@ -29,50 +29,67 @@ function paymentOptions({ installmentPlanEnabled = false, allowedInstallments = 
 // at runtime) that only ever applies when paying in full during an active
 // promotion.
 //
-// `installmentPerClassCents` is a DIFFERENT, deliberately higher rate: paying
-// by installments is priced at the standard per-class list rate ($30/class),
-// not the bulk per-package rate baked into `regularSubtotalCents`. Only
+// `installmentPerClassCents` is a DIFFERENT rate from the pay-in-full rate:
+// paying by installments is priced at a standard per-class list rate, not
+// the bulk per-package rate baked into `regularSubtotalCents`. Only
 // `paymentOptions.payInFullEnabled` packages need `regularSubtotalCents`;
 // only `paymentOptions.installmentPlanEnabled` packages need
 // `installmentPerClassCents`. See resolvePackagePricing, which is the one
 // place all of this is turned into "what does this family actually owe."
-export const ROBOTICS_PACKAGES = Object.freeze([
-  Object.freeze({
-    id: 'explorer',
-    name: 'Explorer',
-    classCount: 10,
-    perClassCents: 3000,
-    regularSubtotalCents: 30000,
-    currency: 'CAD',
-    badge: null,
-    sortOrder: 1,
-    // Pay-in-full only, paid as a single upfront invoice for all classes.
-    // Explorer's own per-class rate ($30) already equals the installment
-    // list rate used for Builder/Engineer, which is why it's already
-    // pay-in-full only rather than needing a separate installment rate.
-    paymentOptions: paymentOptions(),
-    installmentPerClassCents: null,
-    // Not enrolled in the Back-to-School promotion. Must stay unchanged
-    // unless a future configuration change here explicitly opts it in.
-    promotionEligible: false,
-    promotionalPayInFullSubtotalCents: null,
-    // Internal fallback / save-the-sale package — intentionally not shown
-    // in the public package grids (PackageChooser, PackagesPricingSection).
-    // Still fully enabled everywhere else: valid packageId for direct/Shared
-    // links, registration, checkout, and existing Explorer registrations
-    // are completely unaffected. Flip this back to true to re-list it
-    // publicly; nothing else needs to change.
-    publicVisible: false,
-  }),
-  Object.freeze({
-    id: 'builder',
-    name: 'Builder',
-    classCount: 20,
+//
+// Class packages are program-scoped: each Robotics program can have its own
+// Builder/Engineer pricing (see PACKAGE_CATALOGS_BY_PROGRAM_ID below).
+// Explorer is the one exception — it's an internal fallback/save-the-sale
+// package (never shown publicly, not a "drop-in") shared identically across
+// every program, so it's built once and reused in every catalogue.
+const EXPLORER_PACKAGE = Object.freeze({
+  id: 'explorer',
+  name: 'Explorer',
+  classCount: 10,
+  perClassCents: 3000,
+  regularSubtotalCents: 30000,
+  currency: 'CAD',
+  badge: null,
+  sortOrder: 1,
+  // Pay-in-full only, paid as a single upfront invoice for all classes.
+  // Explorer's own per-class rate ($30) already equals the installment
+  // list rate used for Builder/Engineer, which is why it's already
+  // pay-in-full only rather than needing a separate installment rate.
+  paymentOptions: paymentOptions(),
+  installmentPerClassCents: null,
+  // Not enrolled in the Back-to-School promotion. Must stay unchanged
+  // unless a future configuration change here explicitly opts it in.
+  promotionEligible: false,
+  promotionalPayInFullSubtotalCents: null,
+  // Internal fallback / save-the-sale package — intentionally not shown
+  // in the public package grids (PackageChooser, PackagesPricingSection).
+  // Still fully enabled everywhere else: valid packageId for direct/Shared
+  // links, registration, checkout, and existing Explorer registrations
+  // are completely unaffected. Flip this back to true to re-list it
+  // publicly; nothing else needs to change.
+  publicVisible: false,
+})
+
+/** Builds a [Explorer, Builder, Engineer] catalogue from just the two
+ * program-specific packages, so every catalogue shares the exact same
+ * Explorer object rather than duplicating it. */
+function buildPackageCatalog({ builder, engineer }) {
+  return Object.freeze([
+    EXPLORER_PACKAGE,
+    Object.freeze({ id: 'builder', name: 'Builder', classCount: 20, currency: 'CAD', sortOrder: 2, ...builder }),
+    Object.freeze({ id: 'engineer', name: 'Engineer', classCount: 36, currency: 'CAD', sortOrder: 3, ...engineer }),
+  ])
+}
+
+// Today's numbers — unchanged. This is what every Robotics program uses
+// unless it has its own entry in PACKAGE_CATALOGS_BY_PROGRAM_ID below
+// (currently just Smartivo). Bricks Challenge, Algo Play, and any future
+// Robotics program must keep seeing exactly these prices.
+const DEFAULT_PACKAGE_CATALOG = buildPackageCatalog({
+  builder: {
     perClassCents: 2800,
     regularSubtotalCents: 56000,
-    currency: 'CAD',
     badge: null,
-    sortOrder: 2,
     paymentOptions: paymentOptions({ installmentPlanEnabled: true, allowedInstallments: [2, 3, 4] }),
     // $30/class list rate x 20 classes = $600.00 total when paying by
     // installments — higher than both the $560 regular and $532 promotional
@@ -81,16 +98,11 @@ export const ROBOTICS_PACKAGES = Object.freeze([
     promotionEligible: true,
     promotionalPayInFullSubtotalCents: 53200,
     publicVisible: true,
-  }),
-  Object.freeze({
-    id: 'engineer',
-    name: 'Engineer',
-    classCount: 36,
+  },
+  engineer: {
     perClassCents: 2600,
     regularSubtotalCents: 93600,
-    currency: 'CAD',
     badge: 'Best Value',
-    sortOrder: 3,
     paymentOptions: paymentOptions({ installmentPlanEnabled: true, allowedInstallments: [2, 3, 4, 5, 6] }),
     // $30/class list rate x 36 classes = $1,080.00 total when paying by
     // installments — higher than both the $936 regular and $910 promotional
@@ -99,48 +111,100 @@ export const ROBOTICS_PACKAGES = Object.freeze([
     promotionEligible: true,
     promotionalPayInFullSubtotalCents: 91000,
     publicVisible: true,
-  }),
-])
+  },
+})
 
-/** Packages shown in public-facing package grids. Explorer stays fully
- * enabled (resolvable by ID, bookable, invoiceable) — it's just excluded
- * from the default public listing so staff can still offer it directly. */
-export function getPubliclyVisiblePackages() {
-  return ROBOTICS_PACKAGES.filter(pkg => pkg.publicVisible)
+// Smartivo-specific pricing (Back-to-School 2026 update). Builder/Engineer
+// pay-in-full is the LOWER rate here — the opposite relationship from the
+// default catalogue's installment/pay-in-full split, but the same schema:
+// `perClassCents`/`regularSubtotalCents` is always the pay-in-full price,
+// `installmentPerClassCents` is always the installment price.
+const SMARTIVO_PACKAGE_CATALOG = buildPackageCatalog({
+  builder: {
+    perClassCents: 2600, // $26/class pay-in-full
+    regularSubtotalCents: 52000, // $520
+    badge: 'Most Popular',
+    paymentOptions: paymentOptions({ installmentPlanEnabled: true, allowedInstallments: [2, 3, 4] }),
+    installmentPerClassCents: 2800, // $28/class installment rate -> $560 total
+    promotionEligible: true,
+    // Back-to-School Launch Offer: first class free, i.e. regular minus one
+    // pay-in-full class ($520 - $26 = $494).
+    promotionalPayInFullSubtotalCents: 49400,
+    publicVisible: true,
+  },
+  engineer: {
+    perClassCents: 2400, // $24/class pay-in-full
+    regularSubtotalCents: 86400, // $864
+    badge: 'Best Value',
+    paymentOptions: paymentOptions({ installmentPlanEnabled: true, allowedInstallments: [2, 3, 4, 5, 6] }),
+    installmentPerClassCents: 2800, // $28/class installment rate -> $1,008 total
+    promotionEligible: true,
+    // $864 - $24 = $840.
+    promotionalPayInFullSubtotalCents: 84000,
+    publicVisible: true,
+  },
+})
+
+// Keyed by the real Firestore `programs/{id}` document ID, NOT a slug —
+// this project uses Firestore auto-generated IDs (see the same note on
+// DEMO_ELIGIBLE_PROGRAM_IDS in lib/demo-eligibility.js). Must be updated
+// here if the Smartivo program doc is ever deleted and recreated.
+const SMARTIVO_PROGRAM_ID = 'cCdBSnKOgTBcO4ZIPXs4' // Smartivo
+
+const PACKAGE_CATALOGS_BY_PROGRAM_ID = Object.freeze({
+  [SMARTIVO_PROGRAM_ID]: SMARTIVO_PACKAGE_CATALOG,
+})
+
+/** The canonical class-package catalogue for a given program. Every Robotics
+ * program not explicitly listed in PACKAGE_CATALOGS_BY_PROGRAM_ID falls back
+ * to DEFAULT_PACKAGE_CATALOG, so adding a program-specific catalogue here
+ * can never accidentally change another program's prices. */
+function getPackageCatalog(programId) {
+  return PACKAGE_CATALOGS_BY_PROGRAM_ID[programId] ?? DEFAULT_PACKAGE_CATALOG
+}
+
+/** Packages shown in public-facing package grids for `programId`. Explorer
+ * stays fully enabled (resolvable by ID, bookable, invoiceable) — it's just
+ * excluded from the default public listing so staff can still offer it
+ * directly. */
+export function getPubliclyVisiblePackages(programId) {
+  return getPackageCatalog(programId).filter(pkg => pkg.publicVisible)
 }
 
 // Fails fast (at import time) if any package's arithmetic is inconsistent,
-// rather than silently mis-invoicing a family later.
-for (const pkg of ROBOTICS_PACKAGES) {
-  const expected = pkg.classCount * pkg.perClassCents
-  if (expected !== pkg.regularSubtotalCents) {
-    throw new Error(
-      `Robotics package "${pkg.id}" is inconsistent: ${pkg.classCount} × ${pkg.perClassCents} = ${expected}, but regularSubtotalCents is ${pkg.regularSubtotalCents}.`
-    )
-  }
-  if (pkg.promotionEligible) {
-    const promo = pkg.promotionalPayInFullSubtotalCents
-    if (!Number.isSafeInteger(promo) || promo <= 0 || promo >= pkg.regularSubtotalCents) {
+// rather than silently mis-invoicing a family later. Runs over every
+// catalogue so a typo in a program-specific catalogue is caught immediately.
+const ALL_PACKAGE_CATALOGS = [DEFAULT_PACKAGE_CATALOG, ...Object.values(PACKAGE_CATALOGS_BY_PROGRAM_ID)]
+for (const catalog of ALL_PACKAGE_CATALOGS) {
+  for (const pkg of catalog) {
+    const expected = pkg.classCount * pkg.perClassCents
+    if (expected !== pkg.regularSubtotalCents) {
       throw new Error(
-        `Robotics package "${pkg.id}" is promotion-eligible but promotionalPayInFullSubtotalCents (${promo}) is missing or not less than regularSubtotalCents (${pkg.regularSubtotalCents}).`
+        `Robotics package "${pkg.id}" is inconsistent: ${pkg.classCount} × ${pkg.perClassCents} = ${expected}, but regularSubtotalCents is ${pkg.regularSubtotalCents}.`
+      )
+    }
+    if (pkg.promotionEligible) {
+      const promo = pkg.promotionalPayInFullSubtotalCents
+      if (!Number.isSafeInteger(promo) || promo <= 0 || promo >= pkg.regularSubtotalCents) {
+        throw new Error(
+          `Robotics package "${pkg.id}" is promotion-eligible but promotionalPayInFullSubtotalCents (${promo}) is missing or not less than regularSubtotalCents (${pkg.regularSubtotalCents}).`
+        )
+      }
+    }
+    if (pkg.paymentOptions.installmentPlanEnabled && !Number.isSafeInteger(pkg.installmentPerClassCents)) {
+      throw new Error(
+        `Robotics package "${pkg.id}" has installments enabled but no valid installmentPerClassCents configured.`
       )
     }
   }
-  if (pkg.paymentOptions.installmentPlanEnabled && !Number.isSafeInteger(pkg.installmentPerClassCents)) {
-    throw new Error(
-      `Robotics package "${pkg.id}" has installments enabled but no valid installmentPerClassCents configured.`
-    )
-  }
 }
 
-const PACKAGES_BY_ID = new Map(ROBOTICS_PACKAGES.map(pkg => [pkg.id, pkg]))
-
 // The $10 Young Engineers Demo Class is a separate, standalone product — not
-// a class package. It is intentionally NOT added to ROBOTICS_PACKAGES: that
-// array's import-time arithmetic self-check (classCount * perClassCents ===
-// regularSubtotalCents) assumes a multi-class package, which a single $10
-// session would violate. Price is always resolved server-side from here,
-// never from anything the browser sends.
+// a class package. It is intentionally NOT added to any package catalogue
+// above: their import-time arithmetic self-check (classCount * perClassCents
+// === regularSubtotalCents) assumes a multi-class package, which a single
+// $10 session would violate. Price is always resolved server-side from
+// here, never from anything the browser sends.
 export const DEMO_PACKAGE = Object.freeze({
   id: 'demo',
   name: '$10 Demo Class',
@@ -180,13 +244,17 @@ export const PACKAGE_PROMO = Object.freeze({
   endsAt: PROMO_ENDS_AT,
 })
 
-export function isValidPackageId(value) {
-  return typeof value === 'string' && PACKAGES_BY_ID.has(value)
+export function isValidPackageId(programId, packageId) {
+  return typeof packageId === 'string' && getRoboticsPackage(programId, packageId) !== null
 }
 
-/** Canonical lookup — the only place package pricing should be resolved from an ID. */
-export function getRoboticsPackage(packageId) {
-  return PACKAGES_BY_ID.get(packageId) ?? null
+/** Canonical lookup — the only place package pricing should be resolved from
+ * a programId + packageId. Resolves against that program's own catalogue
+ * (see PACKAGE_CATALOGS_BY_PROGRAM_ID), falling back to
+ * DEFAULT_PACKAGE_CATALOG for any program without its own pricing. */
+export function getRoboticsPackage(programId, packageId) {
+  if (typeof packageId !== 'string') return null
+  return getPackageCatalog(programId).find(pkg => pkg.id === packageId) ?? null
 }
 
 /** Short, family-facing explanation of how a package may be paid for. The
@@ -287,8 +355,8 @@ export function getPayInFullSavingsCents(pkg) {
  *   `promotionEligible`/`promotionName`, matching resolvePackagePricing's
  *   method-aware model. Older snapshots are never rewritten; readers must
  *   treat all v5-only fields as optional/absent on v3/v4 documents. */
-export function buildPackageSnapshot(packageId) {
-  const pkg = getRoboticsPackage(packageId)
+export function buildPackageSnapshot(programId, packageId) {
+  const pkg = getRoboticsPackage(programId, packageId)
   if (!pkg) return null
   return {
     version: 5,
@@ -343,8 +411,8 @@ export function computeInstallmentAmountsCents(totalCents, installmentCount) {
  *   `payableSubtotalCents` (method-dependent), and adds explicit
  *   `promotionApplied`/`promotionDiscountCents` so nothing downstream has to
  *   re-derive whether the promotion applied from the numbers alone. */
-export function buildPaymentPreferenceSnapshot(packageId, paymentPreference) {
-  const pkg = getRoboticsPackage(packageId)
+export function buildPaymentPreferenceSnapshot(programId, packageId, paymentPreference) {
+  const pkg = getRoboticsPackage(programId, packageId)
   if (!pkg) return null
 
   const method = paymentPreference?.method

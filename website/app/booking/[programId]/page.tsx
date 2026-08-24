@@ -179,7 +179,7 @@ function PackageChooser({ programId }: { programId: string }) {
       </div>
 
       <div className="relative mt-6 grid gap-5 sm:grid-cols-2 sm:max-w-3xl sm:mx-auto">
-        {getPubliclyVisiblePackages().map(pkg => {
+        {getPubliclyVisiblePackages(programId).map((pkg: any) => {
           // Builder keeps the visually-dominant treatment (ring/scale) as
           // the natural default choice, independent of whether it carries a
           // text badge — decoupled from `badge` since Builder is currently
@@ -313,7 +313,7 @@ function ProgramDetailContent() {
 
   const packageParam = searchParams.get('package') || ''
   const isRobotics = program?.category === ROBOTICS_CATEGORY
-  const selectedPackage = isRobotics && isValidPackageId(packageParam) ? getRoboticsPackage(packageParam) : null
+  const selectedPackage = isRobotics && isValidPackageId(programId, packageParam) ? getRoboticsPackage(programId, packageParam) : null
 
   // A demo offering (offeringType === 'demo') is a distinct product from the
   // regular weekly cohort offerings, sold from the /booking listing page —

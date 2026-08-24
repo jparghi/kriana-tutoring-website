@@ -15,8 +15,9 @@ function RequestReceivedContent() {
   const reference = searchParams.get('reference')
   const offeringId = searchParams.get('offeringId') ?? ''
   const packageIdParam = searchParams.get('package') ?? ''
+  const programId = searchParams.get('programId') ?? ''
 
-  const selectedPackage = isValidPackageId(packageIdParam) ? getRoboticsPackage(packageIdParam) : null
+  const selectedPackage = isValidPackageId(programId, packageIdParam) ? getRoboticsPackage(programId, packageIdParam) : null
   const [packageSchedule, setPackageSchedule] = useState<any>(null)
 
   useEffect(() => {
