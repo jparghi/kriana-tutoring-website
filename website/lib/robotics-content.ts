@@ -41,7 +41,7 @@ export function skillTagsForCategory(category?: string) {
 // for real in Firestore via the separate program-management portal.
 //
 // `weeklySchedules` is the one exception: it's the recurring day/time batches
-// these two programs actually run each week, published ahead of the real
+// these programs actually run each week, published ahead of the real
 // Firestore offerings so families can see them on the program cards. Once
 // real offerings with published class dates exist for a program, their live
 // schedule takes over and this static one is no longer shown (see
@@ -130,6 +130,10 @@ export const licensedRoboticsPrograms = [
     learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/algoplay-enrichment-program/",
     image: "/images/robotics/programs/algo-play.png",
     logo: "/images/robotics/programs/algo-play-logo.png",
+    weeklySchedules: [
+      { label: "Batch 1", weekday: "Friday", startTime: "16:15", endTime: "17:30" },
+      { label: "Batch 2", weekday: "Friday", startTime: "17:45", endTime: "19:00" },
+    ],
   },
   // Hidden for now — re-enable when ready to launch.
   // {
