@@ -229,8 +229,32 @@ export default async function BirthdayPage() {
           </div>
         </section>
 
+        {/* Birthday Parties intro */}
+        <section className="bg-[#0A2D5A] px-6 py-14 text-white sm:px-10 sm:py-20">
+          <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-2">
+            <div>
+              <h2 className="text-2xl font-bold sm:text-3xl">Birthday Parties</h2>
+              <p className="mt-4 max-w-xl text-base leading-7 text-white/90">
+                Every birthday is a milestone, an annual reminder of growth, discovery, and the adventures that lie
+                ahead. For your child&apos;s next birthday, give them a day of collaborative discovery. Your child
+                can choose one of our innovative models and, together with their friends, embark on a building
+                journey. With our specialized kits, every child becomes a creator, an innovator, and a team player.
+                Birthdays has never been this memorable!
+              </p>
+            </div>
+            <div className="relative mx-auto aspect-[650/459] w-full max-w-md">
+              <Image
+                src="/images/young-engineers/birthday-collaborative-discovery-model.png"
+                alt="A colorful motorized LEGO model car built from a Young Engineers robotics kit"
+                fill
+                className="object-contain"
+              />
+            </div>
+          </div>
+        </section>
+
         {/* Visible clarification — not hidden in the FAQ */}
-        <section className="bg-[#0A2D5A] px-6 py-6 text-white sm:px-10">
+        <section className="bg-[#0A2D5A] px-6 py-6 text-white sm:px-10 border-t border-white/10">
           <p className="mx-auto max-w-3xl text-center text-sm font-semibold leading-6 sm:text-base">
             This package includes the Young Engineers robotics activity only. It does not include venue rental,
             food, decorations, or full-party hosting.
