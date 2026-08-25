@@ -219,8 +219,8 @@ export default async function BirthdayPage() {
 
             <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[2rem] border border-slate-200 shadow-[0_26px_70px_rgba(10,45,90,0.15)]">
               <Image
-                src="/images/young-engineers/robotics-birthday-experience-models-v1.png"
-                alt="A group of children building motorized robotics models together at a table, guided by a Young Engineers instructor"
+                src="/images/young-engineers/robotics-birthday-experience-models-v4.png"
+                alt="Young Engineers birthday celebration illustration with a robotics model, balloons, confetti, and two children in party hats"
                 fill
                 priority
                 className="object-cover"

@@ -3,7 +3,9 @@
 
 [] see how much we need to implement from class features - feature-class-operation1.md
 
+[] change birthday party page - https://krianatutoring.com/birthday
 
+    use this image - https://kanata.youngengineers.org/workshops/birthday-party/
 
 [] Please add **2 Algo Play time slots** to the booking page:
 
