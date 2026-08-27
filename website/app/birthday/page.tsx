@@ -15,7 +15,7 @@ import { BirthdayAvailabilityForm } from "./BirthdayAvailabilityForm";
 // facts come from Firestore (via the public catalog), so the page never fails
 // to render just because the catalogue is briefly unavailable.
 const FALLBACK_REGULAR_CENTS = 24900;
-const FALLBACK_LAUNCH_CENTS = 21900;
+const FALLBACK_LAUNCH_CENTS = 19900;
 const FALLBACK_PROMO_LABEL = "Limited-Time Launch Offer";
 
 // Matches CACHE_HEADERS on the public-catalog API routes this page's pricing
@@ -26,12 +26,12 @@ export const revalidate = 60;
 export const metadata: Metadata = {
   title: "Robotics Birthday Parties in Kanata | Young Engineers",
   description:
-    "Book a 75-minute Young Engineers robotics birthday experience in Kanata or Stittsville for up to eight children. Launch price $219 plus tax.",
+    "Book a 75-minute Young Engineers robotics birthday experience in Kanata or Stittsville for up to eight children. Launch price $199 plus tax.",
   alternates: { canonical: `${siteUrl}/birthday` },
   openGraph: {
     title: "Robotics Birthday Parties in Kanata | Young Engineers",
     description:
-      "Book a 75-minute Young Engineers robotics birthday experience in Kanata or Stittsville for up to eight children. Launch price $219 plus tax.",
+      "Book a 75-minute Young Engineers robotics birthday experience in Kanata or Stittsville for up to eight children. Launch price $199 plus tax.",
     url: `${siteUrl}/birthday`,
     type: "website",
   },
@@ -126,7 +126,7 @@ export default async function BirthdayPage() {
   const serviceSchema = {
     "@context": "https://schema.org",
     "@type": "Service",
-    name: "Young Engineers Robotics Birthday Experience",
+    name: "Young Engineers STEM Birthday Experience",
     description:
       "A 75-minute instructor-led robotics and engineering activity for birthday parties, for up to 8 children ages 6-12, offered locally by Kriana Tutoring.",
     provider: { "@id": localBusinessSchema["@id"] },
@@ -166,7 +166,7 @@ export default async function BirthdayPage() {
                 Young Engineers &middot; Birthday Experience
               </p>
               <h1 className="mt-3 text-balance text-4xl font-black leading-[1.05] text-[#0A2D5A] sm:text-5xl">
-                Young Engineers Robotics Birthday Experience
+                Young Engineers STEM Birthday Experience
               </h1>
               <p className="mt-5 max-w-lg text-base leading-7 text-slate-700 sm:text-lg">
                 Celebrate your child&apos;s birthday with a hands-on robotics and engineering experience. Children
