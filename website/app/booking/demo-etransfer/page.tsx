@@ -25,14 +25,14 @@ function googleCalendarUrl({ eventTitle, eventLocation }: { eventTitle: string; 
     action: 'TEMPLATE',
     text: eventTitle || 'Young Engineers Demo Class',
     dates,
-    location: eventLocation || 'Kanata Baptist Church, 465 Hazeldean Rd, Kanata, ON K2L 1V1',
+    location: eventLocation || 'Ottawa Public Library - Hazeldean, 50 Castlefrank Rd, Ottawa, ON K2L 2N5',
     ctz: 'America/Toronto',
   })
   return `https://calendar.google.com/calendar/render?${params.toString()}`
 }
 
 function googleMapsUrl(eventLocation: string) {
-  const query = eventLocation || 'Kanata Baptist Church, 465 Hazeldean Rd, Kanata, ON K2L 1V1'
+  const query = eventLocation || 'Ottawa Public Library - Hazeldean, 50 Castlefrank Rd, Ottawa, ON K2L 2N5'
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
 }
 

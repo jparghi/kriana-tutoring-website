@@ -14,7 +14,7 @@ import { ShareInviteButton } from "./ShareInviteButton"
 export const dynamic = 'force-dynamic'
 
 const PAGE_TITLE = "$10 Young Engineers Demo Class in Kanata | Kriana Tutoring"
-const PAGE_DESCRIPTION = "Reserve a hands-on Young Engineers demo for ages 6–12 at Kanata Baptist Church in Kanata. Your $10 demo fee is credited when you enroll."
+const PAGE_DESCRIPTION = "Reserve a hands-on Young Engineers demo for ages 6–12 at Ottawa Public Library - Hazeldean in Kanata. Your $10 demo fee is credited when you enroll."
 const CONTACT_PHONE_DISPLAY = "613-400-6921"
 const CONTACT_PHONE_HREF = "tel:+16134006921"
 
@@ -97,13 +97,13 @@ export default async function DemoPage({
     eventStatus: "https://schema.org/EventScheduled",
     location: {
       "@type": "Place",
-      name: "Kanata Baptist Church",
+      name: "Ottawa Public Library - Hazeldean",
       address: {
         "@type": "PostalAddress",
-        streetAddress: "465 Hazeldean Rd",
-        addressLocality: "Kanata",
+        streetAddress: "50 Castlefrank Rd",
+        addressLocality: "Ottawa",
         addressRegion: "ON",
-        postalCode: "K2L 1V1",
+        postalCode: "K2L 2N5",
         addressCountry: "CA",
       },
     },
@@ -178,7 +178,7 @@ export default async function DemoPage({
                   </p>
                   <p className="mt-1.5 flex items-center gap-2 text-sm font-bold text-slate-800">
                     <svg viewBox="0 0 24 24" fill="none" stroke="#F2A100" strokeWidth={2.5} className="h-4 w-4 shrink-0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" /><circle cx="12" cy="10" r="3" /></svg>
-                    Kanata Baptist Church
+                    Ottawa Public Library - Hazeldean
                   </p>
                 </div>
 
