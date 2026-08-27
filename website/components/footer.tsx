@@ -28,7 +28,7 @@ const footerLinks = [
     title: "Connect",
     links: [
       { label: "info@krianatutoring.com", href: "mailto:info@krianatutoring.com" },
-      { label: "Instagram", href: "https://www.instagram.com/krianatutoring/" },
+      { label: "Instagram", href: "https://www.instagram.com/krianatutoring.youngengineers" },
       { label: "Facebook", href: "https://www.facebook.com/profile.php?id=61559123522942" }
     ]
   }
@@ -65,7 +65,7 @@ export function Footer() {
           {/* Social icons */}
           <div className="flex items-center gap-3">
             <a
-              href="https://www.instagram.com/krianatutoring/"
+              href="https://www.instagram.com/krianatutoring.youngengineers"
               target="_blank"
               rel="noreferrer"
               aria-label="Kriana Tutoring on Instagram"

@@ -44,7 +44,7 @@ export const localBusinessSchema = {
     }
   ],
   sameAs: [
-    "https://www.instagram.com/krianatutoring/",
+    "https://www.instagram.com/krianatutoring.youngengineers",
     "https://www.facebook.com/profile.php?id=61559123522942"
   ],
   priceRange: "$$"

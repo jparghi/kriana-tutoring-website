@@ -194,7 +194,7 @@ export function NavigationBar() {
             <div className="hidden items-center gap-2 xl:flex xl:pl-3">
               <div className="flex items-center gap-1.5 pr-1">
                 <a
-                  href="https://www.instagram.com/krianatutoring/"
+                  href="https://www.instagram.com/krianatutoring.youngengineers"
                   target="_blank"
                   rel="noreferrer"
                   aria-label="Kriana Tutoring on Instagram"
