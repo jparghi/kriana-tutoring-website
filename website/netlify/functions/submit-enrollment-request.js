@@ -408,9 +408,47 @@ function escapeHtml(value) {
     .replaceAll("'", '&#039;')
 }
 
+// Mirrors formatTimeOfDay in lib/booking.ts (duplicated rather than imported —
+// see the note atop _lib/demo-email.js re: this file's client-side/server-side split).
+function formatTimeOfDay(value) {
+  if (!value) return ''
+  if (typeof value !== 'string') {
+    const d = value?.toDate ? value.toDate() : new Date(value)
+    return d.toLocaleTimeString('en-CA', { timeZone: 'America/Toronto', hour: 'numeric', minute: '2-digit' })
+  }
+  const match = value.trim().match(/^(\d{1,2}):(\d{2})/)
+  if (!match) return value
+  const d = new Date(2000, 0, 1, Number(match[1]), Number(match[2]))
+  return d.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit' })
+}
+
 function formatSchedule(session) {
   const title = session.title || session.termName || session.termLabel
   const start = toDateValue(session.firstClassDate || session.startDateTime || session.termStartDate)
+
+  // The offering's own weekday/startTime/endTime are the source of truth for
+  // which time slot the family picked (e.g. distinguishing "Batch 1" from
+  // "Batch 2" on the same weekday) — firstClassDate/startDateTime only pins
+  // the calendar date and can't be trusted for time-of-day if it drifts from
+  // startTime (e.g. an offering cloned from another batch without updating
+  // its first-class-date timestamp).
+  if (session.weekday && session.startTime) {
+    const dayLabel = start
+      ? start.toLocaleDateString('en-CA', { timeZone: session.timezone || 'America/Toronto', weekday: 'long' })
+      : (() => {
+          const day = String(session.weekday)
+          return day.endsWith('s') ? day : `${day}s`
+        })()
+    const dateLabel = start
+      ? `, ${start.toLocaleDateString('en-CA', { timeZone: session.timezone || 'America/Toronto', month: 'long', day: 'numeric', year: 'numeric' })}`
+      : ''
+    const startTime = formatTimeOfDay(session.startTime)
+    const endTime = formatTimeOfDay(session.endTime)
+    const timeLabel = endTime ? `${startTime}–${endTime}` : startTime
+    const date = `${dayLabel}${dateLabel} at ${timeLabel}`
+    return title ? `${title} — ${date}` : date
+  }
+
   if (!start) return title || 'Schedule to be confirmed'
 
   const date = new Date(start).toLocaleString('en-CA', {
