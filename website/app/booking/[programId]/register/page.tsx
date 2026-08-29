@@ -203,7 +203,7 @@ function DemoRegisterForm({ programId, program, offering }: { programId: string;
           <div className="bg-red-50 border border-red-100 text-red-700 rounded-xl px-4 py-3 text-sm font-medium">{error}</div>
         )}
 
-        <Field label="Full Name" required>
+        <Field label="Parent or Guardian's Full Name" required>
           <input required className={inputClass} value={form.parentName} onChange={e => set('parentName', e.target.value)} placeholder="Jane Smith" autoComplete="name" />
         </Field>
         <Field label="Email Address" required>
