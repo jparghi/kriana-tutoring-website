@@ -7,6 +7,7 @@ import {
   isValidPackageId, getRoboticsPackage, buildPackageSnapshot,
   getAllowedInstallmentCounts, buildPaymentPreferenceSnapshot,
 } from '../../lib/robotics-packages.js'
+import { getLearningPathMonthlyTuition, getRegularMonthlyEstimate } from '../../lib/robotics-monthly-tuition.js'
 import { DEMO_ELIGIBLE_PROGRAM_IDS } from '../../lib/demo-eligibility.js'
 import { computeChildEligibilityKeyHash } from '../../lib/demo-eligibility-crypto.js'
 
@@ -100,6 +101,16 @@ export function validatePayload(body) {
         return { error: 'Selected installment plan is not available for this package.' }
       }
       paymentPreference = { method: 'installments', installmentCount }
+    } else if (method === 'recurring_monthly') {
+      // No client-supplied count/amount is trusted here — the real
+      // billing-month count (Builder/Engineer) or classes-in-month (Regular)
+      // can only be computed once the offering's schedule is available, in
+      // saveEnrollmentRequest/saveWaitlistRequest below.
+      const pkg = getRoboticsPackage(programId, packageId)
+      if (!pkg?.paymentOptions?.recurringMonthlyEnabled) {
+        return { error: 'Monthly billing is not available for the selected package.' }
+      }
+      paymentPreference = { method: 'recurring_monthly' }
     } else {
       return { error: 'Selected payment preference is not recognized.' }
     }
@@ -341,12 +352,16 @@ export function validateCatalogueRequest(request, programDoc, sessionDoc) {
     if (!selectedPackage) {
       throw new RequestRejectedError(400, 'Selected class package is not recognized.')
     }
-    const offeringClassCount = Number(session.classCount)
-    if (!Number.isSafeInteger(offeringClassCount) || offeringClassCount < selectedPackage.classCount) {
-      throw new RequestRejectedError(
-        409,
-        'This class schedule does not have enough classes remaining for the selected package.',
-      )
+    // Regular (`rolling_monthly`) has no fixed class count to check against —
+    // it's a rolling weekly commitment, not a fixed-length learning path.
+    if (selectedPackage.planType !== 'rolling_monthly') {
+      const offeringClassCount = Number(session.classCount)
+      if (!Number.isSafeInteger(offeringClassCount) || offeringClassCount < selectedPackage.classCount) {
+        throw new RequestRejectedError(
+          409,
+          'This class schedule does not have enough classes remaining for the selected package.',
+        )
+      }
     }
   } else if (request.packageId) {
     throw new RequestRejectedError(400, 'Class packages are only available for Robotics programs.')
@@ -422,7 +437,7 @@ function formatTimeOfDay(value) {
   return d.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit' })
 }
 
-function formatSchedule(session) {
+export function formatSchedule(session) {
   const title = session.title || session.termName || session.termLabel
   const start = toDateValue(session.firstClassDate || session.startDateTime || session.termStartDate)
 
@@ -434,13 +449,13 @@ function formatSchedule(session) {
   // its first-class-date timestamp).
   if (session.weekday && session.startTime) {
     const dayLabel = start
-      ? start.toLocaleDateString('en-CA', { timeZone: session.timezone || 'America/Toronto', weekday: 'long' })
+      ? new Date(start).toLocaleDateString('en-CA', { timeZone: session.timezone || 'America/Toronto', weekday: 'long' })
       : (() => {
           const day = String(session.weekday)
           return day.endsWith('s') ? day : `${day}s`
         })()
     const dateLabel = start
-      ? `, ${start.toLocaleDateString('en-CA', { timeZone: session.timezone || 'America/Toronto', month: 'long', day: 'numeric', year: 'numeric' })}`
+      ? `, ${new Date(start).toLocaleDateString('en-CA', { timeZone: session.timezone || 'America/Toronto', month: 'long', day: 'numeric', year: 'numeric' })}`
       : ''
     const startTime = formatTimeOfDay(session.startTime)
     const endTime = formatTimeOfDay(session.endTime)
@@ -487,6 +502,18 @@ function formatAmount(cents) {
 // promotion is active, so these two branches deliberately show different
 // totals (payableSubtotalCents vs. regularSubtotalCents) rather than one
 // shared "effective subtotal".
+// A recurring-monthly package (Builder/Engineer/Regular) never shows a fixed
+// subtotal in the "Package" line — the amount is billed per invoice, based
+// on that month's classes, not a single lump total. Explorer (pay-in-full
+// only) keeps the classCount + subtotal summary as before.
+function packageSummaryLine(packageSnapshot) {
+  if (packageSnapshot.paymentOptions.recurringMonthlyEnabled) {
+    const classCountLabel = Number.isInteger(packageSnapshot.classCount) ? `${packageSnapshot.classCount} classes · ` : ''
+    return `${escapeHtml(packageSnapshot.name)} — ${classCountLabel}${formatAmount(packageSnapshot.perClassCents)}/class · billed monthly`
+  }
+  return `${escapeHtml(packageSnapshot.name)} — ${packageSnapshot.classCount} classes · ${formatAmount(packageSnapshot.perClassCents)}/class · ${formatAmount(packageSnapshot.regularSubtotalCents)} subtotal`
+}
+
 function paymentPreferenceHtml(snapshot) {
   if (!snapshot) return ''
   if (snapshot.method === 'pay_in_full') {
@@ -494,6 +521,16 @@ function paymentPreferenceHtml(snapshot) {
       ? ` — includes the Back-to-School first-class-free offer (save ${formatAmount(snapshot.promotionDiscountCents)})`
       : ''
     return `<p style="margin:0 0 8px"><strong>Payment preference:</strong> Pay in full — ${formatAmount(snapshot.payableSubtotalCents)} (plus applicable taxes)${promoNote}</p>`
+  }
+  if (snapshot.method === 'recurring_monthly') {
+    if (snapshot.variesByMonth) {
+      // Regular: no fixed schedule, so no fixed total either — only this
+      // one month's estimate is known at request time. Never claim
+      // automatic/recurring charging exists; this is a billing preference
+      // staff invoice against each month, cancellable before the next one.
+      return `<p style="margin:0 0 8px"><strong>Payment preference:</strong> Billed monthly for classes actually held (no long-term commitment) — ${escapeHtml(snapshot.billingMonthLabel)} is estimated at ${formatAmount(snapshot.payableSubtotalCents)} for ${snapshot.classesInMonth} class${snapshot.classesInMonth === 1 ? '' : 'es'} (plus applicable taxes). The exact amount for each month depends on that month's calendar and is confirmed before billing; the family may cancel before the next billing month. The Back-to-School offer applies only when paying in full.</p>`
+    }
+    return `<p style="margin:0 0 8px"><strong>Payment preference:</strong> Billed monthly — each invoice is based on the number of classes scheduled that month (plus applicable taxes).</p>`
   }
   const installmentRows = snapshot.installmentAmountsCents
     .map((cents, i) => `<li>Installment ${i + 1} of ${snapshot.installmentCount}: ${formatAmount(cents)}</li>`)
@@ -533,7 +570,7 @@ async function sendAcknowledgements({ registration, program, session, reference,
         <div style="background:#f8fafc;padding:16px;border-radius:10px;margin:18px 0">
           <p style="margin:0 0 8px"><strong>Schedule:</strong> ${schedule}</p>
           ${location ? `<p style="margin:0 0 8px"><strong>Location:</strong> ${location}</p>` : ''}
-          ${packageSnapshot ? `<p style="margin:0 0 8px"><strong>Package:</strong> ${escapeHtml(packageSnapshot.name)} — ${packageSnapshot.classCount} classes · ${formatAmount(packageSnapshot.perClassCents)}/class · ${formatAmount(packageSnapshot.regularSubtotalCents)} package subtotal (plus applicable taxes)</p>` : ''}
+          ${packageSnapshot ? `<p style="margin:0 0 8px"><strong>Package:</strong> ${packageSummaryLine(packageSnapshot)} (plus applicable taxes)</p>` : ''}
           ${paymentPreferenceHtml(paymentPreferenceSnapshot)}
           <p style="margin:0"><strong>Reference:</strong> ${safeReference}</p>
         </div>
@@ -549,7 +586,7 @@ async function sendAcknowledgements({ registration, program, session, reference,
     <p><strong>Reference:</strong> ${safeReference}</p>
     <p><strong>Program:</strong> ${programTitle}</p>
     <p><strong>Schedule:</strong> ${schedule}</p>
-    ${packageSnapshot ? `<p><strong>Package:</strong> ${escapeHtml(packageSnapshot.name)} — ${packageSnapshot.classCount} classes · ${formatAmount(packageSnapshot.perClassCents)}/class · ${formatAmount(packageSnapshot.regularSubtotalCents)} subtotal</p>` : ''}
+    ${packageSnapshot ? `<p><strong>Package:</strong> ${packageSummaryLine(packageSnapshot)}</p>` : ''}
     ${paymentPreferenceHtml(paymentPreferenceSnapshot)}
     <p><strong>Child:</strong> ${childName} (age ${escapeHtml(registration.childAge)}${registration.childGrade ? `, ${escapeHtml(registration.childGrade)}` : ''})</p>
     <p><strong>Parent:</strong> ${parentName} · ${escapeHtml(registration.parentEmail)} · ${escapeHtml(registration.parentPhone)}</p>
@@ -728,6 +765,23 @@ function computeDemoCreditApplication(demoCredit, paymentPreferenceSnapshot) {
   }
 }
 
+/** Server-recomputed `context` for buildPaymentPreferenceSnapshot's
+ * `recurring_monthly` branch — always derived from the real offering
+ * (`session`), never trusted from the client. Returns null if the offering
+ * doesn't carry enough schedule data to compute a real number, so the
+ * caller can reject rather than silently save an incomplete snapshot. */
+export function buildRecurringMonthlyContext(pkg, session) {
+  if (!pkg) return null
+  if (pkg.planType === 'rolling_monthly') {
+    const estimate = getRegularMonthlyEstimate(session, pkg)
+    if (!estimate.monthKey) return null
+    return { classesInMonth: estimate.classesInMonth, billingMonthLabel: estimate.monthLabel }
+  }
+  const tuition = getLearningPathMonthlyTuition(session, pkg)
+  if (tuition.billingMonthCount < 1) return null
+  return { billingMonthCount: tuition.billingMonthCount }
+}
+
 async function saveEnrollmentRequest(db, request) {
   const { programId, offeringId, sessionId, registration } = request
   const programRef = db.collection('programs').doc(programId)
@@ -756,9 +810,22 @@ async function saveEnrollmentRequest(db, request) {
       : 0
     const nextSequence = nonNegativeCounter(previousSequence + 1, 'The registration number sequence')
     const number = `${prefix}-${year}-${String(nextSequence).padStart(4, '0')}`
-    const paymentPreferenceSnapshot = request.paymentPreference
-      ? buildPaymentPreferenceSnapshot(request.programId, request.packageId, request.paymentPreference)
-      : null
+
+    let paymentPreferenceSnapshot = null
+    if (request.paymentPreference) {
+      const recurringMonthlyContext = request.paymentPreference.method === 'recurring_monthly'
+        ? buildRecurringMonthlyContext(getRoboticsPackage(request.programId, request.packageId), session)
+        : {}
+      if (request.paymentPreference.method === 'recurring_monthly' && !recurringMonthlyContext) {
+        throw new RequestRejectedError(
+          409,
+          'This class schedule does not have enough schedule information to calculate monthly tuition. Please contact us.',
+        )
+      }
+      paymentPreferenceSnapshot = buildPaymentPreferenceSnapshot(
+        request.programId, request.packageId, request.paymentPreference, recurringMonthlyContext ?? {}
+      )
+    }
 
     // Additive automatic demo-credit lookup — a read, so it must happen here,
     // before the writes below. See findAvailableDemoCredit's doc comment.
@@ -825,9 +892,7 @@ async function saveEnrollmentRequest(db, request) {
       program,
       session,
       packageSnapshot: request.packageId ? buildPackageSnapshot(request.programId, request.packageId) : null,
-      paymentPreferenceSnapshot: request.paymentPreference
-        ? buildPaymentPreferenceSnapshot(request.programId, request.packageId, request.paymentPreference)
-        : null,
+      paymentPreferenceSnapshot,
     }
   })
 }

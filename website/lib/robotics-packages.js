@@ -15,11 +15,17 @@
 // complete package. Every future package must declare its own
 // `paymentOptions`; installment eligibility is never inferred from class
 // count or price.
-function paymentOptions({ installmentPlanEnabled = false, allowedInstallments = [] } = {}) {
+function paymentOptions({
+  payInFullEnabled = true,
+  installmentPlanEnabled = false,
+  allowedInstallments = [],
+  recurringMonthlyEnabled = false,
+} = {}) {
   return Object.freeze({
-    payInFullEnabled: true,
+    payInFullEnabled,
     installmentPlanEnabled,
     allowedInstallments: Object.freeze([...allowedInstallments]),
+    recurringMonthlyEnabled,
   })
 }
 
@@ -45,12 +51,13 @@ function paymentOptions({ installmentPlanEnabled = false, allowedInstallments = 
 const EXPLORER_PACKAGE = Object.freeze({
   id: 'explorer',
   name: 'Explorer',
+  planType: 'fixed_learning_path',
   classCount: 10,
   perClassCents: 3000,
   regularSubtotalCents: 30000,
   currency: 'CAD',
   badge: null,
-  sortOrder: 1,
+  sortOrder: 2,
   // Pay-in-full only, paid as a single upfront invoice for all classes.
   // Explorer's own per-class rate ($30) already equals the installment
   // list rate used for Builder/Engineer, which is why it's already
@@ -70,14 +77,61 @@ const EXPLORER_PACKAGE = Object.freeze({
   publicVisible: false,
 })
 
-/** Builds a [Explorer, Builder, Engineer] catalogue from just the two
- * program-specific packages, so every catalogue shares the exact same
- * Explorer object rather than duplicating it. */
+// The no-commitment option. Unlike Explorer/Builder/Engineer, Regular has no
+// fixed class count or total — a family is billed for whatever classes are
+// actually scheduled in a given calendar month at this per-class rate, so
+// there's nothing here for the arithmetic self-check below to verify against
+// (see `planType === 'rolling_monthly'` skip in that loop). The actual
+// monthly amount can only be computed once a real offering schedule is known
+// (see lib/robotics-monthly-tuition.js) — never hardcode a Regular monthly
+// total anywhere downstream.
+const REGULAR_PACKAGE = Object.freeze({
+  id: 'regular',
+  name: 'Regular',
+  planType: 'rolling_monthly',
+  classCount: null,
+  perClassCents: 3000,
+  regularSubtotalCents: null,
+  currency: 'CAD',
+  badge: null,
+  sortOrder: 1,
+  minimumClassCommitment: null,
+  paymentOptions: paymentOptions({ payInFullEnabled: false, recurringMonthlyEnabled: true }),
+  installmentPerClassCents: null,
+  // Not enrolled in the Back-to-School promotion — the promotion is a
+  // pay-in-full incentive only, and Regular has no pay-in-full option.
+  promotionEligible: false,
+  promotionalPayInFullSubtotalCents: null,
+  publicVisible: true,
+})
+
+/** Builds a [Regular, Explorer, Builder, Engineer] catalogue from just the
+ * two program-specific packages, so every catalogue shares the exact same
+ * Regular/Explorer objects rather than duplicating them. */
 function buildPackageCatalog({ builder, engineer }) {
   return Object.freeze([
+    REGULAR_PACKAGE,
     EXPLORER_PACKAGE,
-    Object.freeze({ id: 'builder', name: 'Builder', classCount: 20, currency: 'CAD', sortOrder: 2, ...builder }),
-    Object.freeze({ id: 'engineer', name: 'Engineer', classCount: 36, currency: 'CAD', sortOrder: 3, ...engineer }),
+    Object.freeze({
+      id: 'builder',
+      name: 'Builder',
+      planType: 'fixed_learning_path',
+      classCount: 20,
+      currency: 'CAD',
+      sortOrder: 3,
+      minimumClassCommitment: 20,
+      ...builder,
+    }),
+    Object.freeze({
+      id: 'engineer',
+      name: 'Engineer',
+      planType: 'fixed_learning_path',
+      classCount: 36,
+      currency: 'CAD',
+      sortOrder: 4,
+      minimumClassCommitment: 36,
+      ...engineer,
+    }),
   ])
 }
 
@@ -90,7 +144,11 @@ const DEFAULT_PACKAGE_CATALOG = buildPackageCatalog({
     perClassCents: 2800,
     regularSubtotalCents: 56000,
     badge: null,
-    paymentOptions: paymentOptions({ installmentPlanEnabled: true, allowedInstallments: [2, 3, 4] }),
+    paymentOptions: paymentOptions({
+      installmentPlanEnabled: true,
+      allowedInstallments: [2, 3, 4],
+      recurringMonthlyEnabled: true,
+    }),
     // $30/class list rate x 20 classes = $600.00 total when paying by
     // installments — higher than both the $560 regular and $532 promotional
     // pay-in-full prices, which is the incentive to pay in full.
@@ -103,7 +161,11 @@ const DEFAULT_PACKAGE_CATALOG = buildPackageCatalog({
     perClassCents: 2600,
     regularSubtotalCents: 93600,
     badge: 'Best Value',
-    paymentOptions: paymentOptions({ installmentPlanEnabled: true, allowedInstallments: [2, 3, 4, 5, 6] }),
+    paymentOptions: paymentOptions({
+      installmentPlanEnabled: true,
+      allowedInstallments: [2, 3, 4, 5, 6],
+      recurringMonthlyEnabled: true,
+    }),
     // $30/class list rate x 36 classes = $1,080.00 total when paying by
     // installments — higher than both the $936 regular and $910 promotional
     // pay-in-full prices.
@@ -114,33 +176,42 @@ const DEFAULT_PACKAGE_CATALOG = buildPackageCatalog({
   },
 })
 
-// Smartivo-specific pricing (Back-to-School 2026 update). Builder/Engineer
-// pay-in-full is the LOWER rate here — the opposite relationship from the
-// default catalogue's installment/pay-in-full split, but the same schema:
-// `perClassCents`/`regularSubtotalCents` is always the pay-in-full price,
-// `installmentPerClassCents` is always the installment price.
+// Smartivo-specific pricing (2026 monthly-tuition rate update, approved by
+// the owner via the decision gate in
+// docs/.../claude-monthly-pricing-implementation-plan.md). Builder/Engineer
+// pay-in-full now match DEFAULT_PACKAGE_CATALOG's rates exactly ($28/$26) —
+// kept as an explicit catalogue rather than collapsed into the default
+// because the badges differ and programs may diverge again later.
 const SMARTIVO_PACKAGE_CATALOG = buildPackageCatalog({
   builder: {
-    perClassCents: 2600, // $26/class pay-in-full
-    regularSubtotalCents: 52000, // $520
+    perClassCents: 2800, // $28/class pay-in-full
+    regularSubtotalCents: 56000, // $560
     badge: 'Most Popular',
-    paymentOptions: paymentOptions({ installmentPlanEnabled: true, allowedInstallments: [2, 3, 4] }),
-    installmentPerClassCents: 2800, // $28/class installment rate -> $560 total
+    paymentOptions: paymentOptions({
+      installmentPlanEnabled: true,
+      allowedInstallments: [2, 3, 4],
+      recurringMonthlyEnabled: true,
+    }),
+    installmentPerClassCents: 3000, // $30/class installment rate -> $600 total
     promotionEligible: true,
     // Back-to-School Launch Offer: first class free, i.e. regular minus one
-    // pay-in-full class ($520 - $26 = $494).
-    promotionalPayInFullSubtotalCents: 49400,
+    // pay-in-full class ($560 - $28 = $532).
+    promotionalPayInFullSubtotalCents: 53200,
     publicVisible: true,
   },
   engineer: {
-    perClassCents: 2400, // $24/class pay-in-full
-    regularSubtotalCents: 86400, // $864
+    perClassCents: 2600, // $26/class pay-in-full
+    regularSubtotalCents: 93600, // $936
     badge: 'Best Value',
-    paymentOptions: paymentOptions({ installmentPlanEnabled: true, allowedInstallments: [2, 3, 4, 5, 6] }),
-    installmentPerClassCents: 2800, // $28/class installment rate -> $1,008 total
+    paymentOptions: paymentOptions({
+      installmentPlanEnabled: true,
+      allowedInstallments: [2, 3, 4, 5, 6],
+      recurringMonthlyEnabled: true,
+    }),
+    installmentPerClassCents: 3000, // $30/class installment rate -> $1,080 total
     promotionEligible: true,
-    // $864 - $24 = $840.
-    promotionalPayInFullSubtotalCents: 84000,
+    // $936 - $26 = $910.
+    promotionalPayInFullSubtotalCents: 91000,
     publicVisible: true,
   },
 })
@@ -177,6 +248,10 @@ export function getPubliclyVisiblePackages(programId) {
 const ALL_PACKAGE_CATALOGS = [DEFAULT_PACKAGE_CATALOG, ...Object.values(PACKAGE_CATALOGS_BY_PROGRAM_ID)]
 for (const catalog of ALL_PACKAGE_CATALOGS) {
   for (const pkg of catalog) {
+    // Regular (`rolling_monthly`) has no fixed class count or total to check
+    // against — its amount only exists once a real offering schedule is
+    // known (see lib/robotics-monthly-tuition.js).
+    if (pkg.planType === 'rolling_monthly') continue
     const expected = pkg.classCount * pkg.perClassCents
     if (expected !== pkg.regularSubtotalCents) {
       throw new Error(
@@ -263,6 +338,11 @@ export function getRoboticsPackage(programId, packageId) {
  * subscription" / "monthly fee" / cancellable-month-to-month language. */
 export function getPaymentOptionsLabel(pkg) {
   if (!pkg) return ''
+  if (pkg.paymentOptions?.recurringMonthlyEnabled) {
+    return pkg.planType === 'rolling_monthly'
+      ? 'Billed monthly for classes actually scheduled that month.'
+      : `Billed monthly, averaged across your ${pkg.classCount}-class learning path.`
+  }
   return pkg.paymentOptions?.installmentPlanEnabled
     ? 'Pay in full or choose an installment plan.'
     : `Paid in full — one invoice covers all ${pkg.classCount} classes`
@@ -292,9 +372,23 @@ export function getAllowedInstallmentCounts(pkg) {
  *       payableSubtotalCents = classCount × installmentPerClassCents (the
  *       list rate, e.g. $30/class) — never the bulk regularSubtotalCents,
  *       and never discounted by the promotion, even while it's active.
+ *   - method 'recurring_monthly', ALWAYS, promo active or not (same
+ *     never-discounted rule as installments):
+ *       - `fixed_learning_path` packages (Builder/Engineer):
+ *         payableSubtotalCents = classCount × perClassCents — the package's
+ *         own pay-in-full-equivalent rate (e.g. $28/class), NOT the $30
+ *         installment list rate. This is the total that gets averaged across
+ *         billing months (see lib/robotics-monthly-tuition.js), not a
+ *         separately-priced payment method.
+ *       - `rolling_monthly` packages (Regular): there is no fixed total —
+ *         the family is billed for whatever classes actually land in one
+ *         calendar month. Requires `context.classesInMonth` (a real count
+ *         from an actual offering schedule); throws rather than guessing if
+ *         it's missing, since a monthly amount for Regular must never be
+ *         invented.
  *
  * Returns null for an unknown package or method. */
-export function resolvePackagePricing(pkg, method) {
+export function resolvePackagePricing(pkg, method, context = {}) {
   if (!pkg) return null
 
   if (method === 'pay_in_full') {
@@ -320,6 +414,37 @@ export function resolvePackagePricing(pkg, method) {
       method: 'installments',
       regularSubtotalCents: installmentSubtotalCents,
       payableSubtotalCents: installmentSubtotalCents,
+      promotionApplied: false,
+      promotionDiscountCents: 0,
+    }
+  }
+
+  if (method === 'recurring_monthly') {
+    if (pkg.planType === 'rolling_monthly') {
+      const { classesInMonth } = context
+      if (!Number.isSafeInteger(classesInMonth) || classesInMonth < 0) {
+        throw new Error(
+          `resolvePackagePricing: "recurring_monthly" for rolling_monthly package "${pkg.id}" requires context.classesInMonth from a real offering schedule (got ${classesInMonth}).`
+        )
+      }
+      const payableSubtotalCents = classesInMonth * pkg.perClassCents
+      return {
+        method: 'recurring_monthly',
+        regularSubtotalCents: payableSubtotalCents,
+        payableSubtotalCents,
+        promotionApplied: false,
+        promotionDiscountCents: 0,
+      }
+    }
+
+    // fixed_learning_path (Builder/Engineer): the full path total at the
+    // package's own per-class rate — never promo-discounted, matching the
+    // installments rule above.
+    const pathTotalCents = pkg.classCount * pkg.perClassCents
+    return {
+      method: 'recurring_monthly',
+      regularSubtotalCents: pathTotalCents,
+      payableSubtotalCents: pathTotalCents,
       promotionApplied: false,
       promotionDiscountCents: 0,
     }
@@ -371,6 +496,7 @@ export function buildPackageSnapshot(programId, packageId) {
       payInFullEnabled: pkg.paymentOptions.payInFullEnabled,
       installmentPlanEnabled: pkg.paymentOptions.installmentPlanEnabled,
       allowedInstallments: [...pkg.paymentOptions.allowedInstallments],
+      recurringMonthlyEnabled: pkg.paymentOptions.recurringMonthlyEnabled,
     },
     promotionEligible: pkg.promotionEligible,
     promotionName: pkg.promotionEligible ? PACKAGE_PROMO.label : null,
@@ -399,19 +525,30 @@ export function computeInstallmentAmountsCents(totalCents, installmentCount) {
  * stored on an enrollment request. `packageId`/`paymentPreference.method`/
  * `paymentPreference.installmentCount` are the only client-supplied inputs
  * trusted here — every amount is derived from resolvePackagePricing, never
- * from anything the browser sent. Returns null if the package is unknown or
- * the requested method/installment count isn't valid for that package
- * (pay-in-full is always valid for every package).
+ * from anything the browser sent. `context` carries server-recomputed
+ * schedule facts needed for `recurring_monthly` (billingMonthCount for a
+ * fixed_learning_path package, or classesInMonth/billingMonthLabel for
+ * Regular) — always derived from a real offering schedule by the caller
+ * (see lib/robotics-monthly-tuition.js), never trusted from the browser.
+ * Returns null if the package is unknown or the requested method/installment
+ * count isn't valid for that package (pay-in-full is always valid for every
+ * package).
  *
  * Version history:
  *   v1 (legacy) — a single `effectiveSubtotalCents` applied the promotion
  *   to both pay-in-full AND installments, which was incorrect: installment
  *   plans must always use the regular price.
- *   v2 (current) — splits `regularSubtotalCents` (always true) from
- *   `payableSubtotalCents` (method-dependent), and adds explicit
- *   `promotionApplied`/`promotionDiscountCents` so nothing downstream has to
- *   re-derive whether the promotion applied from the numbers alone. */
-export function buildPaymentPreferenceSnapshot(programId, packageId, paymentPreference) {
+ *   v2 (current for pay_in_full/installments) — splits `regularSubtotalCents`
+ *   (always true) from `payableSubtotalCents` (method-dependent), and adds
+ *   explicit `promotionApplied`/`promotionDiscountCents` so nothing
+ *   downstream has to re-derive whether the promotion applied from the
+ *   numbers alone.
+ *   v3 (current for recurring_monthly only) — adds `billingMonthCount`/
+ *   `monthlyAmountsCents` for a fixed_learning_path package's averaged
+ *   tuition, or `classesInMonth`/`billingMonthLabel`/`variesByMonth: true`
+ *   for Regular's single-month amount. pay_in_full/installments snapshots
+ *   are untouched and remain v2. */
+export function buildPaymentPreferenceSnapshot(programId, packageId, paymentPreference, context = {}) {
   const pkg = getRoboticsPackage(programId, packageId)
   if (!pkg) return null
 
@@ -444,6 +581,51 @@ export function buildPaymentPreferenceSnapshot(programId, packageId, paymentPref
       regularSubtotalCents: pricing.regularSubtotalCents,
       payableSubtotalCents: pricing.payableSubtotalCents,
       installmentAmountsCents: computeInstallmentAmountsCents(pricing.payableSubtotalCents, installmentCount),
+      promotionApplied: pricing.promotionApplied,
+      promotionDiscountCents: pricing.promotionDiscountCents,
+      currency: pkg.currency,
+    }
+  }
+
+  if (method === 'recurring_monthly') {
+    if (!pkg.paymentOptions.recurringMonthlyEnabled) return null
+
+    if (pkg.planType === 'rolling_monthly') {
+      const classesInMonth = Number(context.classesInMonth)
+      const billingMonthLabel = context.billingMonthLabel
+      if (!Number.isSafeInteger(classesInMonth) || classesInMonth < 0 || typeof billingMonthLabel !== 'string') {
+        return null
+      }
+      const pricing = resolvePackagePricing(pkg, 'recurring_monthly', { classesInMonth })
+      return {
+        version: 3,
+        method: 'recurring_monthly',
+        classesInMonth,
+        billingMonthLabel,
+        variesByMonth: true,
+        regularSubtotalCents: pricing.regularSubtotalCents,
+        payableSubtotalCents: pricing.payableSubtotalCents,
+        promotionApplied: pricing.promotionApplied,
+        promotionDiscountCents: pricing.promotionDiscountCents,
+        currency: pkg.currency,
+      }
+    }
+
+    // fixed_learning_path (Builder/Engineer): averaged across the real
+    // billing-month count for this offering's schedule, computed by the
+    // caller (see getLearningPathMonthlyTuition) and passed in — never
+    // guessed here.
+    const billingMonthCount = Number(context.billingMonthCount)
+    if (!Number.isSafeInteger(billingMonthCount) || billingMonthCount < 1) return null
+    const pricing = resolvePackagePricing(pkg, 'recurring_monthly')
+    return {
+      version: 3,
+      method: 'recurring_monthly',
+      billingMonthCount,
+      variesByMonth: false,
+      regularSubtotalCents: pricing.regularSubtotalCents,
+      payableSubtotalCents: pricing.payableSubtotalCents,
+      monthlyAmountsCents: computeInstallmentAmountsCents(pricing.payableSubtotalCents, billingMonthCount),
       promotionApplied: pricing.promotionApplied,
       promotionDiscountCents: pricing.promotionDiscountCents,
       currency: pkg.currency,

@@ -14,7 +14,8 @@ import { BIRTHDAY_PARTY_PATH } from '../../../lib/site-links'
 import BookingLayout from '../../../components/booking/BookingLayout'
 import { BookingStepper } from '../../../components/booking/BookingStepper'
 import { ClassScheduleDisclosure } from '../../../components/booking/ClassScheduleDisclosure'
-import { getPubliclyVisiblePackages, PACKAGE_PROMO, getRoboticsPackage, isValidPackageId, resolvePackagePricing } from '../../../lib/robotics-packages.js'
+import { getLearningPathMonthlyTuition, getRegularMonthlyEstimate } from '../../../lib/robotics-monthly-tuition.js'
+import { getPubliclyVisiblePackages, getRoboticsPackage, isValidPackageId } from '../../../lib/robotics-packages.js'
 
 const ROBOTICS_CATEGORY = 'Robotics'
 
@@ -26,6 +27,14 @@ function OfferingCard({ offering, program, onSelect, hideTuition, selectedPackag
   const packageSchedule = selectedPackage ? getPackageClassSchedule(offering, selectedPackage) : null
   const tuition = Number(offering.tuitionCents ?? 0)
   const discount = applyProgramDiscount(tuition, program)
+
+  const isRegularPackage = selectedPackage?.planType === 'rolling_monthly'
+  const learningPathTuition = selectedPackage && !isRegularPackage
+    ? getLearningPathMonthlyTuition(offering, selectedPackage)
+    : null
+  const regularEstimate = selectedPackage && isRegularPackage
+    ? getRegularMonthlyEstimate(offering, selectedPackage)
+    : null
 
   return (
     <div className={`bg-white rounded-2xl border p-5 transition-all ${
@@ -101,6 +110,29 @@ function OfferingCard({ offering, program, onSelect, hideTuition, selectedPackag
             )}
           </div>
         )}
+        {learningPathTuition && learningPathTuition.billingMonthCount > 0 && (
+          <div className="rounded-lg bg-[#0c6162]/5 px-3 py-2 font-semibold text-slate-700">
+            <span className="text-sm">
+              Billed monthly for your {selectedPackage.classCount} classes
+            </span>
+            <p className="mt-0.5 text-xs font-normal text-slate-400">
+              An invoice will be issued monthly based on your selected schedule (plus applicable taxes).
+            </p>
+          </div>
+        )}
+        {regularEstimate && regularEstimate.monthKey && (
+          <div className="rounded-lg bg-[#0c6162]/5 px-3 py-2 font-semibold text-slate-700">
+            <span className="text-lg font-black text-slate-900">
+              ~${(regularEstimate.estimatedAmountCents / 100).toFixed(2)}
+            </span>
+            <span className="ml-1 text-xs text-slate-500">
+              estimated for {regularEstimate.monthLabel} ({regularEstimate.classesInMonth} class{regularEstimate.classesInMonth === 1 ? '' : 'es'})
+            </span>
+            <p className="mt-0.5 text-xs text-slate-400">
+              No long-term commitment — actual amount is confirmed each month and may differ from month to month.
+            </p>
+          </div>
+        )}
       </div>
 
       {packageSchedule && packageSchedule.classDates.length > 0 && (
@@ -148,12 +180,17 @@ const PACKAGE_LOGOS: Record<string, string> = {
   engineer: '/images/robotics/packages/engineer-package-icon.png',
 }
 
-// Short, scannable descriptors for the two publicly-offered learning paths —
-// kept out of lib/robotics-packages.js since it's presentation copy, not
-// pricing/business data.
+// Short, scannable descriptors for each publicly-offered plan — kept out of
+// lib/robotics-packages.js since it's presentation copy, not pricing/business
+// data.
 const PACKAGE_DESCRIPTORS: Record<string, string[]> = {
+  regular: ['No long-term commitment', 'Weekly classes', 'Best for families who want flexibility'],
   builder: ['Structured progression', 'Best starting point for most families'],
   engineer: ['Longer learning journey', 'Greater continuity and progression'],
+}
+
+const PACKAGE_TAGLINES: Record<string, string> = {
+  regular: 'Maximum Flexibility',
 }
 
 function PackageChooser({ programId }: { programId: string }) {
@@ -163,111 +200,128 @@ function PackageChooser({ programId }: { programId: string }) {
       <div className="pointer-events-none absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-[#0c6162]/10 blur-3xl" />
 
       <div className="relative">
-        {PACKAGE_PROMO.active && (
-          <div className="mb-3">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-3.5 py-1.5 text-xs font-black uppercase tracking-wide text-white shadow-sm">
-              🏷️ {PACKAGE_PROMO.label}
-            </span>
-            <p className="mt-1.5 text-xs font-semibold text-orange-600">{PACKAGE_PROMO.registerByLabel}</p>
-          </div>
-        )}
         <h2 className="text-xl font-black text-slate-800 sm:text-2xl">Choose Your Learning Path</h2>
         <p className="mt-1.5 max-w-2xl text-sm text-slate-500">
-          Each path gives your child enough consistent, structured time with the curriculum to build real confidence.
-          Totals shown are the full package subtotal, not a monthly price, plus applicable taxes.
+          Compare Regular's flexibility against Builder and Engineer's lower per-class rates. Builder and Engineer
+          are billed monthly, averaged across your learning path.
         </p>
       </div>
 
-      <div className="relative mt-6 grid gap-5 sm:grid-cols-2 sm:max-w-3xl sm:mx-auto">
-        {getPubliclyVisiblePackages(programId).map((pkg: any) => {
-          // Builder keeps the visually-dominant treatment (ring/scale) as
-          // the natural default choice, independent of whether it carries a
-          // text badge — decoupled from `badge` since Builder is currently
-          // shown with no badge at all (see lib/robotics-packages.js).
-          const isFeatured = pkg.id === 'builder'
-          const payInFullPricing = resolvePackagePricing(pkg, 'pay_in_full')!
+      <div className="relative mt-6 grid gap-5 sm:grid-cols-3">
+        {(() => {
+          const packages = getPubliclyVisiblePackages(programId)
+          const regularPkg = packages.find((p: any) => p.id === 'regular')
 
-          return (
-            <Link
-              key={pkg.id}
-              href={`/booking/${programId}?package=${pkg.id}`}
-              className={`group relative flex flex-col rounded-2xl border bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_18px_40px_rgba(15,23,42,0.14)] ${
-                isFeatured ? 'border-[#0083CB] ring-2 ring-[#0083CB]/25 sm:scale-[1.03]' : 'border-slate-200 hover:border-[#0c6162]/40'
-              }`}
-            >
-              {pkg.badge && (
-                <span
-                  className={`absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-sm ${
-                    isFeatured ? 'bg-[#0083CB]' : 'bg-[#F2A100]'
-                  }`}
-                >
-                  {pkg.badge}
-                </span>
-              )}
+          return packages.map((pkg: any) => {
+            const isRegular = pkg.planType === 'rolling_monthly'
+            // Engineer carries the "Best Value" badge and gets the
+            // stronger/featured treatment — color, border and badge rather
+            // than scaling, so mobile stacking is unaffected.
+            const isFeatured = pkg.id === 'engineer'
+            const savingsPerClassCents = regularPkg && !isRegular ? regularPkg.perClassCents - pkg.perClassCents : 0
 
-              {PACKAGE_LOGOS[pkg.id] ? (
-                <div className="flex h-24 items-center justify-center">
-                  <Image
-                    src={PACKAGE_LOGOS[pkg.id]}
-                    alt={`${pkg.name} robotics package`}
-                    width={180}
-                    height={150}
-                    className="h-24 w-auto object-contain"
-                  />
-                </div>
-              ) : (
-                <span className="text-3xl">⭐</span>
-              )}
-              <p className="mt-2 text-lg font-black text-slate-800">{pkg.name}</p>
-              <p className="mt-0.5 text-sm text-slate-500">{pkg.classCount}-Class Learning Path</p>
+            return (
+              <Link
+                key={pkg.id}
+                href={`/booking/${programId}?package=${pkg.id}`}
+                className={`group relative flex flex-col rounded-2xl border bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_18px_40px_rgba(15,23,42,0.14)] ${
+                  isFeatured ? 'border-[#0083CB] ring-2 ring-[#0083CB]/25' : 'border-slate-200 hover:border-[#0c6162]/40'
+                }`}
+              >
+                {pkg.badge && (
+                  <span
+                    className={`absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-sm ${
+                      isFeatured ? 'bg-[#0083CB]' : 'bg-[#F2A100]'
+                    }`}
+                  >
+                    {pkg.badge}
+                  </span>
+                )}
 
-              {PACKAGE_DESCRIPTORS[pkg.id] && (
-                <ul className="mt-2 space-y-1">
-                  {PACKAGE_DESCRIPTORS[pkg.id].map(point => (
-                    <li key={point} className="flex items-start gap-1.5 text-xs text-slate-500">
-                      <span aria-hidden="true" className="mt-1 h-1 w-1 shrink-0 rounded-full bg-slate-300" />
-                      {point}
-                    </li>
-                  ))}
-                </ul>
-              )}
+                {PACKAGE_LOGOS[pkg.id] ? (
+                  <div className="flex h-24 items-center justify-center">
+                    <Image
+                      src={PACKAGE_LOGOS[pkg.id]}
+                      alt={`${pkg.name} robotics package`}
+                      width={180}
+                      height={150}
+                      className="h-24 w-auto object-contain"
+                    />
+                  </div>
+                ) : (
+                  <span className="text-3xl">⭐</span>
+                )}
+                <p className="mt-2 text-lg font-black text-slate-800">{pkg.name}</p>
+                <p className="mt-0.5 text-sm text-slate-500">
+                  {PACKAGE_TAGLINES[pkg.id] ?? `${pkg.classCount}-Class Learning Path`}
+                </p>
 
-              {/* Parents should read this in order: the bulk per-class rate
-                  that explains why the package is discounted off the $30/class
-                  list rate, then the Back-to-School offer stacked on top of
-                  that, then what the regular (installment) rate is. */}
-              <p className="mt-4 text-sm font-bold text-slate-700">
-                ${(pkg.perClassCents / 100).toFixed(0)}/class <span className="font-normal text-slate-400">when paid in full</span>
-              </p>
-              <div className="mt-1 flex items-baseline gap-2">
-                {payInFullPricing.promotionApplied ? (
+                {PACKAGE_DESCRIPTORS[pkg.id] && (
+                  <ul className="mt-2 space-y-1">
+                    {PACKAGE_DESCRIPTORS[pkg.id].map(point => (
+                      <li key={point} className="flex items-start gap-1.5 text-xs text-slate-500">
+                        <span aria-hidden="true" className="mt-1 h-1 w-1 shrink-0 rounded-full bg-slate-300" />
+                        {point}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {isRegular ? (
                   <>
-                    <span className="text-sm font-semibold text-slate-400 line-through">${(payInFullPricing.regularSubtotalCents / 100).toFixed(0)}</span>
-                    <span className="text-2xl font-black text-orange-600">${(payInFullPricing.payableSubtotalCents / 100).toFixed(0)}</span>
+                    <div className="mt-4 flex items-baseline gap-2">
+                      <span className="text-2xl font-black text-slate-900">${(pkg.perClassCents / 100).toFixed(0)}</span>
+                      <span className="text-xs font-semibold text-slate-500">/class + tax</span>
+                    </div>
+                    <p className="mt-1 text-xs font-bold text-slate-600">No long-term commitment</p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      Billed for classes actually scheduled that month — see the exact amount after choosing a schedule.
+                    </p>
                   </>
                 ) : (
-                  <span className="text-2xl font-black text-slate-900">${(payInFullPricing.payableSubtotalCents / 100).toFixed(0)}</span>
+                  <>
+                    <div className="mt-4 flex items-baseline gap-2">
+                      <span className="text-2xl font-black text-slate-900">${(pkg.perClassCents / 100).toFixed(0)}</span>
+                      <span className="text-xs font-semibold text-slate-500">/class</span>
+                    </div>
+                    <p className="mt-0.5 text-xs font-bold text-slate-600">
+                      Minimum commitment: {pkg.minimumClassCommitment} classes
+                    </p>
+                    {savingsPerClassCents > 0 && (
+                      <p className="mt-0.5 text-xs font-semibold text-emerald-600">
+                        Save ${(savingsPerClassCents / 100).toFixed(0)}/class compared with Regular
+                      </p>
+                    )}
+                    <p className="mt-2 rounded-lg bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-600">
+                      Monthly tuition calculated after you choose a schedule
+                    </p>
+                    {isFeatured && (
+                      <p className="mt-1 text-xs font-semibold text-[#0083CB]">Lowest per-class rate</p>
+                    )}
+                  </>
                 )}
-                <span className="text-xs font-semibold text-slate-500">+ tax</span>
-              </div>
-              {payInFullPricing.promotionApplied && (
-                <p className="mt-1 text-[11px] font-bold text-orange-600">🏷️ {PACKAGE_PROMO.label}</p>
-              )}
-              {pkg.installmentPerClassCents != null && (
-                <p className="mt-1 text-xs text-slate-400">
-                  Regular rate ${(pkg.installmentPerClassCents / 100).toFixed(0)}/class · Installments available
-                </p>
-              )}
 
-              <span
-                className="mt-4 inline-flex w-fit items-center gap-1 rounded-full px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition-transform duration-200 group-hover:scale-[1.03]"
-                style={{ backgroundColor: isFeatured ? '#0083CB' : '#0c6162' }}
-              >
-                Choose {pkg.name} →
-              </span>
-            </Link>
-          )
-        })}
+                <span
+                  className="mt-4 inline-flex w-fit items-center gap-1 rounded-full px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition-transform duration-200 group-hover:scale-[1.03]"
+                  style={{ backgroundColor: isFeatured ? '#0083CB' : '#0c6162' }}
+                >
+                  Choose {pkg.name} →
+                </span>
+              </Link>
+            )
+          })
+        })()}
+      </div>
+
+      <div className="relative mt-8 rounded-2xl border border-slate-100 bg-slate-50/80 p-5">
+        <p className="text-sm font-bold text-slate-700">How monthly tuition works</p>
+        <p className="mt-1.5 text-sm text-slate-500">
+          Classes are generally scheduled weekly, but the number of class dates may vary from month to month due to
+          holidays, school breaks and the calendar. Builder and Engineer tuition is averaged across the selected
+          learning path, giving families predictable monthly payments while ensuring students receive every class
+          included in their program. Regular has no learning-path commitment, so its monthly amount is billed for
+          whatever classes are actually held that month.
+        </p>
       </div>
 
       <p className="relative mt-6 text-center text-sm text-slate-500">
@@ -480,10 +534,12 @@ function ProgramDetailContent() {
               <div>
                 <p className="text-xs font-bold uppercase tracking-wide text-[#0083CB]">Selected Package</p>
                 <p className="mt-0.5 text-sm font-semibold text-slate-800">
-                  {selectedPackage.name} — {selectedPackage.classCount} classes · ${(selectedPackage.regularSubtotalCents / 100).toFixed(0)} package price (plus applicable taxes)
+                  {selectedPackage.planType === 'rolling_monthly'
+                    ? `${selectedPackage.name} — $${(selectedPackage.perClassCents / 100).toFixed(0)}/class · no long-term commitment`
+                    : `${selectedPackage.name} — ${selectedPackage.classCount} classes · $${(selectedPackage.perClassCents / 100).toFixed(0)}/class`}
                 </p>
                 <p className="mt-0.5 text-xs text-slate-500">
-                  You&apos;ll choose how to pay — including the Back-to-School pay-in-full price, if eligible — in the next step.
+                  Billed monthly — you&apos;ll see the exact monthly amount after choosing a schedule below.
                 </p>
               </div>
               <Link href={`/booking/${programId}`} className="text-xs font-semibold text-slate-500 hover:text-slate-700">

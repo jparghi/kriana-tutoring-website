@@ -5,7 +5,10 @@ import {
   validateCatalogueRequest,
   RequestRejectedError,
   idempotencyDigest,
+  buildRecurringMonthlyContext,
+  formatSchedule,
 } from '../netlify/functions/submit-enrollment-request.js'
+import { getRoboticsPackage } from '../lib/robotics-packages.js'
 
 function doc(data, exists = true) {
   return { exists, data: () => data }
@@ -271,4 +274,77 @@ test('validatePayload allows a waitlist request with no payment preference at al
 test('validatePayload rejects a payment preference when no package is selected', () => {
   const result = validatePayload(baseRequest({ packageId: '', paymentPreference: { method: 'pay_in_full' } }))
   assert.equal(result.error, 'Payment preference is only available for class packages.')
+})
+
+// --- recurring_monthly (Regular's rolling billing + Builder/Engineer's averaged tuition) ---
+
+test('validatePayload accepts recurring_monthly for Builder, Engineer, and Regular, dropping any client-supplied count', () => {
+  for (const packageId of ['builder', 'engineer', 'regular']) {
+    const result = validatePayload(baseRequest({
+      packageId,
+      paymentPreference: { method: 'recurring_monthly', billingMonthCount: 999, classesInMonth: 999 },
+    }))
+    assert.equal(result.error, undefined, `${packageId} should be accepted`)
+    assert.deepEqual(result.paymentPreference, { method: 'recurring_monthly' })
+  }
+})
+
+test('validatePayload rejects recurring_monthly for Explorer (pay-in-full only, no monthly option)', () => {
+  const result = validatePayload(baseRequest({
+    packageId: 'explorer',
+    paymentPreference: { method: 'recurring_monthly' },
+  }))
+  assert.equal(result.error, 'Monthly billing is not available for the selected package.')
+})
+
+test('validateCatalogueRequest exempts Regular from the offering-classCount check (it has no fixed class count)', () => {
+  const request = baseRequest({ packageId: 'regular' })
+  const { session } = validateCatalogueRequest(
+    request,
+    doc(roboticsProgram()),
+    doc(openOffering({ classCount: 0 })),
+  )
+  assert.equal(session.classCount, 0)
+})
+
+test('buildRecurringMonthlyContext for Builder/Engineer returns a real billingMonthCount from the offering schedule', () => {
+  const builder = getRoboticsPackage(undefined, 'builder')
+  const session = openOffering({ firstClassDate: '2026-09-14', weekday: 'Monday', timezone: 'America/Toronto' })
+  const context = buildRecurringMonthlyContext(builder, session)
+  assert.equal(context.billingMonthCount, 6) // matches the hand-traced fixture in robotics-monthly-tuition.test.mjs
+})
+
+test('buildRecurringMonthlyContext for Regular returns classesInMonth/billingMonthLabel from the offering schedule', () => {
+  const regular = getRoboticsPackage(undefined, 'regular')
+  const session = openOffering({ firstClassDate: '2026-09-14', weekday: 'Monday', timezone: 'America/Toronto' })
+  const context = buildRecurringMonthlyContext(regular, session)
+  assert.equal(context.classesInMonth, 3) // Sep 14, 21, 28
+  assert.equal(context.billingMonthLabel, 'September 2026')
+})
+
+test('buildRecurringMonthlyContext returns null when the offering has no computable schedule, so the caller rejects rather than guessing', () => {
+  const builder = getRoboticsPackage(undefined, 'builder')
+  assert.equal(buildRecurringMonthlyContext(builder, openOffering({ firstClassDate: undefined, weekday: undefined })), null)
+  assert.equal(buildRecurringMonthlyContext(null, openOffering()), null)
+})
+
+// --- formatSchedule (confirmation email copy) ---
+
+test('formatSchedule does not crash for a modern weekday/startTime offering with a string firstClassDate (regression: toDateValue returns a string, not a Date)', () => {
+  const session = openOffering({
+    title: 'Fall 2026 - Monday Batch 1',
+    weekday: 'Monday',
+    startTime: '16:15',
+    endTime: '17:15',
+    firstClassDate: '2026-09-14T20:15:00.000Z',
+    timezone: 'America/Toronto',
+  })
+  const label = formatSchedule(session)
+  assert.match(label, /Fall 2026 - Monday Batch 1/)
+  assert.match(label, /Monday, September 14, 2026/)
+})
+
+test('formatSchedule falls back to a generic weekday label when firstClassDate is missing', () => {
+  const session = openOffering({ weekday: 'Monday', startTime: '16:15', endTime: '17:15', firstClassDate: undefined })
+  assert.match(formatSchedule(session), /^Mondays at /)
 })
