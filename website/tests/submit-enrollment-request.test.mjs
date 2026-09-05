@@ -187,57 +187,32 @@ test('validatePayload requires a payment preference for a robotics enrollment re
   assert.equal(result.error, 'Please choose a payment preference before requesting a spot.')
 })
 
-test('validatePayload normalizes pay_in_full to installmentCount 1, ignoring any client-supplied count', () => {
+test('validatePayload accepts pay_in_full, ignoring any leftover client-supplied count', () => {
   const result = validatePayload(baseRequest({
-    packageId: 'builder',
+    packageId: 'explorer',
     paymentPreference: { method: 'pay_in_full', installmentCount: 4 },
   }))
   assert.equal(result.error, undefined)
-  assert.deepEqual(result.paymentPreference, { method: 'pay_in_full', installmentCount: 1 })
+  assert.deepEqual(result.paymentPreference, { method: 'pay_in_full' })
 })
 
-test('validatePayload accepts every allowed installment count for Builder', () => {
-  for (const count of [2, 3, 4]) {
+// Installment plans were removed entirely — 'installments' is no longer a
+// recognized method for any package, and a stale client sending it must be
+// rejected rather than silently priced as something else.
+test('validatePayload rejects the removed installments method for every package', () => {
+  for (const packageId of ['builder', 'engineer', 'explorer', 'regular']) {
     const result = validatePayload(baseRequest({
-      packageId: 'builder',
-      paymentPreference: { method: 'installments', installmentCount: count },
+      packageId,
+      paymentPreference: { method: 'installments', installmentCount: 3 },
     }))
-    assert.equal(result.error, undefined, `count ${count} should be accepted`)
-    assert.deepEqual(result.paymentPreference, { method: 'installments', installmentCount: count })
+    assert.equal(result.error, 'Selected payment preference is not recognized.', `${packageId} must reject installments`)
   }
-})
-
-test('validatePayload accepts every allowed installment count for Engineer', () => {
-  for (const count of [2, 3, 4, 5, 6]) {
-    const result = validatePayload(baseRequest({
-      packageId: 'engineer',
-      paymentPreference: { method: 'installments', installmentCount: count },
-    }))
-    assert.equal(result.error, undefined, `count ${count} should be accepted`)
-    assert.deepEqual(result.paymentPreference, { method: 'installments', installmentCount: count })
-  }
-})
-
-test('validatePayload rejects an installment count unsupported by the selected package', () => {
-  const result = validatePayload(baseRequest({
-    packageId: 'builder',
-    paymentPreference: { method: 'installments', installmentCount: 5 },
-  }))
-  assert.equal(result.error, 'Selected installment plan is not available for this package.')
-})
-
-test('validatePayload rejects installments for Explorer (pay-in-full only)', () => {
-  const result = validatePayload(baseRequest({
-    packageId: 'explorer',
-    paymentPreference: { method: 'installments', installmentCount: 2 },
-  }))
-  assert.equal(result.error, 'Selected installment plan is not available for this package.')
 })
 
 test('validatePayload rejects an unrecognized payment method', () => {
   const result = validatePayload(baseRequest({
     packageId: 'builder',
-    paymentPreference: { method: 'crypto', installmentCount: 2 },
+    paymentPreference: { method: 'crypto' },
   }))
   assert.equal(result.error, 'Selected payment preference is not recognized.')
 })
@@ -246,14 +221,13 @@ test('validatePayload ignores client-supplied financial amounts on paymentPrefer
   const result = validatePayload(baseRequest({
     packageId: 'builder',
     paymentPreference: {
-      method: 'installments',
-      installmentCount: 3,
+      method: 'recurring_monthly',
       effectiveSubtotalCents: 1,
       installmentAmountsCents: [1, 1, 1],
     },
   }))
   assert.equal(result.error, undefined)
-  assert.deepEqual(result.paymentPreference, { method: 'installments', installmentCount: 3 })
+  assert.deepEqual(result.paymentPreference, { method: 'recurring_monthly' })
 })
 
 test('validatePayload rejects a payment preference on a waitlist request', () => {

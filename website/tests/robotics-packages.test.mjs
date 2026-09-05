@@ -6,9 +6,7 @@ import {
   getRoboticsPackage,
   getPubliclyVisiblePackages,
   getPaymentOptionsLabel,
-  getAllowedInstallmentCounts,
   resolvePackagePricing,
-  getPayInFullSavingsCents,
   computeInstallmentAmountsCents,
   buildPackageSnapshot,
   buildPaymentPreferenceSnapshot,
@@ -35,70 +33,57 @@ test('every fixed_learning_path package regular subtotal equals classCount * per
 
 test('exact default-catalogue values match the spec', () => {
   assert.deepEqual(
-    allPackages(undefined).map(p => [p.id, p.classCount, p.perClassCents, p.regularSubtotalCents, p.promotionalPayInFullSubtotalCents, p.installmentPerClassCents, p.badge]),
+    allPackages(undefined).map(p => [p.id, p.classCount, p.perClassCents, p.regularSubtotalCents, p.promotionalPayInFullSubtotalCents, p.badge]),
     [
-      ['regular', null, 3000, null, null, null, null],
-      ['explorer', 10, 3000, 30000, null, null, null],
-      ['builder', 20, 2800, 56000, 53200, 3000, null],
-      ['engineer', 36, 2600, 93600, 91000, 3000, 'Best Value'],
+      ['regular', null, 3200, null, null, null],
+      ['explorer', 10, 3000, 30000, null, null],
+      ['builder', 20, 2800, 56000, 53200, null],
+      ['engineer', 36, 2500, 90000, 87500, 'Best Value'],
     ]
   )
 })
 
-test('Smartivo catalogue matches the approved 2026 rate update ($28 Builder / $26 Engineer, same as the default catalogue)', () => {
+test('Smartivo catalogue matches the 60-minute rate card ($30 Regular / $26 Builder / $24 Engineer)', () => {
+  assert.equal(getRoboticsPackage(SMARTIVO_PROGRAM_ID, 'regular').perClassCents, 3000)
   assert.deepEqual(
     ['builder', 'engineer'].map(id => {
       const p = getRoboticsPackage(SMARTIVO_PROGRAM_ID, id)
-      return [p.id, p.classCount, p.perClassCents, p.regularSubtotalCents, p.promotionalPayInFullSubtotalCents, p.installmentPerClassCents, p.badge]
+      return [p.id, p.classCount, p.perClassCents, p.regularSubtotalCents, p.promotionalPayInFullSubtotalCents, p.badge]
     }),
     [
-      ['builder', 20, 2800, 56000, 53200, 3000, 'Most Popular'],
-      ['engineer', 36, 2600, 93600, 91000, 3000, 'Best Value'],
+      ['builder', 20, 2600, 52000, 49400, 'Most Popular'],
+      ['engineer', 36, 2400, 86400, 84000, 'Best Value'],
     ]
   )
 })
 
-test('Builder and Engineer payment-option configuration matches the spec (pay-in-full, installments, and recurring monthly, no promo on the latter two)', () => {
+test('Builder and Engineer are billed monthly only — no installment plan exists for any package', () => {
   const builder = getRoboticsPackage(undefined, 'builder')
-  assert.deepEqual(builder.paymentOptions, {
-    payInFullEnabled: true,
-    installmentPlanEnabled: true,
-    allowedInstallments: [2, 3, 4],
-    recurringMonthlyEnabled: true,
-  })
+  assert.deepEqual(builder.paymentOptions, { payInFullEnabled: true, recurringMonthlyEnabled: true })
 
   const engineer = getRoboticsPackage(undefined, 'engineer')
-  assert.deepEqual(engineer.paymentOptions, {
-    payInFullEnabled: true,
-    installmentPlanEnabled: true,
-    allowedInstallments: [2, 3, 4, 5, 6],
-    recurringMonthlyEnabled: true,
-  })
+  assert.deepEqual(engineer.paymentOptions, { payInFullEnabled: true, recurringMonthlyEnabled: true })
+
+  // Installment plans were removed: no package carries an installment rate,
+  // an installment flag, or resolvable installment pricing.
+  for (const pkg of allPackages(undefined)) {
+    assert.equal(pkg.installmentPerClassCents, undefined, `${pkg.id} must not carry an installment rate`)
+    assert.equal(pkg.paymentOptions.installmentPlanEnabled, undefined, `${pkg.id} must not carry an installment flag`)
+    assert.equal(resolvePackagePricing(pkg, 'installments'), null, `${pkg.id} must not resolve installment pricing`)
+  }
 })
 
-test('Regular has no pay-in-full or installment option, only recurring monthly, and is never promotion-eligible', () => {
+test('Regular has no pay-in-full option, only recurring monthly, and is never promotion-eligible', () => {
   const regular = getRoboticsPackage(undefined, 'regular')
-  assert.deepEqual(regular.paymentOptions, {
-    payInFullEnabled: false,
-    installmentPlanEnabled: false,
-    allowedInstallments: [],
-    recurringMonthlyEnabled: true,
-  })
+  assert.deepEqual(regular.paymentOptions, { payInFullEnabled: false, recurringMonthlyEnabled: true })
   assert.equal(regular.planType, 'rolling_monthly')
   assert.equal(regular.promotionEligible, false)
   assert.equal(regular.publicVisible, true)
-  assert.deepEqual(getAllowedInstallmentCounts(regular), [])
 })
 
 test('Explorer stays pay-in-full only, private, and promotion-ineligible unless explicitly configured otherwise', () => {
   const explorer = getRoboticsPackage(undefined, 'explorer')
-  assert.deepEqual(explorer.paymentOptions, {
-    payInFullEnabled: true,
-    installmentPlanEnabled: false,
-    allowedInstallments: [],
-    recurringMonthlyEnabled: false,
-  })
-  assert.deepEqual(getAllowedInstallmentCounts(explorer), [])
+  assert.deepEqual(explorer.paymentOptions, { payInFullEnabled: true, recurringMonthlyEnabled: false })
   assert.equal(explorer.promotionEligible, false)
   assert.equal(explorer.publicVisible, false)
 
@@ -107,8 +92,6 @@ test('Explorer stays pay-in-full only, private, and promotion-ineligible unless 
   const pricing = resolvePackagePricing(explorer, 'pay_in_full')
   assert.equal(pricing.promotionApplied, false)
   assert.equal(pricing.payableSubtotalCents, explorer.regularSubtotalCents)
-  // No installment option at all, so there's nothing to "save" against.
-  assert.equal(getPayInFullSavingsCents(explorer), 0)
 })
 
 test('Explorer is enabled system-wide but excluded from the public package grid', () => {
@@ -145,10 +128,10 @@ test('getRoboticsPackage returns null for unknown ids', () => {
 test('package objects are frozen (cannot be mutated at runtime)', () => {
   const pkg = getRoboticsPackage(undefined, 'explorer')
   assert.throws(() => { pkg.perClassCents = 1 }, /Cannot assign to read only property|frozen/i)
-  assert.throws(() => { pkg.paymentOptions.installmentPlanEnabled = true }, /Cannot assign to read only property|frozen/i)
+  assert.throws(() => { pkg.paymentOptions.payInFullEnabled = false }, /Cannot assign to read only property|frozen/i)
 })
 
-test('getPaymentOptionsLabel uses installment-plan or monthly-billing language, never monthly-subscription language', () => {
+test('getPaymentOptionsLabel uses pay-in-full or monthly-billing language, never monthly-subscription language', () => {
   assert.match(getPaymentOptionsLabel(getRoboticsPackage(undefined, 'builder')), /Billed monthly, averaged across your 20-class learning path\./)
   assert.match(getPaymentOptionsLabel(getRoboticsPackage(undefined, 'engineer')), /Billed monthly, averaged across your 36-class learning path\./)
   assert.match(getPaymentOptionsLabel(getRoboticsPackage(undefined, 'explorer')), /Paid in full/i)
@@ -185,11 +168,8 @@ test('PACKAGE_PROMO.active turns off automatically after its deadline, without e
 
 // --- resolvePackagePricing: the core business rules ---
 // 1. The Back-to-School promotional price applies only to Pay in Full.
-// 2. Installments are priced at the $30/class list rate, not the bulk
-//    per-package rate — so they're always MORE than either pay-in-full
-//    price, promo or not.
-// 3. Recurring monthly is priced at the package's own per-class rate
-//    (Builder $28/Engineer $26), never promo-discounted, and for Regular
+// 2. Recurring monthly is priced at the package's own per-class rate
+//    (Builder $28/Engineer $25), never promo-discounted, and for Regular
 //    only ever computed from a real offering's classesInMonth.
 
 test('Builder: pay in full uses $532 (promotional) while the promotion is active', () => {
@@ -206,41 +186,24 @@ test('Builder: pay in full uses $532 (promotional) while the promotion is active
   assert.equal(pricing.regularSubtotalCents, 56000)
 })
 
-test('Builder: installments always total $600 (20 classes x $30/class), even while the promotion is active', () => {
-  const builder = getRoboticsPackage(undefined, 'builder')
-  const pricing = resolvePackagePricing(builder, 'installments')
-  assert.equal(pricing.payableSubtotalCents, 60000)
-  assert.equal(pricing.regularSubtotalCents, 60000)
-  assert.equal(pricing.promotionApplied, false)
-  assert.equal(pricing.promotionDiscountCents, 0)
-})
-
-test('Engineer: pay in full uses $910 (promotional) while the promotion is active', () => {
+test('Engineer: pay in full uses $875 (promotional) while the promotion is active', () => {
   const engineer = getRoboticsPackage(undefined, 'engineer')
   const pricing = resolvePackagePricing(engineer, 'pay_in_full')
   if (PACKAGE_PROMO.active) {
-    assert.equal(pricing.payableSubtotalCents, 91000)
+    assert.equal(pricing.payableSubtotalCents, 87500)
     assert.equal(pricing.promotionApplied, true)
-    assert.equal(pricing.promotionDiscountCents, 2600)
+    assert.equal(pricing.promotionDiscountCents, 2500)
   } else {
-    assert.equal(pricing.payableSubtotalCents, 93600)
+    assert.equal(pricing.payableSubtotalCents, 90000)
     assert.equal(pricing.promotionApplied, false)
   }
-  assert.equal(pricing.regularSubtotalCents, 93600)
+  assert.equal(pricing.regularSubtotalCents, 90000)
 })
 
-test('Engineer: installments always total $1,080 (36 classes x $30/class), even while the promotion is active', () => {
-  const engineer = getRoboticsPackage(undefined, 'engineer')
-  const pricing = resolvePackagePricing(engineer, 'installments')
-  assert.equal(pricing.payableSubtotalCents, 108000)
-  assert.equal(pricing.regularSubtotalCents, 108000)
-  assert.equal(pricing.promotionApplied, false)
-})
-
-test('Builder/Engineer: recurring_monthly totals $560/$936 (the package own per-class rate), never the promotion', () => {
+test('Builder/Engineer: recurring_monthly totals $560/$900 (the package own per-class rate), never the promotion', () => {
   const before = Date
   try {
-    for (const [id, expectedTotal] of [['builder', 56000], ['engineer', 93600]]) {
+    for (const [id, expectedTotal] of [['builder', 56000], ['engineer', 90000]]) {
       const pkg = getRoboticsPackage(undefined, id)
       const pricing = resolvePackagePricing(pkg, 'recurring_monthly')
       assert.equal(pricing.payableSubtotalCents, expectedTotal)
@@ -260,11 +223,11 @@ test('Builder/Engineer: recurring_monthly totals $560/$936 (the package own per-
   }
 })
 
-test('Regular: recurring_monthly requires a real classesInMonth and prices at $30/class for that month only', () => {
+test('Regular: recurring_monthly requires a real classesInMonth and prices at $32/class for that month only', () => {
   const regular = getRoboticsPackage(undefined, 'regular')
-  assert.equal(resolvePackagePricing(regular, 'recurring_monthly', { classesInMonth: 4 }).payableSubtotalCents, 12000)
-  assert.equal(resolvePackagePricing(regular, 'recurring_monthly', { classesInMonth: 3 }).payableSubtotalCents, 9000)
-  assert.equal(resolvePackagePricing(regular, 'recurring_monthly', { classesInMonth: 5 }).payableSubtotalCents, 15000)
+  assert.equal(resolvePackagePricing(regular, 'recurring_monthly', { classesInMonth: 4 }).payableSubtotalCents, 12800)
+  assert.equal(resolvePackagePricing(regular, 'recurring_monthly', { classesInMonth: 3 }).payableSubtotalCents, 9600)
+  assert.equal(resolvePackagePricing(regular, 'recurring_monthly', { classesInMonth: 5 }).payableSubtotalCents, 16000)
   assert.equal(resolvePackagePricing(regular, 'recurring_monthly', { classesInMonth: 0 }).payableSubtotalCents, 0)
 })
 
@@ -291,38 +254,8 @@ test('promotion expiry restores regular pay-in-full pricing for both Builder and
     assert.equal(builderPricing.promotionDiscountCents, 0)
 
     const engineerPricing = resolvePackagePricing(getRoboticsPackage(undefined, 'engineer'), 'pay_in_full')
-    assert.equal(engineerPricing.payableSubtotalCents, 93600)
+    assert.equal(engineerPricing.payableSubtotalCents, 90000)
     assert.equal(engineerPricing.promotionApplied, false)
-
-    // Installment pricing is unaffected either way — it never depended on
-    // the promotion window in the first place.
-    assert.equal(resolvePackagePricing(getRoboticsPackage(undefined, 'builder'), 'installments').payableSubtotalCents, 60000)
-    assert.equal(resolvePackagePricing(getRoboticsPackage(undefined, 'engineer'), 'installments').payableSubtotalCents, 108000)
-  } finally {
-    globalThis.Date = before
-  }
-})
-
-test('installments never receive the promotion, regardless of promo window', () => {
-  const before = Date
-  try {
-    // Active promo window.
-    for (const id of ['builder', 'engineer']) {
-      const pricing = resolvePackagePricing(getRoboticsPackage(undefined, id), 'installments')
-      assert.equal(pricing.promotionApplied, false)
-      assert.equal(pricing.payableSubtotalCents, pricing.regularSubtotalCents)
-    }
-    // Expired promo window too — same result either way.
-    globalThis.Date = class extends before {
-      static now() {
-        return new before(PACKAGE_PROMO.endsAt).getTime() + 1000
-      }
-    }
-    for (const id of ['builder', 'engineer']) {
-      const pricing = resolvePackagePricing(getRoboticsPackage(undefined, id), 'installments')
-      assert.equal(pricing.promotionApplied, false)
-      assert.equal(pricing.payableSubtotalCents, pricing.regularSubtotalCents)
-    }
   } finally {
     globalThis.Date = before
   }
@@ -331,32 +264,13 @@ test('installments never receive the promotion, regardless of promo window', () 
 test('resolvePackagePricing returns null for an unknown package or method', () => {
   assert.equal(resolvePackagePricing(null, 'pay_in_full'), null)
   assert.equal(resolvePackagePricing(getRoboticsPackage(undefined, 'builder'), 'partial'), null)
+  // 'installments' is no longer a method at all, for any package.
+  assert.equal(resolvePackagePricing(getRoboticsPackage(undefined, 'builder'), 'installments'), null)
 })
 
-// --- Pay-in-full savings (installment total minus pay-in-full price) ---
-
-test('getPayInFullSavingsCents reflects the gap between the $30/class installment total and the pay-in-full price', () => {
-  const builder = getRoboticsPackage(undefined, 'builder')
-  const engineer = getRoboticsPackage(undefined, 'engineer')
-  if (PACKAGE_PROMO.active) {
-    assert.equal(getPayInFullSavingsCents(builder), 60000 - 53200) // $68.00
-    assert.equal(getPayInFullSavingsCents(engineer), 108000 - 91000) // $170.00
-  } else {
-    assert.equal(getPayInFullSavingsCents(builder), 60000 - 56000) // $40.00
-    assert.equal(getPayInFullSavingsCents(engineer), 108000 - 93600) // $144.00
-  }
-})
-
-test('getPayInFullSavingsCents is never negative and is 0 for packages without an installment option', () => {
-  assert.equal(getPayInFullSavingsCents(getRoboticsPackage(undefined, 'explorer')), 0)
-  assert.equal(getPayInFullSavingsCents(getRoboticsPackage(undefined, 'regular')), 0)
-  assert.equal(getPayInFullSavingsCents(null), 0)
-  for (const pkg of allPackages(undefined)) {
-    assert.ok(getPayInFullSavingsCents(pkg) >= 0)
-  }
-})
-
-// --- Installment math (also reused, unmodified, for monthly-tuition averaging) ---
+// --- Monthly-tuition averaging math (computeInstallmentAmountsCents) ---
+// Despite its name this is not the removed installment plan — it spreads a
+// learning path's total across its real billing months.
 
 test('computeInstallmentAmountsCents: exact cent-level rounding, sum always equals the total', () => {
   // $600.00 (Builder installment total) over 3 payments -> $200.00 each
@@ -374,27 +288,25 @@ test('computeInstallmentAmountsCents reproduces the plan\'s worked monthly-tuiti
   assert.deepEqual(computeInstallmentAmountsCents(56000, 5), [11200, 11200, 11200, 11200, 11200])
 })
 
-test('Builder installment examples match the spec exactly ($600 installment total, not the $560/$532 pay-in-full prices)', () => {
-  assert.deepEqual(computeInstallmentAmountsCents(60000, 2), [30000, 30000]) // 2 x $300.00
-  assert.deepEqual(computeInstallmentAmountsCents(60000, 3), [20000, 20000, 20000]) // 3 x $200.00
-  assert.deepEqual(computeInstallmentAmountsCents(60000, 4), [15000, 15000, 15000, 15000]) // 4 x $150.00
+test('Builder installment examples match the spec exactly ($640 installment total, not the $560/$532 pay-in-full prices)', () => {
+  assert.deepEqual(computeInstallmentAmountsCents(64000, 2), [32000, 32000]) // 2 x $320.00
+  assert.deepEqual(computeInstallmentAmountsCents(64000, 4), [16000, 16000, 16000, 16000]) // 4 x $160.00
 })
 
-test('Engineer installment example matches the spec exactly ($1,080 installment total, not the $936/$910 pay-in-full prices)', () => {
-  assert.deepEqual(computeInstallmentAmountsCents(108000, 6), [18000, 18000, 18000, 18000, 18000, 18000]) // 6 x $180.00
+test('Engineer installment example matches the spec exactly ($1,152 installment total, not the $900/$875 pay-in-full prices)', () => {
+  assert.deepEqual(computeInstallmentAmountsCents(115200, 6), [19200, 19200, 19200, 19200, 19200, 19200]) // 6 x $192.00
 })
 
-test('computeInstallmentAmountsCents sums to the exact $30/class installment total for every allowed installment count', () => {
+test('computeInstallmentAmountsCents sums to a learning path total exactly, for every plausible billing-month count', () => {
   for (const pkg of allPackages(undefined)) {
-    const counts = getAllowedInstallmentCounts(pkg)
-    if (counts.length === 0) continue
-    const installmentTotalCents = resolvePackagePricing(pkg, 'installments').payableSubtotalCents
-    for (const count of counts) {
-      const amounts = computeInstallmentAmountsCents(installmentTotalCents, count)
+    if (pkg.planType !== 'fixed_learning_path') continue
+    const totalCents = resolvePackagePricing(pkg, 'recurring_monthly').payableSubtotalCents
+    for (let count = 1; count <= 12; count++) {
+      const amounts = computeInstallmentAmountsCents(totalCents, count)
       assert.equal(amounts.length, count)
-      assert.equal(amounts.reduce((a, b) => a + b, 0), installmentTotalCents)
+      assert.equal(amounts.reduce((a, b) => a + b, 0), totalCents)
       // First N-1 are the rounded-even share; only the last may differ.
-      const regular = Math.round(installmentTotalCents / count)
+      const regular = Math.round(totalCents / count)
       assert.ok(amounts.slice(0, -1).every(a => a === regular))
     }
   }
@@ -407,12 +319,12 @@ test('computeInstallmentAmountsCents rejects invalid inputs', () => {
   assert.throws(() => computeInstallmentAmountsCents(1000, 1.5))
 })
 
-// --- Package snapshot (v5) ---
+// --- Package snapshot (v6) ---
 
-test('buildPackageSnapshot produces an immutable, v5 snapshot with explicit regular/promotional fields', () => {
+test('buildPackageSnapshot produces an immutable, v6 snapshot with explicit regular/promotional fields', () => {
   const snapshot = buildPackageSnapshot(undefined, 'builder')
   assert.deepEqual(snapshot, {
-    version: 5,
+    version: 6,
     id: 'builder',
     name: 'Builder',
     classCount: 20,
@@ -420,12 +332,7 @@ test('buildPackageSnapshot produces an immutable, v5 snapshot with explicit regu
     regularSubtotalCents: 56000,
     promotionalPayInFullSubtotalCents: 53200,
     currency: 'CAD',
-    paymentOptions: {
-      payInFullEnabled: true,
-      installmentPlanEnabled: true,
-      allowedInstallments: [2, 3, 4],
-      recurringMonthlyEnabled: true,
-    },
+    paymentOptions: { payInFullEnabled: true, recurringMonthlyEnabled: true },
     promotionEligible: true,
     promotionName: PACKAGE_PROMO.label,
   })
@@ -435,20 +342,15 @@ test('buildPackageSnapshot produces an immutable, v5 snapshot with explicit regu
 test('buildPackageSnapshot for Regular has null class count/total and reflects its recurring-only payment options', () => {
   const snapshot = buildPackageSnapshot(undefined, 'regular')
   assert.deepEqual(snapshot, {
-    version: 5,
+    version: 6,
     id: 'regular',
     name: 'Regular',
     classCount: null,
-    perClassCents: 3000,
+    perClassCents: 3200,
     regularSubtotalCents: null,
     promotionalPayInFullSubtotalCents: null,
     currency: 'CAD',
-    paymentOptions: {
-      payInFullEnabled: false,
-      installmentPlanEnabled: false,
-      allowedInstallments: [],
-      recurringMonthlyEnabled: true,
-    },
+    paymentOptions: { payInFullEnabled: false, recurringMonthlyEnabled: true },
     promotionEligible: false,
     promotionName: null,
   })
@@ -517,27 +419,15 @@ test('buildPaymentPreferenceSnapshot: pay-in-full normalizes to installmentCount
   assert.deepEqual(snapshot.installmentAmountsCents, [snapshot.payableSubtotalCents])
 })
 
-test('buildPaymentPreferenceSnapshot: installments always total $600 (Builder) and never receive the promotion', () => {
-  for (const count of [2, 3, 4]) {
-    const snapshot = buildPaymentPreferenceSnapshot(undefined, 'builder', { method: 'installments', installmentCount: count })
-    assert.equal(snapshot.method, 'installments')
-    assert.equal(snapshot.installmentCount, count)
-    assert.equal(snapshot.regularSubtotalCents, 60000)
-    assert.equal(snapshot.payableSubtotalCents, 60000)
-    assert.equal(snapshot.promotionApplied, false)
-    assert.equal(snapshot.promotionDiscountCents, 0)
-    assert.equal(snapshot.installmentAmountsCents.length, count)
-    assert.equal(snapshot.installmentAmountsCents.reduce((a, b) => a + b, 0), 60000)
-  }
-})
-
-test('buildPaymentPreferenceSnapshot: every allowed installment count for Engineer totals $1,080', () => {
-  for (const count of [2, 3, 4, 5, 6]) {
-    const snapshot = buildPaymentPreferenceSnapshot(undefined, 'engineer', { method: 'installments', installmentCount: count })
-    assert.equal(snapshot.installmentCount, count)
-    assert.equal(snapshot.payableSubtotalCents, 108000)
-    assert.equal(snapshot.promotionApplied, false)
-    assert.equal(snapshot.installmentAmountsCents.reduce((a, b) => a + b, 0), 108000)
+test('buildPaymentPreferenceSnapshot never builds an installments snapshot, for any package or count', () => {
+  for (const packageId of ['builder', 'engineer', 'explorer', 'regular']) {
+    for (const installmentCount of [2, 3, 4, 5, 6]) {
+      assert.equal(
+        buildPaymentPreferenceSnapshot(undefined, packageId, { method: 'installments', installmentCount }),
+        null,
+        `${packageId} must not accept a ${installmentCount}-payment installment plan`
+      )
+    }
   }
 })
 
@@ -577,17 +467,16 @@ test('buildPaymentPreferenceSnapshot ignores any client-supplied financial field
   assert.equal(snapshot.payableSubtotalCents, PACKAGE_PROMO.active ? 53200 : 56000)
   assert.equal(snapshot.regularSubtotalCents, 56000)
 
-  const installmentsSnapshot = buildPaymentPreferenceSnapshot(undefined, 'builder', {
-    method: 'installments',
-    installmentCount: 2,
+  const monthlySnapshot = buildPaymentPreferenceSnapshot(undefined, 'builder', {
+    method: 'recurring_monthly',
     payableSubtotalCents: 1,
-    installmentAmountsCents: [1, 1],
-  })
-  assert.equal(installmentsSnapshot.payableSubtotalCents, 60000)
-  assert.deepEqual(installmentsSnapshot.installmentAmountsCents, [30000, 30000])
+    monthlyAmountsCents: [1, 1],
+  }, { billingMonthCount: 5 })
+  assert.equal(monthlySnapshot.payableSubtotalCents, 56000)
+  assert.deepEqual(monthlySnapshot.monthlyAmountsCents, [11200, 11200, 11200, 11200, 11200])
 })
 
-test('buildPaymentPreferenceSnapshot: recurring_monthly for Builder/Engineer averages the $560/$936 total across a server-supplied billingMonthCount', () => {
+test('buildPaymentPreferenceSnapshot: recurring_monthly for Builder/Engineer averages the $560/$900 total across a server-supplied billingMonthCount', () => {
   const builderSnapshot = buildPaymentPreferenceSnapshot(
     undefined, 'builder', { method: 'recurring_monthly' }, { billingMonthCount: 6 }
   )
@@ -603,9 +492,9 @@ test('buildPaymentPreferenceSnapshot: recurring_monthly for Builder/Engineer ave
   const engineerSnapshot = buildPaymentPreferenceSnapshot(
     undefined, 'engineer', { method: 'recurring_monthly' }, { billingMonthCount: 9 }
   )
-  assert.equal(engineerSnapshot.payableSubtotalCents, 93600)
+  assert.equal(engineerSnapshot.payableSubtotalCents, 90000)
   assert.equal(engineerSnapshot.monthlyAmountsCents.length, 9)
-  assert.equal(engineerSnapshot.monthlyAmountsCents.reduce((a, b) => a + b, 0), 93600)
+  assert.equal(engineerSnapshot.monthlyAmountsCents.reduce((a, b) => a + b, 0), 90000)
 })
 
 test('buildPaymentPreferenceSnapshot: recurring_monthly for Builder/Engineer requires a valid billingMonthCount in context', () => {
@@ -624,7 +513,7 @@ test('buildPaymentPreferenceSnapshot: recurring_monthly for Regular prices one s
   assert.equal(snapshot.classesInMonth, 4)
   assert.equal(snapshot.billingMonthLabel, 'October 2026')
   assert.equal(snapshot.variesByMonth, true)
-  assert.equal(snapshot.payableSubtotalCents, 12000)
+  assert.equal(snapshot.payableSubtotalCents, 12800)
   assert.equal(snapshot.promotionApplied, false)
 })
 

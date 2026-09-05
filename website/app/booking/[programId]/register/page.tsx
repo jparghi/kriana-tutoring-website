@@ -15,8 +15,7 @@ import { ClassScheduleDisclosure } from '../../../../components/booking/ClassSch
 import { MonthlyTuitionInfo } from '../../../../components/booking/MonthlyTuitionInfo'
 import {
   PACKAGE_PROMO, getRoboticsPackage, isValidPackageId,
-  getPaymentOptionsLabel, getAllowedInstallmentCounts,
-  computeInstallmentAmountsCents, resolvePackagePricing,
+  getPaymentOptionsLabel, resolvePackagePricing,
 } from '../../../../lib/robotics-packages.js'
 import { getLearningPathMonthlyTuition, getRegularMonthlyEstimate } from '../../../../lib/robotics-monthly-tuition.js'
 
@@ -292,12 +291,12 @@ function RegisterForm() {
     childAge: '', childGrade: '', medicalNotes: '', emergencyContact: '',
     specialRequests: '', consentAccepted: false, photoConsent: false,
   })
-  // Preselected to Pay in Full per spec. installmentCount is only meaningful
-  // when method === 'installments'. Regular (rolling_monthly) always uses
-  // 'recurring_monthly' regardless of this state — see effectiveMethod below
-  // — since it's the only payment method Regular offers.
-  const [paymentPreference, setPaymentPreference] = useState<{ method: 'pay_in_full' | 'installments' | 'recurring_monthly'; installmentCount: number }>({
-    method: 'pay_in_full', installmentCount: 1,
+  // Preselected to Pay in Full, which only Explorer (internal, never publicly
+  // listed) still uses. Every public package is billed monthly and always
+  // resolves to 'recurring_monthly' regardless of this state — see
+  // effectiveMethod below.
+  const [paymentPreference, setPaymentPreference] = useState<{ method: 'pay_in_full' | 'recurring_monthly' }>({
+    method: 'pay_in_full',
   })
 
   useEffect(() => {
@@ -422,20 +421,12 @@ function RegisterForm() {
   // a payment preference.
   const hasPaymentStep = Boolean(selectedPackage) && !useWaitlist
   const isRegularPackage = selectedPackage?.planType === 'rolling_monthly'
-  // Regular and Builder/Engineer are billed monthly only — no pay-in-full or
-  // installment choice for a family to make. Explorer (legacy/internal, never
+  // Regular and Builder/Engineer are billed monthly only — there is no
+  // payment choice for a family to make. Explorer (legacy/internal, never
   // publicly listed) is the only package that still uses pay-in-full.
   const isMonthlyOnlyPackage = Boolean(selectedPackage?.paymentOptions?.recurringMonthlyEnabled)
   const effectiveMethod = isMonthlyOnlyPackage ? 'recurring_monthly' : paymentPreference.method
-  const allowedInstallmentCounts = selectedPackage && !isMonthlyOnlyPackage ? getAllowedInstallmentCounts(selectedPackage) : []
   const payInFullPricing = selectedPackage && !isMonthlyOnlyPackage ? resolvePackagePricing(selectedPackage, 'pay_in_full') : null
-  const installmentsPricing = selectedPackage && !isMonthlyOnlyPackage ? resolvePackagePricing(selectedPackage, 'installments') : null
-  const selectedInstallmentCount = allowedInstallmentCounts.includes(paymentPreference.installmentCount)
-    ? paymentPreference.installmentCount
-    : allowedInstallmentCounts[0]
-  const installmentPreviewAmountsCents = selectedInstallmentCount && installmentsPricing
-    ? computeInstallmentAmountsCents(installmentsPricing.payableSubtotalCents, selectedInstallmentCount)
-    : []
   // Real, schedule-derived monthly numbers — never a guessed/typical amount.
   // Builder/Engineer average the full path total across the offering's real
   // billing months; Regular estimates one specific month's classes.
@@ -489,15 +480,13 @@ function RegisterForm() {
           clientRequestId: clientRequestId.current,
           requestedAction: useWaitlist ? 'waitlist' : 'enrollment',
           ...(selectedPackage ? { packageId: selectedPackage.id } : {}),
-          // Only the selected method + count are sent — every dollar amount
-          // is resolved and validated server-side against the canonical
+          // Only the selected method is sent — every dollar amount is
+          // resolved and validated server-side against the canonical
           // package catalogue, never trusted from the browser.
           ...(hasPaymentStep ? {
-            paymentPreference: effectiveMethod === 'installments'
-              ? { method: 'installments', installmentCount: selectedInstallmentCount }
-              : effectiveMethod === 'recurring_monthly'
-                ? { method: 'recurring_monthly' }
-                : { method: 'pay_in_full', installmentCount: 1 },
+            paymentPreference: effectiveMethod === 'recurring_monthly'
+              ? { method: 'recurring_monthly' }
+              : { method: 'pay_in_full' },
           } : {}),
           registration: {
             parentName: form.parentName,
@@ -735,7 +724,7 @@ function RegisterForm() {
                   type="radio"
                   name="paymentMethod"
                   checked={paymentPreference.method === 'pay_in_full'}
-                  onChange={() => setPaymentPreference({ method: 'pay_in_full', installmentCount: 1 })}
+                  onChange={() => setPaymentPreference({ method: 'pay_in_full' })}
                   className="mt-0.5 accent-[#0c6162] w-4 h-4 shrink-0"
                 />
                 <div className="flex-1">
@@ -766,52 +755,6 @@ function RegisterForm() {
                   <p className="text-xs text-slate-400">Plus applicable taxes.</p>
                 </div>
               </label>
-
-              {allowedInstallmentCounts.length > 0 && installmentsPricing && (
-                <label className={`flex items-start gap-3 rounded-xl border p-4 cursor-pointer transition-colors ${
-                  paymentPreference.method === 'installments' ? 'border-[#0c6162] bg-[#0c6162]/5' : 'border-slate-200 hover:border-slate-300'
-                }`}>
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    checked={paymentPreference.method === 'installments'}
-                    onChange={() => setPaymentPreference({ method: 'installments', installmentCount: allowedInstallmentCounts[0] })}
-                    className="mt-0.5 accent-[#0c6162] w-4 h-4 shrink-0"
-                  />
-                  <div className="flex-1">
-                    <p className="font-bold text-slate-800 text-sm">Installment Plan</p>
-                    <p className="mt-1 text-sm text-slate-600">
-                      Flexible installment plan — billed at the regular ${((selectedPackage?.installmentPerClassCents ?? 0) / 100).toFixed(0)}/class rate.
-                    </p>
-                    <p className="text-xs text-slate-400">The Back-to-School offer applies only when paying in full.</p>
-
-                    {paymentPreference.method === 'installments' && (
-                      <div className="mt-2 space-y-2">
-                        <select
-                          className={inputClass}
-                          value={selectedInstallmentCount}
-                          onChange={e => setPaymentPreference({ method: 'installments', installmentCount: Number(e.target.value) })}
-                        >
-                          {allowedInstallmentCounts.map(count => (
-                            <option key={count} value={count}>{count} payments</option>
-                          ))}
-                        </select>
-                        <div className="rounded-lg bg-slate-50 px-3 py-2.5 text-sm">
-                          <p className="text-slate-700">
-                            <span className="font-semibold">{selectedInstallmentCount} payments</span>
-                            {' · '}
-                            ${(installmentPreviewAmountsCents[0] / 100).toFixed(2)} per installment before tax
-                          </p>
-                          <p className="text-slate-500 mt-0.5">Package subtotal: ${(installmentsPricing.regularSubtotalCents / 100).toFixed(2)}</p>
-                          <p className="text-xs text-slate-400 mt-1">
-                            This is a way to pay for your child&apos;s complete package, not a monthly membership.
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </label>
-              )}
             </div>
 
             <div className="bg-[#e6f4f4] border border-[#0c6162]/15 rounded-xl px-4 py-3">
@@ -893,28 +836,14 @@ function RegisterForm() {
             {hasPaymentStep && !isMonthlyOnlyPackage && payInFullPricing && (
               <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm">
                 <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Payment Preference</p>
-                {paymentPreference.method === 'pay_in_full' || !installmentsPricing ? (
-                  <>
-                    <p className="mt-1 font-semibold text-slate-800">
-                      Pay in Full — ${(payInFullPricing.payableSubtotalCents / 100).toFixed(2)} (plus applicable taxes)
-                    </p>
-                    <p className={`text-xs font-semibold ${payInFullPricing.promotionApplied ? 'text-orange-600' : 'text-slate-400'}`}>
-                      {payInFullPricing.promotionApplied
-                        ? `${PACKAGE_PROMO.label} applied — save $${(payInFullPricing.promotionDiscountCents / 100).toFixed(2)}`
-                        : 'No promotion applied.'}
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <p className="mt-1 font-semibold text-slate-800">
-                      {selectedInstallmentCount} payments — ${(installmentPreviewAmountsCents[0] / 100).toFixed(2)} per installment before tax
-                    </p>
-                    <p className="text-slate-500">Regular package subtotal: ${(installmentsPricing.regularSubtotalCents / 100).toFixed(2)}</p>
-                    <p className="text-xs font-semibold text-slate-400">
-                      Back-to-School promotion not applied — it applies only when paying in full.
-                    </p>
-                  </>
-                )}
+                <p className="mt-1 font-semibold text-slate-800">
+                  Pay in Full — ${(payInFullPricing.payableSubtotalCents / 100).toFixed(2)} (plus applicable taxes)
+                </p>
+                <p className={`text-xs font-semibold ${payInFullPricing.promotionApplied ? 'text-orange-600' : 'text-slate-400'}`}>
+                  {payInFullPricing.promotionApplied
+                    ? `${PACKAGE_PROMO.label} applied — save $${(payInFullPricing.promotionDiscountCents / 100).toFixed(2)}`
+                    : 'No promotion applied.'}
+                </p>
                 <p className="mt-1 text-xs text-slate-400">No payment is due today.</p>
                 <button type="button" onClick={() => setSubStep(paymentSubStep)} className="mt-2 text-xs font-semibold text-[#0c6162] hover:underline">Change payment preference</button>
               </div>

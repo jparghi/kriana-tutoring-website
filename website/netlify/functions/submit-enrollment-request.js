@@ -5,7 +5,7 @@ import { getAdminDb } from './_lib/firebase-admin.js'
 import { emailSignatureHtml } from './_lib/email-signature.js'
 import {
   isValidPackageId, getRoboticsPackage, buildPackageSnapshot,
-  getAllowedInstallmentCounts, buildPaymentPreferenceSnapshot,
+  buildPaymentPreferenceSnapshot,
 } from '../../lib/robotics-packages.js'
 import { getLearningPathMonthlyTuition, getRegularMonthlyEstimate } from '../../lib/robotics-monthly-tuition.js'
 import { DEMO_ELIGIBLE_PROGRAM_IDS } from '../../lib/demo-eligibility.js'
@@ -75,8 +75,8 @@ export function validatePayload(body) {
     return { error: 'Selected class package is not recognized.' }
   }
 
-  // Payment preference (method + installment count only) is a browser input
-  // just like packageId — never a source of trusted amounts. Every dollar
+  // Payment preference (the method only) is a browser input just like
+  // packageId — never a source of trusted amounts. Every dollar
   // figure is (re)computed server-side from the canonical catalogue in
   // buildPaymentPreferenceSnapshot, so any financial fields the client might
   // also send here are simply never read.
@@ -92,15 +92,7 @@ export function validatePayload(body) {
     }
     const method = normalizeText(rawPaymentPreference.method, 20)
     if (method === 'pay_in_full') {
-      paymentPreference = { method: 'pay_in_full', installmentCount: 1 }
-    } else if (method === 'installments') {
-      const pkg = getRoboticsPackage(programId, packageId)
-      const allowed = pkg ? getAllowedInstallmentCounts(pkg) : []
-      const installmentCount = Number(rawPaymentPreference.installmentCount)
-      if (!allowed.includes(installmentCount)) {
-        return { error: 'Selected installment plan is not available for this package.' }
-      }
-      paymentPreference = { method: 'installments', installmentCount }
+      paymentPreference = { method: 'pay_in_full' }
     } else if (method === 'recurring_monthly') {
       // No client-supplied count/amount is trusted here — the real
       // billing-month count (Builder/Engineer) or classes-in-month (Regular)
@@ -491,17 +483,6 @@ function formatAmount(cents) {
   return `$${(Number(cents ?? 0) / 100).toFixed(2)} CAD`
 }
 
-// Renders the full chosen payment plan — every installment's exact amount,
-// not just a rounded "approximately $X each" summary — so the family and
-// staff both see precisely what was agreed to (the last installment is
-// often a cent or two different from the others; see
-// computeInstallmentAmountsCents in lib/robotics-packages.js).
-//
-// The Back-to-School promotion is a pay-in-full incentive only — an
-// installment plan always uses the package's regular price, even while the
-// promotion is active, so these two branches deliberately show different
-// totals (payableSubtotalCents vs. regularSubtotalCents) rather than one
-// shared "effective subtotal".
 // A recurring-monthly package (Builder/Engineer/Regular) never shows a fixed
 // subtotal in the "Package" line — the amount is billed per invoice, based
 // on that month's classes, not a single lump total. Explorer (pay-in-full
@@ -532,12 +513,10 @@ function paymentPreferenceHtml(snapshot) {
     }
     return `<p style="margin:0 0 8px"><strong>Payment preference:</strong> Billed monthly — each invoice is based on the number of classes scheduled that month (plus applicable taxes).</p>`
   }
-  const installmentRows = snapshot.installmentAmountsCents
-    .map((cents, i) => `<li>Installment ${i + 1} of ${snapshot.installmentCount}: ${formatAmount(cents)}</li>`)
-    .join('')
-  return `
-          <p style="margin:0 0 4px"><strong>Payment preference:</strong> ${snapshot.installmentCount}-installment plan — regular package subtotal ${formatAmount(snapshot.regularSubtotalCents)} (plus applicable taxes). The Back-to-School offer applies only when paying in full.</p>
-          <ul style="margin:2px 0 8px 18px;padding:0">${installmentRows}</ul>`
+  // Unrecognized method (e.g. a historical 'installments' snapshot from
+  // before installment plans were removed): say nothing rather than render a
+  // payment plan the site no longer offers.
+  return ''
 }
 
 async function sendAcknowledgements({ registration, program, session, reference, isWaitlist, packageSnapshot, paymentPreferenceSnapshot }) {
