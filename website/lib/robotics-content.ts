@@ -37,7 +37,8 @@ export function skillTagsForCategory(category?: string) {
 }
 
 // Confirmed licensed Young Engineers programs (names, ages, durations only —
-// no price/location yet). Shown as placeholder cards until each is created
+// no price/location yet). Coming-soon programs remain previews, even if a
+// saved offering exists. Other programs show placeholder cards until created
 // for real in Firestore via the separate program-management portal.
 //
 // `weeklySchedules` is the one exception: it's the recurring day/time batches
@@ -48,7 +49,24 @@ export function skillTagsForCategory(category?: string) {
 // ProgramCard in robotics-programs.tsx). Each entry's shape matches
 // Firestore's offering.weekday / offering.startTime / offering.endTime so it
 // formats identically via formatTimeOfDay/formatWeeklyClassSchedule.
-export const licensedRoboticsPrograms = [
+type LicensedRoboticsProgram = {
+  id: string;
+  title: string;
+  ageRange: string;
+  durationMin: number;
+  description: string;
+  learnMoreUrl: string;
+  image: string;
+  logo: string;
+  comingSoon?: boolean;
+  bookingTag?: string;
+  marketingEyebrow?: string;
+  skillTags?: string[];
+  futureReadyCopy?: string;
+  weeklySchedules?: { label?: string; weekday: string; startTime: string; endTime: string }[];
+};
+
+export const licensedRoboticsPrograms: LicensedRoboticsProgram[] = [
   {
     id: "smartivo",
     title: "Smartivo",
@@ -89,32 +107,6 @@ export const licensedRoboticsPrograms = [
       { label: "Batch 2", weekday: "Wednesday", startTime: "17:45", endTime: "19:00" },
     ],
   },
-  // Galileo Technic is a second-level program — hidden for launch, focusing
-  // on first-level offerings first. Re-enable when ready to promote it.
-  // {
-  //   id: "galileo-technic",
-  //   title: "Galileo Technic",
-  //   ageRange: "7-10",
-  //   durationMin: 75,
-  //   description:
-  //     "An advanced program that delves deep into comprehensive mechanical engineering principles, allowing students to explore new engineering terms through building complex models.",
-  //   learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/galileo-technic-enrichment-program/",
-  //   image: "/images/robotics/programs/galileo-technic.png",
-  //   logo: "/images/robotics/programs/galileo-technic-logo.png",
-  // },
-  // Robo Toys is hidden for launch, focusing on first-level offerings
-  // first. Re-enable when ready to promote it.
-  // {
-  //   id: "robo-toys",
-  //   title: "Robo Toys",
-  //   ageRange: "9-12",
-  //   durationMin: 75,
-  //   description:
-  //     "A program designed to provide children with the basic skills to become proficient robotic makers and introduce them robotic-mechanical planning while using programming subjects.",
-  //   learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/robotoys-program/",
-  //   image: "/images/robotics/programs/robo-toys.png",
-  //   logo: "/images/robotics/programs/robo-toys-logo.png",
-  // },
   {
     id: "algo-play",
     title: "Algo Play",
@@ -135,18 +127,42 @@ export const licensedRoboticsPrograms = [
       { label: "Batch 2", weekday: "Friday", startTime: "17:45", endTime: "19:00" },
     ],
   },
-  // Hidden for now — re-enable when ready to launch.
-  // {
-  //   id: "algoc",
-  //   title: "AlgoC",
-  //   ageRange: "13-18",
-  //   durationMin: 90,
-  //   description:
-  //     "AlgoC is a hands-on learning experience designed to equip students with essential coding, robotics, coding with AI, and problem-solving skills. This program focuses on C programming, the foundational language used in robotics, automation, and embedded systems. Through real-world challenges and interactive lessons, children will build, code, and innovate—preparing for a technology-driven future.",
-  //   learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/algoc-enrichment-program/",
-  //   image: "/images/robotics/programs/algoc.png",
-  //   logo: "/images/robotics/programs/algoc-logo.png",
-  // },
+  {
+    id: "galileo-technic",
+    title: "Galileo Technic",
+    comingSoon: true,
+    ageRange: "7-10",
+    durationMin: 75,
+    description:
+      "An advanced program that delves deep into comprehensive mechanical engineering principles, allowing students to explore new engineering terms through building complex models.",
+    learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/galileo-technic-enrichment-program/",
+    image: "/images/robotics/programs/galileo-technic.png",
+    logo: "/images/robotics/programs/galileo-technic-logo.png",
+  },
+  {
+    id: "robo-toys",
+    title: "RoboToys",
+    comingSoon: true,
+    ageRange: "9-12",
+    durationMin: 75,
+    description:
+      "A program designed to provide children with the basic skills to become proficient robotic makers and introduce them robotic-mechanical planning while using programming subjects.",
+    learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/robotoys-program/",
+    image: "/images/robotics/programs/robo-toys.png",
+    logo: "/images/robotics/programs/robo-toys-logo.png",
+  },
+  {
+    id: "algoc",
+    title: "AlgoC",
+    comingSoon: true,
+    ageRange: "13-18",
+    durationMin: 90,
+    description:
+      "AlgoC is a hands-on learning experience designed to equip students with essential coding, robotics, coding with AI, and problem-solving skills. This program focuses on C programming, the foundational language used in robotics, automation, and embedded systems. Through real-world challenges and interactive lessons, children will build, code, and innovate—preparing for a technology-driven future.",
+    learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/algoc-enrichment-program/",
+    image: "/images/robotics/programs/algoc.png",
+    logo: "/images/robotics/programs/algoc-logo.png",
+  },
 ];
 
 // Formats a single licensedRoboticsPrograms weekly-schedule batch the same

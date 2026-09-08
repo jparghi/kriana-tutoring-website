@@ -48,6 +48,7 @@ function withLicensedProgramAssets(program: Program): Program {
 
   return {
     ...program,
+    comingSoon: licensedProgram.comingSoon ?? false,
     image: program.image || licensedProgram.image,
     logo: program.logo || licensedProgram.logo,
     ageRange: program.ageRange || licensedProgram.ageRange,
@@ -74,20 +75,21 @@ function ProgramCard({
   isPlaceholder?: boolean;
   image?: string;
 }) {
-  const nextOffering = offerings[0];
-  const hasSchedule = offerings.length > 0;
+  const comingSoon = Boolean(program.comingSoon);
+  const nextOffering = comingSoon ? undefined : offerings[0];
+  const hasSchedule = !comingSoon && offerings.length > 0;
   const allSoldOut = hasSchedule && offerings.every(isOfferingSoldOut);
-  const isOpen = offerings.some(
+  const isOpen = !comingSoon && offerings.some(
     (offering) => isOfferingRequestWindowOpen(offering) && !isOfferingSoldOut(offering)
   );
-  const hasWaitlist = offerings.some(
+  const hasWaitlist = !comingSoon && offerings.some(
     (offering) => isOfferingRequestWindowOpen(offering) && isOfferingSoldOut(offering) && offering.waitlistEnabled
   );
   const accent = themeColorForCategory(program.category);
   // Only show the static weekly-time placeholder while there's no real
   // published offering yet — once one exists, its live schedule (with real
   // class dates and location) is the source of truth instead.
-  const weeklyBatches = hasSchedule ? [] : formatWeeklyClassSchedules(program.weeklySchedules);
+  const weeklyBatches = comingSoon || hasSchedule ? [] : formatWeeklyClassSchedules(program.weeklySchedules);
   const cardImage = image ?? program.image ?? imageForCategory(program.category);
   const programId = normalizeProgramName(program.id);
   const programTitle = normalizeProgramName(program.title);
@@ -101,12 +103,16 @@ function ProgramCard({
     programId === "robotoys" ||
     programTitle === "robotoys";
 
-  const availabilityLabel = isOpen
+  const availabilityLabel = comingSoon
+    ? "Coming soon"
+    : isOpen
     ? "Requests Open"
     : hasWaitlist ? "Waitlist Open"
       : allSoldOut ? "Full"
         : hasSchedule ? "Schedule Published" : "Schedule Pending";
-  const availabilityClasses = allSoldOut && !hasWaitlist
+  const availabilityClasses = comingSoon
+    ? "bg-sky-50 text-sky-700"
+    : allSoldOut && !hasWaitlist
     ? "bg-red-50 text-red-600"
     : isOpen
       ? "bg-emerald-50 text-emerald-700"
@@ -224,7 +230,22 @@ function ProgramCard({
           </div>
         )}
 
-        {isPlaceholder ? (
+        {comingSoon ? (
+          <div className="mt-auto space-y-3 pt-2">
+            <p className="text-sm text-slate-600">Coming soon. Registration is not open yet.</p>
+            {program.learnMoreUrl && (
+              <a
+                href={program.learnMoreUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex w-full items-center justify-center gap-1 rounded-full border border-slate-200 px-5 py-2 text-sm font-bold text-slate-700 transition-all duration-200 hover:border-brand-sky hover:text-brand-sky"
+              >
+                Learn More
+                <span aria-hidden="true">↗</span>
+              </a>
+            )}
+          </div>
+        ) : isPlaceholder ? (
           <div className="mt-auto flex gap-3 pt-2">
             <Link
               href="/contact#consultation-form"
