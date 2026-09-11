@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { isOfferingSoldOut, formatOfferingScheduleDetail } from '../../lib/booking'
+import { isOfferingSoldOut, isDemoOfferingPubliclyFull, formatOfferingScheduleDetail } from '../../lib/booking'
 import { isRequestOnlyBookingFlow } from '../../lib/booking-flow'
 import { Footer } from '../footer'
 import { getRoboticsPackage, isValidPackageId } from '../../lib/robotics-packages.js'
@@ -39,6 +39,11 @@ function buildDemoCards(programs: any[], offeringsByProgram: Record<string, any[
         isDemoCard: true,
         demoProgramId: p.id,
         demoOfferingId: demoOffering.id,
+        // Fully booked or public booking paused — the card then points to
+        // the same register link, which shows the waitlist (if enabled) or
+        // a fully-booked message instead of the booking form.
+        demoFullyBooked: isDemoOfferingPubliclyFull(demoOffering),
+        demoWaitlistEnabled: demoOffering.waitlistEnabled === true,
       }
     })
     .filter(Boolean)
@@ -166,10 +171,18 @@ function ProgramCard({ program, offerings, packageId }: { program: any; offering
         <div className="mt-2">
           {isDemoCard ? (
             <div>
-              <span className="inline-flex items-center gap-1 text-[10px] font-black text-sky-700 bg-sky-100 px-2 py-1 rounded-full">
-                $10 CAD
-              </span>
-              <p className="mt-1 text-[10px] leading-tight text-slate-500">Demo is FREE when you enroll.</p>
+              {program.demoFullyBooked ? (
+                <span className="inline-flex items-center gap-1 text-[10px] font-black text-red-600 bg-red-50 px-2 py-1 rounded-full">
+                  Fully booked
+                </span>
+              ) : (
+                <>
+                  <span className="inline-flex items-center gap-1 text-[10px] font-black text-sky-700 bg-sky-100 px-2 py-1 rounded-full">
+                    $10 CAD
+                  </span>
+                  <p className="mt-1 text-[10px] leading-tight text-slate-500">Demo is FREE when you enroll.</p>
+                </>
+              )}
             </div>
           ) : (
             /* Birthday Party is request-based, not weekly-scheduled — a "Coming
@@ -188,7 +201,7 @@ function ProgramCard({ program, offerings, packageId }: { program: any; offering
             className="inline-flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-white shadow-sm transition-all duration-200 active:scale-95 hover:shadow-[0_4px_12px_rgba(12,97,98,0.35)]"
             style={{ backgroundColor: isDemoCard ? '#0EA5E9' : '#0c6162' }}
           >
-            {isDemoCard ? 'Try for $10' : hasSchedule ? (isRequestOnlyBookingFlow ? 'View' : 'Book') : 'View'}
+            {isDemoCard ? (program.demoFullyBooked ? (program.demoWaitlistEnabled ? 'Join Waitlist' : 'View') : 'Try for $10') : hasSchedule ? (isRequestOnlyBookingFlow ? 'View' : 'Book') : 'View'}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-3 w-3 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5">
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>

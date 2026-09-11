@@ -276,9 +276,13 @@ export function validateCatalogueRequest(request, programDoc, sessionDoc) {
   if (!isOffering && program.legacyBookingEnabled !== true) {
     throw new RequestRejectedError(409, 'This legacy class schedule is not enabled. Please choose a current offering.')
   }
+  // A $10 demo offering (offeringType 'demo') is a separate product with its
+  // own booking and waitlist endpoints (submit-demo-registration.js /
+  // submit-demo-waitlist.js) — never a regular enrollment or waitlist target.
   const acceptedStatus = isOffering
     ? session.publicCatalogVersion === 1
       && session.isPublished === true
+      && session.offeringType !== 'demo'
       && OFFERING_ACTIVE_STATUSES.has(session.status)
     : session.legacyPublicBookingVersion === 1
       && LEGACY_ACTIVE_STATUSES.has(session.status)

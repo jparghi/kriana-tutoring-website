@@ -144,3 +144,61 @@ test('resolveDemoCampaignOffering returns closed when enrollmentCloseAt is in th
   delete process.env.DEMO_CAMPAIGN_PROGRAM_ID
   delete process.env.DEMO_CAMPAIGN_OFFERING_ID
 })
+
+test('resolveDemoCampaignOffering returns full (with offering details) when public booking is paused while seats remain', async () => {
+  process.env.DEMO_CAMPAIGN_PROGRAM_ID = TEST_PROGRAM_ID
+  process.env.DEMO_CAMPAIGN_OFFERING_ID = TEST_OFFERING_ID
+  const db = fakeDb({
+    [`programs/${TEST_PROGRAM_ID}`]: demoProgram(),
+    [`programOfferings/${TEST_OFFERING_ID}`]: demoOffering({ capacity: 20, confirmedCount: 13, publicRegistrationPaused: true }),
+  })
+  const result = await resolveDemoCampaignOffering(db)
+  assert.equal(result.status, 'full')
+  assert.equal(result.waitlistOpen, false)
+  assert.equal(result.offeringId, TEST_OFFERING_ID)
+  assert.equal(result.offering.eventTitle, 'Young Engineers Demo Class — Kanata')
+  delete process.env.DEMO_CAMPAIGN_PROGRAM_ID
+  delete process.env.DEMO_CAMPAIGN_OFFERING_ID
+})
+
+test('resolveDemoCampaignOffering reports waitlistOpen only when the offering enables its waitlist', async () => {
+  process.env.DEMO_CAMPAIGN_PROGRAM_ID = TEST_PROGRAM_ID
+  process.env.DEMO_CAMPAIGN_OFFERING_ID = TEST_OFFERING_ID
+  const db = fakeDb({
+    [`programs/${TEST_PROGRAM_ID}`]: demoProgram(),
+    [`programOfferings/${TEST_OFFERING_ID}`]: demoOffering({ publicRegistrationPaused: true, waitlistEnabled: true }),
+  })
+  const result = await resolveDemoCampaignOffering(db)
+  assert.equal(result.status, 'full')
+  assert.equal(result.waitlistOpen, true)
+  delete process.env.DEMO_CAMPAIGN_PROGRAM_ID
+  delete process.env.DEMO_CAMPAIGN_OFFERING_ID
+})
+
+test('resolveDemoCampaignOffering stays open when publicRegistrationPaused is absent or false', async () => {
+  process.env.DEMO_CAMPAIGN_PROGRAM_ID = TEST_PROGRAM_ID
+  process.env.DEMO_CAMPAIGN_OFFERING_ID = TEST_OFFERING_ID
+  for (const overrides of [{}, { publicRegistrationPaused: false }, { publicRegistrationPaused: 'true' }]) {
+    const db = fakeDb({
+      [`programs/${TEST_PROGRAM_ID}`]: demoProgram(),
+      [`programOfferings/${TEST_OFFERING_ID}`]: demoOffering(overrides),
+    })
+    const result = await resolveDemoCampaignOffering(db)
+    assert.equal(result.status, 'open', JSON.stringify(overrides))
+  }
+  delete process.env.DEMO_CAMPAIGN_PROGRAM_ID
+  delete process.env.DEMO_CAMPAIGN_OFFERING_ID
+})
+
+test('resolveDemoCampaignOffering returns unavailable (not full) for an unpublished full offering', async () => {
+  process.env.DEMO_CAMPAIGN_PROGRAM_ID = TEST_PROGRAM_ID
+  process.env.DEMO_CAMPAIGN_OFFERING_ID = TEST_OFFERING_ID
+  const db = fakeDb({
+    [`programs/${TEST_PROGRAM_ID}`]: demoProgram(),
+    [`programOfferings/${TEST_OFFERING_ID}`]: demoOffering({ isPublished: false, publicRegistrationPaused: true, waitlistEnabled: true }),
+  })
+  const result = await resolveDemoCampaignOffering(db)
+  assert.equal(result.status, 'unavailable')
+  delete process.env.DEMO_CAMPAIGN_PROGRAM_ID
+  delete process.env.DEMO_CAMPAIGN_OFFERING_ID
+})

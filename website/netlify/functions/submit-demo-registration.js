@@ -40,7 +40,7 @@ function json(statusCode, body) {
   return { statusCode, headers: JSON_HEADERS, body: JSON.stringify(body) }
 }
 
-function demoPaymentsEnabled() {
+export function demoPaymentsEnabled() {
   return process.env.ENABLE_DEMO_PAYMENTS === 'true'
 }
 
@@ -169,7 +169,11 @@ function registrationWindowIsOpen(offering) {
 
 // ─── Catalogue validation ─────────────────────────────────────────────────
 
-export function validateDemoCatalogueRequest(request, programDoc, offeringDoc) {
+// Everything that makes an offering a live, published demo at all — the
+// checks that DON'T depend on whether the public can book it right now.
+// Shared by validateDemoCatalogueRequest (booking) and
+// submit-demo-waitlist.js (waitlist), and by lib/demo-campaign.server.js.
+export function assertLiveDemoOffering(request, programDoc, offeringDoc) {
   if (!programDoc.exists || !offeringDoc.exists) {
     throw new RequestRejectedError(404, 'This demo class is no longer available.')
   }
@@ -192,17 +196,40 @@ export function validateDemoCatalogueRequest(request, programDoc, offeringDoc) {
     || offering.publicCatalogVersion !== 1
     || offering.isPublished !== true
     || !OFFERING_ACTIVE_STATUSES.has(offering.status)
-    || !registrationWindowIsOpen(offering)
   ) {
     throw new RequestRejectedError(409, 'This demo class schedule is not accepting registrations.')
   }
 
+  return { program, offering }
+}
+
+// Whether the public can book a live demo offering right now:
+//   'closed'           — outside the enrollmentOpenAt/enrollmentCloseAt window
+//   'invalid_capacity' — counters are missing or inconsistent
+//   'full'             — no seats left, status 'Full', OR staff paused public
+//                        booking (publicRegistrationPaused: true) while seats
+//                        remain internally — e.g. to stop public sign-ups
+//                        without shrinking the offering's real capacity
+//   'open'             — bookable
+export function demoPublicBookingState(offering) {
+  if (!registrationWindowIsOpen(offering)) return 'closed'
   const seats = availableSeats(offering)
-  if (seats === null) {
+  if (seats === null) return 'invalid_capacity'
+  if (offering.publicRegistrationPaused === true || offering.status === 'Full' || seats === 0) return 'full'
+  return 'open'
+}
+
+export function validateDemoCatalogueRequest(request, programDoc, offeringDoc) {
+  const { program, offering } = assertLiveDemoOffering(request, programDoc, offeringDoc)
+
+  const state = demoPublicBookingState(offering)
+  if (state === 'closed') {
+    throw new RequestRejectedError(409, 'This demo class schedule is not accepting registrations.')
+  }
+  if (state === 'invalid_capacity') {
     throw new RequestRejectedError(409, 'This demo class schedule is missing capacity information. Please contact us.')
   }
-  const isFull = offering.status === 'Full' || seats === 0
-  if (isFull) {
+  if (state === 'full') {
     throw new RequestRejectedError(409, 'This demo class is full. Please contact us for another option.')
   }
 
@@ -222,7 +249,7 @@ function idempotencyRef(db, request) {
   return db.collection('demoRequestKeys').doc(digest)
 }
 
-function activeIdempotencyRecord(snapshot) {
+export function activeIdempotencyRecord(snapshot) {
   if (!snapshot?.exists) return null
   const data = snapshot.data()
   const expiresAt = data.expiresAt?.toMillis?.() || 0

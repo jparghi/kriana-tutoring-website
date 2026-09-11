@@ -142,3 +142,67 @@ export async function sendDemoAcknowledgement({ registration, program, offering,
     if (result.status === 'rejected') console.error('Demo registration acknowledgement email failed:', result.reason)
   }
 }
+
+/**
+ * Parent + admin emails for a demo WAITLIST join (submit-demo-waitlist.js).
+ * Deliberately contains no price, no e-transfer instructions, and no
+ * "your spot is held" wording — a waitlist entry holds nothing and nothing
+ * is owed. Same skip-if-unconfigured / never-throw behavior as
+ * sendDemoAcknowledgement above.
+ */
+export async function sendDemoWaitlistAcknowledgement({ registration, program, offering, reference }) {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.warn('Demo waitlist entry saved; SMTP credentials are not configured, so email was skipped.')
+    return
+  }
+
+  const programTitle = escapeHtml(program?.title || 'Kriana program')
+  const parentName = escapeHtml(registration.parentName)
+  const childName = escapeHtml(registration.childName)
+  const safeReference = escapeHtml(reference)
+  const eventTitle = escapeHtml(offering?.eventTitle || '')
+  const eventWhen = escapeHtml(formatEventDateTime(offering))
+  const eventLocation = escapeHtml(offering?.location || '')
+  const fromAddress = `"Kriana Tutoring" <${process.env.SMTP_USER}>`
+  const adminEmail = process.env.ADMIN_EMAIL || 'info@krianatutoring.com'
+  const subjectEvent = offering?.eventTitle || program?.title || 'Kriana demo'
+
+  const parentHtml = `
+    <div style="max-width:600px;margin:24px auto;font-family:Arial,sans-serif;color:#1e293b">
+      <div style="background:#0c6162;color:white;padding:28px;border-radius:16px 16px 0 0">
+        <p style="margin:0 0 6px;font-size:12px;letter-spacing:.12em;text-transform:uppercase">Kriana Tutoring</p>
+        <h1 style="margin:0;font-size:24px">You&apos;re on the Demo Waitlist</h1>
+      </div>
+      <div style="border:1px solid #e2e8f0;border-top:0;padding:28px;border-radius:0 0 16px 16px">
+        <p>Hi ${parentName},</p>
+        <p>Thank you for your interest. <strong>${eventTitle || 'This demo class'}</strong> is fully booked, and we&apos;ve added <strong>${childName}</strong> to the waitlist.</p>
+        <div style="background:#f8fafc;padding:16px;border-radius:10px;margin:18px 0">
+          ${eventWhen ? `<p style="margin:0 0 8px"><strong>When:</strong> ${eventWhen}</p>` : ''}
+          ${eventLocation ? `<p style="margin:0 0 8px"><strong>Location:</strong> ${eventLocation}</p>` : ''}
+          <p style="margin:0"><strong>Waitlist reference:</strong> ${safeReference}</p>
+        </div>
+        <p><strong>No payment is due.</strong> Joining the waitlist does not reserve a spot. If a spot becomes available, we&apos;ll contact you, and families on the waitlist will be the first to hear about our next demo.</p>
+        <p>Questions? Reply to this email or call or text <a href="tel:+16134006921">(613) 400-6921</a>.</p>
+        ${emailSignatureHtml()}
+      </div>
+    </div>`
+
+  const adminHtml = `
+    <h2>New demo waitlist request</h2>
+    <p><strong>Waitlist reference:</strong> ${safeReference}</p>
+    ${eventTitle ? `<p><strong>Event:</strong> ${eventTitle}</p>` : ''}
+    ${eventWhen ? `<p><strong>When:</strong> ${eventWhen}</p>` : ''}
+    <p><strong>Program:</strong> ${programTitle}</p>
+    <p><strong>Child:</strong> ${childName} (age ${escapeHtml(registration.childAge)})</p>
+    <p><strong>Parent:</strong> ${parentName} · ${escapeHtml(registration.parentEmail)} · ${escapeHtml(registration.parentPhone)}</p>
+    <p>No seat is held and no payment was requested. The entry is in the program management portal's Waitlist tab.</p>`
+
+  const transport = createTransport()
+  const results = await Promise.allSettled([
+    transport.sendMail({ from: fromAddress, to: registration.parentEmail, subject: `You're on the waitlist — ${subjectEvent}`, html: parentHtml }),
+    transport.sendMail({ from: fromAddress, to: adminEmail, subject: `New demo waitlist request — ${subjectEvent} — ${registration.childName}`, html: adminHtml }),
+  ])
+  for (const result of results) {
+    if (result.status === 'rejected') console.error('Demo waitlist acknowledgement email failed:', result.reason)
+  }
+}

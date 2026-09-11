@@ -20,6 +20,11 @@ const OFFERING_FIELDS = [
   // Distinguishes a $10 demo offering ('demo') from a regular cohort
   // offering (field absent). See lib/booking.ts's normalizeOffering.
   'offeringType',
+  // Demo-only fixed-event fields, read by the demo register/waitlist form
+  // and lib/booking.ts's formatEventDateTime. publicRegistrationPaused is
+  // the staff switch that stops public demo booking while seats remain —
+  // see submit-demo-registration.js's demoPublicBookingState.
+  'eventTitle', 'eventStartAt', 'eventEndAt', 'publicRegistrationPaused',
 ]
 const LEGACY_FIELDS = [
   'programId', 'title', 'location', 'startDateTime', 'endDateTime',

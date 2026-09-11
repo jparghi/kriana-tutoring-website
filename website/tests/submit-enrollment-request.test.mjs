@@ -322,3 +322,18 @@ test('formatSchedule falls back to a generic weekday label when firstClassDate i
   const session = openOffering({ weekday: 'Monday', startTime: '16:15', endTime: '17:15', firstClassDate: undefined })
   assert.match(formatSchedule(session), /^Mondays at /)
 })
+
+test('a $10 demo offering is never a regular enrollment or waitlist target', () => {
+  const tutoringProgram = roboticsProgram({ category: 'Tutoring', partnerName: '' })
+  for (const requestedAction of ['enrollment', 'waitlist']) {
+    const demoOffering = openOffering({
+      offeringType: 'demo',
+      waitlistEnabled: true,
+      ...(requestedAction === 'waitlist' ? { status: 'Full', confirmedCount: 10 } : {}),
+    })
+    assert.throws(
+      () => validateCatalogueRequest(baseRequest({ requestedAction }), doc(tutoringProgram), doc(demoOffering)),
+      err => err instanceof RequestRejectedError && /not accepting requests/.test(err.message),
+    )
+  }
+})

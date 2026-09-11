@@ -9,6 +9,7 @@ process.env.DEMO_ELIGIBILITY_KEY_SALT = 'test-demo-eligibility-salt-0123456789'
 import {
   validatePayload,
   validateDemoCatalogueRequest,
+  demoPublicBookingState,
   computeChildEligibilityKeyHash,
   saveDemoRegistration,
   idempotencyDigest,
@@ -638,4 +639,38 @@ test('reconcileDemoWebhookEvent: a duplicate event.id is a no-op on the second d
   }
   await reconcileDemoWebhookEvent(db, stripeEvent)
   assert.equal(store.get('demoRegistrations/reg-1').paymentStatus, 'pending', 'a duplicate delivery must not reconcile a second time')
+})
+
+// ─── Public booking pause (publicRegistrationPaused) ──────────────────────
+
+test('demoPublicBookingState: open, full (sold out / status Full / paused), closed, invalid_capacity', () => {
+  assert.equal(demoPublicBookingState(demoOffering()), 'open')
+  assert.equal(demoPublicBookingState(demoOffering({ confirmedCount: 10 })), 'full')
+  assert.equal(demoPublicBookingState(demoOffering({ status: 'Full' })), 'full')
+  assert.equal(demoPublicBookingState(demoOffering({ capacity: 20, confirmedCount: 13, heldCount: 1, publicRegistrationPaused: true })), 'full')
+  assert.equal(demoPublicBookingState(demoOffering({ enrollmentCloseAt: PAST })), 'closed')
+  assert.equal(demoPublicBookingState(demoOffering({ capacity: undefined })), 'invalid_capacity')
+})
+
+test('validateDemoCatalogueRequest rejects a paused offering even though seats remain', () => {
+  assert.throws(
+    () => validateDemoCatalogueRequest(
+      baseRequest(),
+      doc(demoProgram()),
+      doc(demoOffering({ capacity: 20, confirmedCount: 13, publicRegistrationPaused: true })),
+    ),
+    err => err instanceof RequestRejectedError && err.statusCode === 409 && /full/.test(err.message),
+  )
+})
+
+test('saveDemoRegistration writes nothing for a paused offering (direct register links cannot book)', async () => {
+  const offeringDoc = demoOffering({ capacity: 20, confirmedCount: 13, publicRegistrationPaused: true })
+  const { db, store } = makeFakeDb({
+    [`programs/${TEST_PROGRAM_ID}`]: demoProgram(),
+    'programOfferings/demo-off-1': offeringDoc,
+  })
+  const before = new Map(store)
+  await assert.rejects(() => saveDemoRegistration(db, baseRequest()), RequestRejectedError)
+  assert.deepEqual([...store.entries()], [...before.entries()])
+  assert.equal(store.get('programOfferings/demo-off-1').heldCount, 0)
 })

@@ -6,7 +6,7 @@ import Link from 'next/link'
 import {
   getProgram, getOffering, getPackageClassSchedule, formatOfferingDateRange, formatOfferingWeeklySchedule,
   isOfferingRequestWindowOpen, isOfferingSoldOut, programUsesOfferings, applyProgramDiscount,
-  formatEventDateTime, formatEventTimeRange,
+  formatEventDateTime, formatEventTimeRange, isDemoOfferingPubliclyFull,
 } from '../../../../lib/booking'
 import { trackEvent, ALLOWED_ATTRIBUTION_PARAMS } from '../../../../lib/analytics'
 import BookingLayout from '../../../../components/booking/BookingLayout'
@@ -47,7 +47,14 @@ const inputClass = 'w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text
 // NEXT_PUBLIC_ENABLE_DEMO_PAYMENTS === 'true' and a published demo offering
 // exists), so in production today this code path is unreachable — but it
 // must still be correct and complete for when the flag is flipped on.
-function DemoRegisterForm({ programId, program, offering }: { programId: string; program: any; offering: any }) {
+//
+// mode 'waitlist' is the same form, shown on the same register link when the
+// demo is fully booked (or public booking is paused) and the offering's
+// waitlistEnabled switch is on. It posts to submit-demo-waitlist.js, which
+// never holds a seat, creates a demo credit, or requests payment — so this
+// mode drops every price / e-transfer / "hold your spot" line.
+function DemoRegisterForm({ programId, program, offering, mode = 'register' }: { programId: string; program: any; offering: any; mode?: 'register' | 'waitlist' }) {
+  const isWaitlist = mode === 'waitlist'
   const router = useRouter()
   const searchParams = useSearchParams()
   const clientRequestId = useRef('')
@@ -62,7 +69,7 @@ function DemoRegisterForm({ programId, program, offering }: { programId: string;
       clientRequestId.current = globalThis.crypto?.randomUUID?.()
         ?? `demo-request-${Date.now()}-${Math.random().toString(36).slice(2)}`
     }
-    trackEvent('demo_registration_started', { offeringId: offering?.id ?? null })
+    trackEvent(isWaitlist ? 'demo_waitlist_started' : 'demo_registration_started', { offeringId: offering?.id ?? null })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -103,7 +110,7 @@ function DemoRegisterForm({ programId, program, offering }: { programId: string;
     setSubmitting(true)
 
     try {
-      const registerResponse = await fetch('/.netlify/functions/submit-demo-registration', {
+      const registerResponse = await fetch(isWaitlist ? '/.netlify/functions/submit-demo-waitlist' : '/.netlify/functions/submit-demo-registration', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -122,7 +129,19 @@ function DemoRegisterForm({ programId, program, offering }: { programId: string;
         }),
       })
       const registerResult = await registerResponse.json().catch(() => ({}))
-      if (!registerResponse.ok) throw new Error(registerResult.error || 'We could not submit your demo registration. Please try again.')
+      if (!registerResponse.ok) {
+        throw new Error(registerResult.error || (isWaitlist
+          ? 'We could not add you to the waitlist. Please try again.'
+          : 'We could not submit your demo registration. Please try again.'))
+      }
+
+      if (isWaitlist) {
+        trackEvent('demo_waitlist_submitted', { offeringId: offering?.id ?? null })
+        const waitlistParams = new URLSearchParams({ type: 'demo', program: offering.eventTitle || program.title })
+        if (registerResult.reference) waitlistParams.set('reference', registerResult.reference)
+        router.push(`/booking/waitlist-confirmed?${waitlistParams.toString()}`)
+        return
+      }
 
       trackEvent('demo_registration_submitted', { offeringId: offering?.id ?? null })
 
@@ -155,7 +174,7 @@ function DemoRegisterForm({ programId, program, offering }: { programId: string;
         <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg, #F2A100, #ED174B)' }} />
         <div className="px-5 py-4 flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-0.5">$10 Demo Class</p>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-0.5">{isWaitlist ? 'Demo Waitlist' : '$10 Demo Class'}</p>
             <h2 className="font-black text-slate-800">{program.title}</h2>
             {/* This campaign's demo has a fixed date/time/location (set on
                 the offering doc by an admin) — never say "we'll follow up
@@ -183,23 +202,43 @@ function DemoRegisterForm({ programId, program, offering }: { programId: string;
               </a>
             )}
           </div>
-          <div className="shrink-0 text-right">
-            <p className="text-xl font-black text-slate-800">$10 CAD</p>
-            <p className="text-xs text-slate-400">one-time demo charge</p>
-          </div>
+          {isWaitlist ? (
+            <span className="shrink-0 text-xs font-bold bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full">Fully booked</span>
+          ) : (
+            <div className="shrink-0 text-right">
+              <p className="text-xl font-black text-slate-800">$10 CAD</p>
+              <p className="text-xs text-slate-400">one-time demo charge</p>
+            </div>
+          )}
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
-        <div className="mb-1">
-          <h3 className="font-black text-slate-800 text-base">Register for the $10 Demo Class</h3>
-          <p className="text-sm text-slate-400 mt-0.5">Just a few details to hold your child&apos;s demo spot.</p>
-        </div>
+        {isWaitlist ? (
+          <>
+            <div className="mb-1">
+              <h3 className="font-black text-slate-800 text-base">Join the Waitlist</h3>
+              <p className="text-sm text-slate-400 mt-0.5">This demo is fully booked. Leave your details and we&apos;ll contact you if a spot opens up.</p>
+            </div>
 
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-          <p className="text-sm font-bold text-amber-700">Try for $10 — Demo is FREE when you enroll.</p>
-          <p className="text-sm text-amber-700 mt-1">The $10 is credited toward regular enrollment after your child attends.</p>
-        </div>
+            <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3">
+              <p className="text-sm font-bold text-sky-800">Free to join — no payment is due.</p>
+              <p className="text-sm text-sky-800 mt-1">Joining doesn&apos;t reserve a spot. Families on the waitlist will be the first to hear about our next demo.</p>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="mb-1">
+              <h3 className="font-black text-slate-800 text-base">Register for the $10 Demo Class</h3>
+              <p className="text-sm text-slate-400 mt-0.5">Just a few details to hold your child&apos;s demo spot.</p>
+            </div>
+
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+              <p className="text-sm font-bold text-amber-700">Try for $10 — Demo is FREE when you enroll.</p>
+              <p className="text-sm text-amber-700 mt-1">The $10 is credited toward regular enrollment after your child attends.</p>
+            </div>
+          </>
+        )}
 
         {error && (
           <div className="bg-red-50 border border-red-100 text-red-700 rounded-xl px-4 py-3 text-sm font-medium">{error}</div>
@@ -224,15 +263,51 @@ function DemoRegisterForm({ programId, program, offering }: { programId: string;
         <label className="flex items-start gap-3 cursor-pointer">
           <input type="checkbox" required checked={form.consentAccepted} onChange={e => set('consentAccepted', e.target.checked)} className="mt-0.5 accent-[#0c6162] w-4 h-4 shrink-0" />
           <span className="text-sm text-slate-600">
-            I confirm this information is accurate and consent to Kriana using it to register my child for {offering.eventTitle || 'this $10 demo class'} and contact me about this registration. <span className="text-red-500">*</span>
+            {isWaitlist
+              ? <>I confirm this information is accurate and consent to Kriana using it to add my child to the waitlist for {offering.eventTitle || 'this demo class'} and contact me about the waitlist and future demos.</>
+              : <>I confirm this information is accurate and consent to Kriana using it to register my child for {offering.eventTitle || 'this $10 demo class'} and contact me about this registration.</>}
+            {' '}<span className="text-red-500">*</span>
           </span>
         </label>
 
         <button type="submit" disabled={submitting} className="w-full py-4 rounded-xl text-white font-black text-base transition-all disabled:opacity-50 active:scale-[0.98] shadow-sm" style={{ backgroundColor: '#F2A100' }}>
-          {submitting ? 'Submitting…' : 'Register & Get E-Transfer Instructions →'}
+          {submitting ? 'Submitting…' : isWaitlist ? 'Join the Waitlist' : 'Register & Get E-Transfer Instructions →'}
         </button>
-        <p className="text-center text-xs text-slate-400">You&apos;ll receive instructions to send your $10 CAD payment by e-transfer.</p>
+        <p className="text-center text-xs text-slate-400">
+          {isWaitlist
+            ? 'You’ll get an email confirming you’re on the waitlist.'
+            : <>You&apos;ll receive instructions to send your $10 CAD payment by e-transfer.</>}
+        </p>
       </form>
+    </BookingLayout>
+  )
+}
+
+// Demo is fully booked (or public booking paused) and its waitlist is off —
+// no form at all, just where to go next.
+function DemoFullyBooked({ programId, program, offering }: { programId: string; program: any; offering: any }) {
+  const when = formatEventDateTime(offering)
+  return (
+    <BookingLayout backTo={`/booking/${programId}`} backLabel={program.title} maxWidth="max-w-xl">
+      <div className="rounded-2xl border border-slate-100 bg-white px-6 py-10 text-center shadow-sm">
+        <h1 className="text-xl font-black text-slate-800">This demo is fully booked</h1>
+        <p className="mt-2 text-sm leading-relaxed text-slate-500">
+          Thank you for your interest. We&apos;ve reached capacity, and registration for {offering.eventTitle || 'this demo'} is closed.
+        </p>
+        {when && <p className="mt-2 text-sm font-semibold text-slate-700">{when}{offering.location ? ` · ${offering.location}` : ''}</p>}
+        <p className="mt-3 text-sm text-slate-500">
+          <span className="font-bold text-slate-700">Already registered?</span> Please refer to your registration email for your booking and payment details.
+        </p>
+        <div className="mt-6 flex flex-col gap-3">
+          <Link href="/robotics#programs" className="rounded-xl px-5 py-3 text-sm font-black text-white" style={{ backgroundColor: '#0c6162' }}>
+            Explore Regular Programs
+          </Link>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <a href="tel:+16134006921" className="flex-1 rounded-xl border border-[#0c6162] px-5 py-3 text-sm font-black text-[#0c6162]">Call 613-400-6921</a>
+            <a href="sms:+16134006921" className="flex-1 rounded-xl border border-[#0c6162] px-5 py-3 text-sm font-black text-[#0c6162]">Text 613-400-6921</a>
+          </div>
+        </div>
+      </div>
     </BookingLayout>
   )
 }
@@ -355,6 +430,11 @@ function RegisterForm() {
   // below entirely, and renders its own minimal 5-field form instead of the
   // multi-step package/payment-preference wizard.
   if (isDemoRegistration) {
+    if (isDemoOfferingPubliclyFull(offering)) {
+      return offering.waitlistEnabled === true && isOfferingRequestWindowOpen(offering)
+        ? <DemoRegisterForm programId={programId} program={program} offering={offering} mode="waitlist" />
+        : <DemoFullyBooked programId={programId} program={program} offering={offering} />
+    }
     return <DemoRegisterForm programId={programId} program={program} offering={offering} />
   }
 

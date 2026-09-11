@@ -546,6 +546,14 @@ export function isOfferingSoldOut(offering: any) {
     || getAvailableSeats(offering) === 0
 }
 
+// A $10 demo offering the public can't book right now: sold out, or staff
+// paused public booking while seats remain (publicRegistrationPaused).
+// Presentation only — submit-demo-registration.js's demoPublicBookingState
+// is the server-side source of truth that actually rejects the booking.
+export function isDemoOfferingPubliclyFull(offering: any) {
+  return offering?.publicRegistrationPaused === true || isOfferingSoldOut(offering)
+}
+
 export function isOfferingRequestWindowOpen(offering: any, now = Date.now()) {
   const hasOpenBoundary = Boolean(offering?.enrollmentOpenAt)
   const hasCloseBoundary = Boolean(offering?.enrollmentCloseAt)
