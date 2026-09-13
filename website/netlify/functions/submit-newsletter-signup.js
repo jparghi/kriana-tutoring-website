@@ -184,6 +184,11 @@ export const handler = async event => {
     return json(500, {
       error: 'We could not complete your signup. Please try again or contact Kriana Tutoring.',
       stage,
+      // Off unless SIGNUP_DIAG is explicitly 'true'. Temporary switch for
+      // diagnosing a failure that only reproduces in the deployed runtime.
+      ...(process.env.SIGNUP_DIAG === 'true'
+        ? { detail: String(error?.message ?? error).slice(0, 300) }
+        : {}),
     })
   }
 }
