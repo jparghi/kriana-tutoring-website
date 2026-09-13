@@ -6,6 +6,7 @@ import { HeroSplit } from "../components/hero-split";
 import { ProgramsGrid } from "../components/programs-grid";
 import { TestimonialCarousel } from "../components/testimonial-carousel";
 import { TrustBar } from "../components/trust-bar";
+import { GalleryPreview } from "../components/gallery/gallery-preview";
 
 export const metadata: Metadata = {
   title: "Kriana Tutoring | Tutoring, Robotics & STEM in Kanata",
@@ -28,6 +29,7 @@ export default function HomePage() {
       <ProgramsGrid />
       {/* 3. Trust bar — Young Engineers partner + trust points */}
       <TrustBar />
+      <GalleryPreview />
       {/* 4. Parent testimonials */}
       <TestimonialCarousel />
       {/* 5. Final CTA banner */}

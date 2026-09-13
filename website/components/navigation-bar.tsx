@@ -21,6 +21,7 @@ const navItems = [
     label: "About",
     children: [
       { label: "About Us", href: "/about" },
+      { label: "Gallery", href: "/gallery" },
       { label: "Why Kriana", href: "/why-kriana" },
       { label: "Contact", href: "/contact#consultation-form" },
     ],

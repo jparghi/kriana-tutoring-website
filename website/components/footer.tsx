@@ -10,6 +10,7 @@ const footerLinks = [
       { label: "Tutoring", href: "/tutoring" },
       { label: "Robotics & Coding", href: "/robotics" },
       { label: "About", href: "/about" },
+      { label: "Gallery", href: "/gallery" },
       { label: "Blog", href: "/blog" },
       { label: "Worksheets", href: "/worksheets" }
     ]

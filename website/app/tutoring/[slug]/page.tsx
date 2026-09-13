@@ -131,6 +131,9 @@ export default function ServiceDetailPage({ params }: ServiceDetailPageProps) {
               >
                 Read Parent Resources
               </Link>
+              <Link href="/gallery" className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/25 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10">
+                Take a Look Inside Kriana
+              </Link>
             </div>
           </section>
         </div>

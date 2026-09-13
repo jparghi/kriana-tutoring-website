@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { Footer } from "../../components/footer";
+import { GalleryPreview } from "../../components/gallery/gallery-preview";
 import { servicePages } from "./data";
 
 export const metadata: Metadata = {
@@ -146,6 +147,8 @@ export default function ServicesPage() {
             </div>
           </div>
         </section>
+
+        <GalleryPreview />
 
         <section className="px-6 pb-20 sm:px-10">
           <div className="mx-auto max-w-6xl rounded-[2rem] bg-[#0A2D5A] px-8 py-10 text-white">

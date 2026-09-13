@@ -5,6 +5,8 @@ import { PROGRAM_CATEGORIES } from "./booking";
 
 export const BOOKING_PATH = "/booking";
 export const ROBOTICS_PATH = "/robotics";
+export const GALLERY_PATH = "/gallery";
+export const ASSESSMENT_BOOKING_URL = "/booking/VQNj7NfFGCI5oun5PXQE";
 export const BIRTHDAY_PARTY_PATH = "/birthday";
 
 export const ROBOTICS_CATEGORY: (typeof PROGRAM_CATEGORIES)[number] = "Robotics";
