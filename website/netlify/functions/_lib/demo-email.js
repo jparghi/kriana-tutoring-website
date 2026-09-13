@@ -130,6 +130,7 @@ export async function sendDemoAcknowledgement({ registration, program, offering,
     <p><strong>Charge:</strong> ${priceLabel}</p>
     <p><strong>Child:</strong> ${childName} (age ${escapeHtml(registration.childAge)})</p>
     <p><strong>Parent:</strong> ${parentName} · ${escapeHtml(registration.parentEmail)} · ${escapeHtml(registration.parentPhone)}</p>
+    ${interestLabel ? `<p><strong>Program of interest:</strong> ${interestLabel}</p>` : ''}
     <p><strong>Expected e-transfer message/note:</strong> ${etransferMessageText}</p>
     <p>Review the private demo registration record in the program management portal for all additional details, and confirm the e-transfer there once it arrives.</p>`
 
@@ -150,7 +151,19 @@ export async function sendDemoAcknowledgement({ registration, program, offering,
  * is owed. Same skip-if-unconfigured / never-throw behavior as
  * sendDemoAcknowledgement above.
  */
-export async function sendDemoWaitlistAcknowledgement({ registration, program, offering, reference }) {
+// Labels for the optional "which program are you interested in?" answer
+// collected on /demo (submit-demo-waitlist.js normalizes the values).
+const PROGRAM_INTEREST_LABELS = {
+  'smartivo': 'Smartivo',
+  'bricks-challenge': 'Bricks Challenge',
+  'algo-play': 'Algo Play',
+  'not-sure': 'Not sure yet',
+}
+
+// waitlistKind 'next_demo' means the family joined after registration closed
+// — they're waiting for the NEXT demo to be announced, not for a seat at a
+// sold-out one, so never tell them "this demo is fully booked".
+export async function sendDemoWaitlistAcknowledgement({ registration, program, offering, reference, waitlistKind = 'sold_out', programInterest = null }) {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     console.warn('Demo waitlist entry saved; SMTP credentials are not configured, so email was skipped.')
     return
@@ -166,41 +179,49 @@ export async function sendDemoWaitlistAcknowledgement({ registration, program, o
   const fromAddress = `"Kriana Tutoring" <${process.env.SMTP_USER}>`
   const adminEmail = process.env.ADMIN_EMAIL || 'info@krianatutoring.com'
   const subjectEvent = offering?.eventTitle || program?.title || 'Kriana demo'
+  const isNextDemo = waitlistKind === 'next_demo'
+  const interestLabel = programInterest ? escapeHtml(PROGRAM_INTEREST_LABELS[programInterest] || programInterest) : ''
 
   const parentHtml = `
     <div style="max-width:600px;margin:24px auto;font-family:Arial,sans-serif;color:#1e293b">
       <div style="background:#0c6162;color:white;padding:28px;border-radius:16px 16px 0 0">
         <p style="margin:0 0 6px;font-size:12px;letter-spacing:.12em;text-transform:uppercase">Kriana Tutoring</p>
-        <h1 style="margin:0;font-size:24px">You&apos;re on the Demo Waitlist</h1>
+        <h1 style="margin:0;font-size:24px">${isNextDemo ? 'You&apos;re on the Next Demo Waitlist' : 'You&apos;re on the Demo Waitlist'}</h1>
       </div>
       <div style="border:1px solid #e2e8f0;border-top:0;padding:28px;border-radius:0 0 16px 16px">
         <p>Hi ${parentName},</p>
-        <p>Thank you for your interest. <strong>${eventTitle || 'This demo class'}</strong> is fully booked, and we&apos;ve added <strong>${childName}</strong> to the waitlist.</p>
+        ${isNextDemo
+          ? `<p>Thank you for your interest. We&apos;ve added <strong>${childName}</strong> to the waitlist for our next Young Engineers Kanata demo.</p>`
+          : `<p>Thank you for your interest. <strong>${eventTitle || 'This demo class'}</strong> is fully booked, and we&apos;ve added <strong>${childName}</strong> to the waitlist.</p>`}
         <div style="background:#f8fafc;padding:16px;border-radius:10px;margin:18px 0">
-          ${eventWhen ? `<p style="margin:0 0 8px"><strong>When:</strong> ${eventWhen}</p>` : ''}
-          ${eventLocation ? `<p style="margin:0 0 8px"><strong>Location:</strong> ${eventLocation}</p>` : ''}
+          ${!isNextDemo && eventWhen ? `<p style="margin:0 0 8px"><strong>When:</strong> ${eventWhen}</p>` : ''}
+          ${!isNextDemo && eventLocation ? `<p style="margin:0 0 8px"><strong>Location:</strong> ${eventLocation}</p>` : ''}
+          ${interestLabel ? `<p style="margin:0 0 8px"><strong>Program of interest:</strong> ${interestLabel}</p>` : ''}
           <p style="margin:0"><strong>Waitlist reference:</strong> ${safeReference}</p>
         </div>
-        <p><strong>No payment is due.</strong> Joining the waitlist does not reserve a spot. If a spot becomes available, we&apos;ll contact you, and families on the waitlist will be the first to hear about our next demo.</p>
+        ${isNextDemo
+          ? `<p><strong>No payment is due.</strong> We&apos;ll email you as soon as registration for our next demo opens — waitlist families are notified first. Don&apos;t want to wait? Our regular Young Engineers programs are enrolling now at <a href="https://www.krianatutoring.com/booking?category=Robotics">krianatutoring.com/booking</a>.</p>`
+          : `<p><strong>No payment is due.</strong> Joining the waitlist does not reserve a spot. If a spot becomes available, we&apos;ll contact you, and families on the waitlist will be the first to hear about our next demo.</p>`}
         <p>Questions? Reply to this email or call or text <a href="tel:+16134006921">(613) 400-6921</a>.</p>
         ${emailSignatureHtml()}
       </div>
     </div>`
 
   const adminHtml = `
-    <h2>New demo waitlist request</h2>
+    <h2>${isNextDemo ? 'New next-demo waitlist request' : 'New demo waitlist request'}</h2>
     <p><strong>Waitlist reference:</strong> ${safeReference}</p>
     ${eventTitle ? `<p><strong>Event:</strong> ${eventTitle}</p>` : ''}
     ${eventWhen ? `<p><strong>When:</strong> ${eventWhen}</p>` : ''}
     <p><strong>Program:</strong> ${programTitle}</p>
     <p><strong>Child:</strong> ${childName} (age ${escapeHtml(registration.childAge)})</p>
     <p><strong>Parent:</strong> ${parentName} · ${escapeHtml(registration.parentEmail)} · ${escapeHtml(registration.parentPhone)}</p>
+    ${interestLabel ? `<p><strong>Program of interest:</strong> ${interestLabel}</p>` : ''}
     <p>No seat is held and no payment was requested. The entry is in the program management portal's Waitlist tab.</p>`
 
   const transport = createTransport()
   const results = await Promise.allSettled([
-    transport.sendMail({ from: fromAddress, to: registration.parentEmail, subject: `You're on the waitlist — ${subjectEvent}`, html: parentHtml }),
-    transport.sendMail({ from: fromAddress, to: adminEmail, subject: `New demo waitlist request — ${subjectEvent} — ${registration.childName}`, html: adminHtml }),
+    transport.sendMail({ from: fromAddress, to: registration.parentEmail, subject: isNextDemo ? `You're on the waitlist for our next Young Engineers demo` : `You're on the waitlist — ${subjectEvent}`, html: parentHtml }),
+    transport.sendMail({ from: fromAddress, to: adminEmail, subject: `${isNextDemo ? 'New next-demo waitlist request' : 'New demo waitlist request'} — ${subjectEvent} — ${registration.childName}`, html: adminHtml }),
   ])
   for (const result of results) {
     if (result.status === 'rejected') console.error('Demo waitlist acknowledgement email failed:', result.reason)

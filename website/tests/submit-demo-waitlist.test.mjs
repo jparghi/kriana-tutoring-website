@@ -5,6 +5,7 @@ process.env.DEMO_ELIGIBILITY_KEY_SALT = 'test-demo-eligibility-salt-0123456789'
 
 import {
   validateDemoWaitlistRequest,
+  normalizeProgramInterest,
   saveDemoWaitlistEntry,
   waitlistIdempotencyDigest,
   handler as waitlistHandler,
@@ -187,11 +188,41 @@ test('waitlist rejected when the offering waitlist switch is off or missing', ()
   }
 })
 
-test('waitlist rejected once the registration window has closed', () => {
+// The September 12 regression: once enrollmentCloseAt passed, the offering
+// state became 'closed' and every waitlist join was refused, which is what
+// made /demo's waitlist vanish after the event. A closed window now means
+// the family is waiting for the NEXT demo, not a seat at this one.
+test('waitlist accepted after the registration window closes, tagged next_demo', () => {
+  const result = validateDemoWaitlistRequest(
+    baseRequest(),
+    doc(demoProgram()),
+    doc(pausedOffering({ enrollmentCloseAt: PAST })),
+  )
+  assert.equal(result.waitlistKind, 'next_demo')
+})
+
+test('a join while the demo is still upcoming and full is tagged sold_out', () => {
+  const result = validateDemoWaitlistRequest(baseRequest(), doc(demoProgram()), doc(pausedOffering()))
+  assert.equal(result.waitlistKind, 'sold_out')
+})
+
+test('waitlist still rejected after the window closes when the waitlist switch is off', () => {
   assert.throws(
-    () => validateDemoWaitlistRequest(baseRequest(), doc(demoProgram()), doc(pausedOffering({ enrollmentCloseAt: PAST }))),
+    () => validateDemoWaitlistRequest(
+      baseRequest(),
+      doc(demoProgram()),
+      doc(pausedOffering({ enrollmentCloseAt: PAST, waitlistEnabled: false })),
+    ),
     err => err instanceof RequestRejectedError && /waitlist is not open/.test(err.message),
   )
+})
+
+test('program interest is normalized to the known options only', () => {
+  assert.equal(normalizeProgramInterest('Bricks-Challenge'), 'bricks-challenge')
+  assert.equal(normalizeProgramInterest(' not-sure '), 'not-sure')
+  for (const value of ['', 'chess-club', null, undefined, 42, { id: 'smartivo' }]) {
+    assert.equal(normalizeProgramInterest(value), null)
+  }
 })
 
 test('waitlist rejected for an unpublished or non-demo offering', () => {
@@ -221,6 +252,8 @@ test('saveDemoWaitlistEntry writes one Waiting demo entry and nothing a booking 
   assert.equal(entry.publicReference, saved.reference)
   assert.equal(entry.eventSnapshot.eventTitle, 'Young Engineers Demo Class — Kanata')
   assert.equal(entry.marketingAttribution.source, 'flyer')
+  assert.equal(entry.demoWaitlistKind, 'sold_out')
+  assert.equal(entry.programInterest, null)
 
   // Inert: no seat hold, no DEMO number, no eligibility lock, no credit, no registration.
   const offering = store.get(`programOfferings/${OFFERING_ID}`)
@@ -230,6 +263,17 @@ test('saveDemoWaitlistEntry writes one Waiting demo entry and nothing a booking 
     assert.deepEqual(collectionKeys(store, name), [], name)
   }
   assert.equal(store.get(`waitlistCounters/offeringId-${OFFERING_ID}`).lastPosition, 1)
+})
+
+test('saveDemoWaitlistEntry records the next-demo kind and the program interest', async () => {
+  const { db, store } = seededDb({ enrollmentCloseAt: PAST })
+  await saveDemoWaitlistEntry(db, { ...baseRequest(), programInterest: 'algo-play' })
+
+  const [entryKey] = collectionKeys(store, 'waitlist')
+  const entry = store.get(entryKey)
+  assert.equal(entry.demoWaitlistKind, 'next_demo')
+  assert.equal(entry.programInterest, 'algo-play')
+  assert.equal(entry.status, 'Waiting')
 })
 
 test('saveDemoWaitlistEntry continues the per-offering position sequence', async () => {

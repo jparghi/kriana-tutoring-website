@@ -202,3 +202,87 @@ test('resolveDemoCampaignOffering returns unavailable (not full) for an unpublis
   delete process.env.DEMO_CAMPAIGN_PROGRAM_ID
   delete process.env.DEMO_CAMPAIGN_OFFERING_ID
 })
+
+// ─── Lifecycle page state (DEMO_PAGE_STATES / DEMO_PAGE_STATE) ────────────
+
+function withCampaignEnv(overrides, run) {
+  process.env.DEMO_CAMPAIGN_PROGRAM_ID = TEST_PROGRAM_ID
+  process.env.DEMO_CAMPAIGN_OFFERING_ID = TEST_OFFERING_ID
+  if (overrides.pageState === undefined) delete process.env.DEMO_PAGE_STATE
+  else process.env.DEMO_PAGE_STATE = overrides.pageState
+  return run(fakeDb({
+    [`programs/${TEST_PROGRAM_ID}`]: demoProgram(),
+    [`programOfferings/${TEST_OFFERING_ID}`]: demoOffering(overrides.offering ?? {}),
+  })).finally(() => {
+    delete process.env.DEMO_CAMPAIGN_PROGRAM_ID
+    delete process.env.DEMO_CAMPAIGN_OFFERING_ID
+    delete process.env.DEMO_PAGE_STATE
+  })
+}
+
+test('pageState is derived from the offering when DEMO_PAGE_STATE is unset', async () => {
+  const cases = [
+    [{}, 'registration_open'],
+    [{ confirmedCount: 10 }, 'sold_out'],
+    [{ publicRegistrationPaused: true }, 'sold_out'],
+    [{ enrollmentOpenAt: PAST, enrollmentCloseAt: PAST }, 'completed'],
+  ]
+  for (const [offering, expected] of cases) {
+    await withCampaignEnv({ offering }, async db => {
+      const result = await resolveDemoCampaignOffering(db)
+      assert.equal(result.pageState, expected, JSON.stringify(offering))
+    })
+  }
+})
+
+test('an unconfigured or unavailable campaign still renders the evergreen waitlist page', async () => {
+  delete process.env.DEMO_CAMPAIGN_PROGRAM_ID
+  delete process.env.DEMO_CAMPAIGN_OFFERING_ID
+  assert.equal((await resolveDemoCampaignOffering()).pageState, 'waitlist')
+
+  await withCampaignEnv({ offering: { isPublished: false } }, async db => {
+    const result = await resolveDemoCampaignOffering(db)
+    assert.equal(result.status, 'unavailable')
+    assert.equal(result.pageState, 'waitlist')
+  })
+})
+
+test('DEMO_PAGE_STATE pins the page state, and an unknown value is ignored', async () => {
+  await withCampaignEnv({ pageState: 'completed' }, async db => {
+    const result = await resolveDemoCampaignOffering(db)
+    assert.equal(result.status, 'open')
+    assert.equal(result.pageState, 'completed')
+  })
+  await withCampaignEnv({ pageState: 'SOLD_OUT' }, async db => {
+    assert.equal((await resolveDemoCampaignOffering(db)).pageState, 'sold_out')
+  })
+  await withCampaignEnv({ pageState: 'auto' }, async db => {
+    assert.equal((await resolveDemoCampaignOffering(db)).pageState, 'registration_open')
+  })
+  await withCampaignEnv({ pageState: 'nonsense' }, async db => {
+    assert.equal((await resolveDemoCampaignOffering(db)).pageState, 'registration_open')
+  })
+})
+
+// Presentation must never unlock a $10 CTA the booking endpoint would reject.
+test('DEMO_PAGE_STATE cannot claim registration is open for an unbookable offering', async () => {
+  await withCampaignEnv({ pageState: 'registration_open', offering: { enrollmentOpenAt: PAST, enrollmentCloseAt: PAST } }, async db => {
+    const result = await resolveDemoCampaignOffering(db)
+    assert.equal(result.pageState, 'completed')
+  })
+  await withCampaignEnv({ pageState: 'registration_open', offering: { confirmedCount: 10 } }, async db => {
+    assert.equal((await resolveDemoCampaignOffering(db)).pageState, 'sold_out')
+  })
+})
+
+test('waitlistOpen mirrors the offering switch on closed demos too', async () => {
+  const closed = { enrollmentOpenAt: PAST, enrollmentCloseAt: PAST }
+  await withCampaignEnv({ offering: { ...closed, waitlistEnabled: true } }, async db => {
+    const result = await resolveDemoCampaignOffering(db)
+    assert.equal(result.status, 'closed')
+    assert.equal(result.waitlistOpen, true)
+  })
+  await withCampaignEnv({ offering: closed }, async db => {
+    assert.equal((await resolveDemoCampaignOffering(db)).waitlistOpen, false)
+  })
+})

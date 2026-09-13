@@ -23,6 +23,10 @@ export type FunnelEvent =
   | 'demo_waitlist_click'
   | 'demo_waitlist_started'
   | 'demo_waitlist_submitted'
+  // Evergreen /demo page (sold-out recap + next-demo waitlist).
+  | 'demo_waitlist_cta_clicked'
+  | 'demo_video_played'
+  | 'demo_classes_cta_clicked'
 
 export interface FunnelEventData {
   campaignId?: string | null

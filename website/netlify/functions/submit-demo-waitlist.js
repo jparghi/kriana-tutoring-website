@@ -1,9 +1,18 @@
 // $10 demo WAITLIST — public submission endpoint.
 //
-// When a demo offering is fully booked (or staff paused public booking via
-// publicRegistrationPaused) AND the offering's waitlistEnabled switch is on,
-// the same register link families already use shows a "Join the Waitlist"
-// form that posts here instead of to submit-demo-registration.js.
+// Two situations post here, both gated on the offering's waitlistEnabled
+// switch:
+//
+//   'sold_out'  — the demo is fully booked (or staff paused public booking
+//                 via publicRegistrationPaused). The family wants a seat at
+//                 THIS demo if one frees up.
+//   'next_demo' — the demo's registration window has closed (usually because
+//                 the event already happened). /demo stays live year-round as
+//                 the "next Young Engineers demo" waitlist, and entries queue
+//                 against the most recent demo offering until a new one is
+//                 created and DEMO_CAMPAIGN_OFFERING_ID is repointed.
+//
+// Either way the entry is inert (below) and no payment is ever requested.
 //
 // A waitlist entry is deliberately inert. Unlike a demo registration it
 // NEVER: holds a seat (heldCount), allocates a DEMO-{year}-{seq} number,
@@ -32,13 +41,19 @@ const JSON_HEADERS = {
 }
 const MAX_BODY_BYTES = 20 * 1024
 const DEMO_WAITLIST_CONSENT_VERSION = 'demo-waitlist-v1'
+// Optional "which program are you interested in?" answer. Stored as a plain
+// tag for staff follow-up — it commits the family to nothing and is never
+// used to pick an offering, so an unrecognized value is simply dropped.
+const PROGRAM_INTEREST_OPTIONS = new Set(['smartivo', 'bricks-challenge', 'algo-play', 'not-sure'])
 
 function json(statusCode, body) {
   return { statusCode, headers: JSON_HEADERS, body: JSON.stringify(body) }
 }
 
-// Accepts a waitlist join only while the offering is live, inside its
-// registration window, publicly un-bookable ('full'), and waitlistEnabled.
+// Accepts a waitlist join only while the offering is live, publicly
+// un-bookable, and waitlistEnabled — either because it's full ('sold_out')
+// or because its registration window has closed ('next_demo'). Never while
+// seats are actually on sale: those families must register instead.
 // Exported for tests.
 export function validateDemoWaitlistRequest(request, programDoc, offeringDoc) {
   const { program, offering } = assertLiveDemoOffering(request, programDoc, offeringDoc)
@@ -46,10 +61,17 @@ export function validateDemoWaitlistRequest(request, programDoc, offeringDoc) {
   if (state === 'open') {
     throw new RequestRejectedError(409, 'Spots are still available for this demo. Please register instead.')
   }
-  if (state !== 'full' || offering.waitlistEnabled !== true) {
+  if ((state !== 'full' && state !== 'closed') || offering.waitlistEnabled !== true) {
     throw new RequestRejectedError(409, 'The waitlist is not open for this demo.')
   }
-  return { program, offering }
+  return { program, offering, waitlistKind: state === 'closed' ? 'next_demo' : 'sold_out' }
+}
+
+// Exported for tests. Returns null for anything not on the list.
+export function normalizeProgramInterest(value) {
+  if (typeof value !== 'string') return null
+  const normalized = value.trim().toLowerCase().slice(0, 40)
+  return PROGRAM_INTEREST_OPTIONS.has(normalized) ? normalized : null
 }
 
 // Prefixed so a waitlist join can never collide with a demo registration's
@@ -89,7 +111,7 @@ export async function saveDemoWaitlistEntry(db, request) {
 
     const programDoc = await tx.get(programRef)
     const offeringDoc = await tx.get(offeringRef)
-    const { program, offering } = validateDemoWaitlistRequest(request, programDoc, offeringDoc)
+    const { program, offering, waitlistKind } = validateDemoWaitlistRequest(request, programDoc, offeringDoc)
 
     const counter = await tx.get(counterRef)
     let previousPosition = 0
@@ -108,6 +130,10 @@ export async function saveDemoWaitlistEntry(db, request) {
       programId,
       offeringId: demoOfferingId,
       waitlistType: 'demo',
+      // Which story the family signed up under — 'sold_out' wants this
+      // demo's next free seat, 'next_demo' wants the one after it.
+      demoWaitlistKind: waitlistKind,
+      programInterest: request.programInterest ?? null,
       parentName: registration.parentName,
       parentEmail: registration.parentEmail,
       parentPhone: registration.parentPhone,
@@ -145,7 +171,7 @@ export async function saveDemoWaitlistEntry(db, request) {
       createdAt: FieldValue.serverTimestamp(),
     })
 
-    return { id: entryRef.id, reference: publicReference, duplicate: false, program, offering }
+    return { id: entryRef.id, reference: publicReference, duplicate: false, program, offering, waitlistKind }
   })
 }
 
@@ -173,6 +199,7 @@ export const handler = async event => {
   // Same 5-field payload + consent + attribution as a demo registration.
   const validated = validatePayload(body)
   if (validated.error) return json(400, { error: validated.error })
+  validated.programInterest = normalizeProgramInterest(body.programInterest)
 
   try {
     const db = getAdminDb()
@@ -187,6 +214,8 @@ export const handler = async event => {
         program: saved.program,
         offering: saved.offering,
         reference: saved.reference,
+        waitlistKind: saved.waitlistKind,
+        programInterest: validated.programInterest,
       })
     }
 
