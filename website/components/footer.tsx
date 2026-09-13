@@ -125,8 +125,9 @@ export function Footer() {
         {/* Newsletter */}
         <div className="max-w-sm space-y-4">
           <p className="text-xs font-black uppercase tracking-[0.3em] text-brand-sky">Newsletter</p>
-          <p className="text-sm font-semibold leading-relaxed text-white/85">
-            Tips, updates &amp; special offers straight to your inbox.
+          <p className="text-sm font-black leading-relaxed text-white">Join Kriana Learning Updates</p>
+          <p className="text-xs leading-relaxed text-white/75">
+            Learning tips, free worksheets, STEM activities, upcoming demos and program updates.
           </p>
           <NewsletterForm />
         </div>
