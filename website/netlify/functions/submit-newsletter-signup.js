@@ -143,16 +143,26 @@ export const handler = async event => {
   const validated = validateSignupPayload(body)
   if (validated.error) return json(400, { error: validated.error })
 
+  // Each step reports which stage failed. The public message stays generic —
+  // `stage` is a bare marker like 'rate-limit', never an internal message —
+  // so a signup failure can be diagnosed from the response instead of
+  // needing log access.
+  let stage = 'init'
   try {
+    stage = 'admin-db'
     const db = getAdminDb()
+
+    stage = 'rate-limit'
     if (!await enforceRateLimit(db, event)) {
       return json(429, { error: 'Too many requests. Please wait a few minutes and try again.' })
     }
 
+    stage = 'save-contact'
     const saved = await saveNewsletterContact(db, validated)
 
     // Only a genuinely new subscription triggers the welcome email — a
     // re-submit by someone already on the list must not re-send it.
+    stage = 'welcome-email'
     if (!saved.duplicate && !saved.alreadySubscribed) {
       await sendNewsletterWelcomeEmail({
         parentName: validated.parentName,
@@ -170,7 +180,10 @@ export const handler = async event => {
     if (error instanceof RequestRejectedError) {
       return json(error.statusCode, { error: error.message })
     }
-    console.error('submit-newsletter-signup failed:', error)
-    return json(500, { error: 'We could not complete your signup. Please try again or contact Kriana Tutoring.' })
+    console.error(`submit-newsletter-signup failed at stage "${stage}":`, error)
+    return json(500, {
+      error: 'We could not complete your signup. Please try again or contact Kriana Tutoring.',
+      stage,
+    })
   }
 }
