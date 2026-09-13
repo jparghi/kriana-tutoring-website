@@ -104,7 +104,7 @@ function highlightVideoSchema(event: DemoEvent) {
     thumbnailUrl: `${siteUrl}${HIGHLIGHT_POSTER_PATH}`,
     contentUrl: `${siteUrl}${HIGHLIGHT_VIDEO_PATH}`,
     ...(event.startIso ? { uploadDate: event.startIso } : {}),
-    duration: "PT28S",
+    duration: "PT26S",
     publisher: { "@type": "Organization", name: "Kriana Tutoring", url: siteUrl },
   }
 }

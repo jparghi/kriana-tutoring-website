@@ -49,7 +49,7 @@ export const galleryMedia: GalleryMedia[] = [
       "A few moments from our September 12 Young Engineers demo: building, experimenting, and discovering together.",
     width: 720,
     height: 1280,
-    durationLabel: "28 seconds",
+    durationLabel: "26 seconds",
     categories: ["robotics", "demo"],
     publicApproved: true,
     featured: true,

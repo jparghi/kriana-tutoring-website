@@ -5,7 +5,7 @@ import { trackEvent } from '../../lib/analytics'
 
 // Real footage from the sold-out September 12 Kanata demo.
 //
-// preload="none" + a poster keeps the ~4.5 MB file off the critical path —
+// preload="none" + a poster keeps the ~4 MB file off the critical path —
 // nothing but the poster image is fetched until a parent taps play, so the
 // video can't hurt LCP on the mobile visits this page is built for. No
 // autoplay: the reel is scored to music, and an autoplaying muted version
