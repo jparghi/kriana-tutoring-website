@@ -44,7 +44,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const event = describeDemoEvent(campaign.offering)
   const eventTitle = event.title || DEFAULT_EVENT_TITLE
   const where = event.venueName ? ` at ${event.venueName}` : ""
-  const ageRange = typeof campaign.program?.ageRange === "string" ? campaign.program.ageRange.replace("-", "–") : "6–12"
+  const ageRange = typeof campaign.program?.ageRange === "string" ? campaign.program.ageRange.replace("-", "–") : "7–12"
 
   // /demo is a permanent, shared URL, so its metadata is evergreen by
   // default and only becomes event-specific while a demo is actually on
@@ -180,7 +180,7 @@ const DEMO_FAQS = [
   },
   {
     q: "What ages is the demo for?",
-    a: "Our Kanata demos are designed for children ages 6–12. Smartivo, our early-coding program, runs for ages 4–7 — tell us your child's age on the waitlist form and we'll point you to the right fit.",
+    a: "Our Kanata demos are designed for children ages 7–12. Smartivo, our early-coding program, runs for ages 4–7 — tell us your child's age on the waitlist form and we'll point you to the right fit.",
   },
   {
     q: "Does my child need previous experience?",
@@ -553,7 +553,7 @@ export default async function DemoPage({
                   </h1>
                   <p className="mt-3 text-lg font-semibold text-slate-700">Build · Create · Code · Explore</p>
                   <p className="mt-2 max-w-md text-sm text-slate-600 lg:mx-0 mx-auto">
-                    A hands-on engineering and coding experience for children ages 6–12.
+                    A hands-on engineering and coding experience for children ages 7–12.
                   </p>
 
                   <div className="mt-5">
@@ -584,7 +584,7 @@ export default async function DemoPage({
                 <li>• Build a hands-on Bricks Challenge model.</li>
                 <li>• Experience coding and robotics.</li>
                 <li>• Discover Bricks Challenge, AlgoPlay and Smartivo.</li>
-                <li>• Designed for children ages 6–12.</li>
+                <li>• Designed for children ages 7–12.</li>
                 <li>• Limited capacity.</li>
                 <li>
                   • Call or text <a href={CONTACT_PHONE_HREF} className="text-[#0c6162] font-semibold hover:underline">{CONTACT_PHONE_DISPLAY}</a>.

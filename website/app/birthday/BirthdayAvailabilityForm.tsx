@@ -234,7 +234,7 @@ export function BirthdayAvailabilityForm({ programId }: { programId: string }) {
             aria-invalid={!!fieldErrors.childName} aria-describedby={fieldErrors.childName ? 'childName-error' : undefined}
           />
         </Field>
-        <Field id="childAge" label="Child's Age" required hint="Ages 6-12 recommended" error={fieldErrors.childAge}>
+        <Field id="childAge" label="Child's Age" required hint="Ages 7-12 recommended" error={fieldErrors.childAge}>
           <input
             id="childAge" required type="number" min={1} max={17} className={inputClass} value={form.childAge}
             onChange={e => set('childAge', e.target.value)}
