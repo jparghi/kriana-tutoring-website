@@ -15,9 +15,9 @@ import { ALLOWED_ATTRIBUTION_PARAMS, trackEvent } from '../../lib/analytics'
 // The one added field is the optional program interest, which the endpoint
 // stores as a plain tag for staff follow-up.
 const PROGRAM_INTEREST_OPTIONS = [
-  { value: 'smartivo', label: 'Smartivo (ages 4–6)' },
-  { value: 'bricks-challenge', label: 'Bricks Challenge (ages 6–12)' },
-  { value: 'algo-play', label: 'Algo Play (ages 6–12)' },
+  { value: 'smartivo', label: 'Smartivo (ages 4–7)' },
+  { value: 'bricks-challenge', label: 'Bricks Challenge (ages 7–12)' },
+  { value: 'algo-play', label: 'Algo Play (ages 9–12)' },
   { value: 'not-sure', label: 'Not sure yet' },
 ]
 

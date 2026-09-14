@@ -180,7 +180,7 @@ const DEMO_FAQS = [
   },
   {
     q: "What ages is the demo for?",
-    a: "Our Kanata demos are designed for children ages 6–12. Smartivo, our early-coding program, runs for ages 4–6 — tell us your child's age on the waitlist form and we'll point you to the right fit.",
+    a: "Our Kanata demos are designed for children ages 6–12. Smartivo, our early-coding program, runs for ages 4–7 — tell us your child's age on the waitlist form and we'll point you to the right fit.",
   },
   {
     q: "Does my child need previous experience?",
