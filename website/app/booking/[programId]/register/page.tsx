@@ -14,10 +14,10 @@ import { BookingStepper } from '../../../../components/booking/BookingStepper'
 import { ClassScheduleDisclosure } from '../../../../components/booking/ClassScheduleDisclosure'
 import { MonthlyTuitionInfo } from '../../../../components/booking/MonthlyTuitionInfo'
 import {
-  PACKAGE_PROMO, getRoboticsPackage, isValidPackageId,
+  getRoboticsPackage, isValidPackageId,
   getPaymentOptionsLabel, resolvePackagePricing,
 } from '../../../../lib/robotics-packages.js'
-import { getLearningPathMonthlyTuition, getRegularMonthlyEstimate } from '../../../../lib/robotics-monthly-tuition.js'
+import { getLearningPathMonthlyTuition } from '../../../../lib/robotics-monthly-tuition.js'
 
 const ROBOTICS_CATEGORY = 'Robotics'
 const AGE_OPTIONS = [5, 6, 7, 8, 9, 10, 11, 12, 13]
@@ -500,21 +500,17 @@ function RegisterForm() {
   // that isn't a free waitlist join — waitlist requests never show or collect
   // a payment preference.
   const hasPaymentStep = Boolean(selectedPackage) && !useWaitlist
-  const isRegularPackage = selectedPackage?.planType === 'rolling_monthly'
-  // Regular and Builder/Engineer are billed monthly only — there is no
+  // Regular, Builder and Engineer are billed monthly only — there is no
   // payment choice for a family to make. Explorer (legacy/internal, never
   // publicly listed) is the only package that still uses pay-in-full.
   const isMonthlyOnlyPackage = Boolean(selectedPackage?.paymentOptions?.recurringMonthlyEnabled)
   const effectiveMethod = isMonthlyOnlyPackage ? 'recurring_monthly' : paymentPreference.method
   const payInFullPricing = selectedPackage && !isMonthlyOnlyPackage ? resolvePackagePricing(selectedPackage, 'pay_in_full') : null
   // Real, schedule-derived monthly numbers — never a guessed/typical amount.
-  // Builder/Engineer average the full path total across the offering's real
-  // billing months; Regular estimates one specific month's classes.
-  const learningPathTuition = selectedPackage && isMonthlyOnlyPackage && !isRegularPackage
+  // Every package is a fixed learning path, so this always averages the full
+  // path total across the offering's real billing months.
+  const learningPathTuition = selectedPackage && isMonthlyOnlyPackage
     ? getLearningPathMonthlyTuition(offering, selectedPackage)
-    : null
-  const regularEstimate = selectedPackage && isRegularPackage
-    ? getRegularMonthlyEstimate(offering, selectedPackage)
     : null
 
   const stepLabels = ['Your Info', 'Child Details', ...(hasPaymentStep ? ['Payment'] : []), 'Review & Submit']
@@ -626,15 +622,10 @@ function RegisterForm() {
           {selectedPackage && !useWaitlist ? (
             <div className="shrink-0 text-right">
               <p className="text-xs font-bold uppercase tracking-wide text-[#0083CB]">{selectedPackage.name}</p>
-              {isRegularPackage ? (
+              {isMonthlyOnlyPackage ? (
                 <>
                   <p className="text-xl font-black text-slate-800">${(selectedPackage.perClassCents / 100).toFixed(0)}/class</p>
-                  <p className="text-xs text-slate-400">no long-term commitment</p>
-                </>
-              ) : isMonthlyOnlyPackage ? (
-                <>
-                  <p className="text-xl font-black text-slate-800">${(selectedPackage.perClassCents / 100).toFixed(0)}/class</p>
-                  <p className="text-xs text-slate-400">{selectedPackage.classCount} classes · billed monthly</p>
+                  <p className="text-xs text-slate-400">{selectedPackage.classCount} classes</p>
                 </>
               ) : (
                 <>
@@ -747,26 +738,10 @@ function RegisterForm() {
                 Billed Monthly
                 <MonthlyTuitionInfo />
               </p>
-              {isRegularPackage ? (
+              {learningPathTuition && learningPathTuition.billingMonthCount > 0 ? (
                 <>
                   <p className="mt-1 text-sm font-semibold text-slate-700">
-                    ${(selectedPackage.perClassCents / 100).toFixed(0)}/class <span className="font-normal text-slate-400">— billed for classes actually held</span>
-                  </p>
-                  {regularEstimate && regularEstimate.monthKey ? (
-                    <p className="mt-1 text-sm text-slate-600">
-                      ~${(regularEstimate.estimatedAmountCents / 100).toFixed(2)} estimated for {regularEstimate.monthLabel} ({regularEstimate.classesInMonth} class{regularEstimate.classesInMonth === 1 ? '' : 'es'})
-                    </p>
-                  ) : (
-                    <p className="mt-1 text-sm text-slate-600">Your first month&apos;s exact amount is confirmed after enrollment.</p>
-                  )}
-                  <p className="mt-1 text-xs text-slate-400">
-                    The amount varies month to month depending on the calendar. You may cancel before the next billing month.
-                  </p>
-                </>
-              ) : learningPathTuition && learningPathTuition.billingMonthCount > 0 ? (
-                <>
-                  <p className="mt-1 text-sm font-semibold text-slate-700">
-                    ${(selectedPackage.perClassCents / 100).toFixed(0)}/class <span className="font-normal text-slate-400">— billed monthly for your {selectedPackage.classCount} classes</span>
+                    ${(selectedPackage.perClassCents / 100).toFixed(0)}/class <span className="font-normal text-slate-400">— {selectedPackage.classCount} classes, ${(selectedPackage.regularSubtotalCents / 100).toFixed(0)} total, billed monthly</span>
                   </p>
                   <p className="mt-1 text-xs text-slate-400">
                     An invoice will be issued monthly based on your selected schedule (plus applicable taxes).
@@ -808,30 +783,15 @@ function RegisterForm() {
                   className="mt-0.5 accent-[#0c6162] w-4 h-4 shrink-0"
                 />
                 <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-bold text-slate-800 text-sm">Pay in Full</p>
-                    {payInFullPricing.promotionApplied && (
-                      <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-orange-700">Best Price</span>
-                    )}
-                  </div>
+                  <p className="font-bold text-slate-800 text-sm">Pay in Full</p>
                   {selectedPackage && (
                     <p className="mt-1 text-sm font-semibold text-slate-700">
                       ${(selectedPackage.perClassCents / 100).toFixed(0)}/class <span className="font-normal text-slate-400">when paid in full</span>
                     </p>
                   )}
                   <p className="mt-0.5 text-sm text-slate-600">
-                    {payInFullPricing.promotionApplied ? (
-                      <>
-                        <span className="text-slate-400 line-through">${(payInFullPricing.regularSubtotalCents / 100).toFixed(2)}</span>{' '}
-                        <span className="font-semibold text-orange-600">${(payInFullPricing.payableSubtotalCents / 100).toFixed(2)}</span> package subtotal
-                      </>
-                    ) : (
-                      <>${(payInFullPricing.payableSubtotalCents / 100).toFixed(2)} package subtotal</>
-                    )}
+                    ${(payInFullPricing.payableSubtotalCents / 100).toFixed(2)} package subtotal
                   </p>
-                  {payInFullPricing.promotionApplied && (
-                    <p className="text-xs font-semibold text-orange-600">🏷️ Includes the Back-to-School first-class-free offer.</p>
-                  )}
                   <p className="text-xs text-slate-400">Plus applicable taxes.</p>
                 </div>
               </label>
@@ -860,12 +820,12 @@ function RegisterForm() {
               <div className="rounded-xl border border-[#0083CB]/25 bg-[#0083CB]/5 px-4 py-3.5 text-sm">
                 <p className="text-xs font-bold uppercase tracking-wide text-[#0083CB]">Selected Package</p>
                 <p className="mt-1 font-black text-slate-800">{selectedPackage.name}</p>
-                {isRegularPackage ? (
-                  <p className="font-semibold text-slate-800">${(selectedPackage.perClassCents / 100).toFixed(0)}/class — no long-term commitment</p>
-                ) : isMonthlyOnlyPackage ? (
+                {isMonthlyOnlyPackage ? (
                   <>
                     <p className="mt-1 text-slate-600">{selectedPackage.classCount} classes</p>
-                    <p className="font-semibold text-slate-800">${(selectedPackage.perClassCents / 100).toFixed(0)}/class — billed monthly</p>
+                    <p className="font-semibold text-slate-800">
+                      ${(selectedPackage.perClassCents / 100).toFixed(0)}/class — ${(selectedPackage.regularSubtotalCents / 100).toFixed(0)} total, billed monthly
+                    </p>
                   </>
                 ) : (
                   <>
@@ -886,20 +846,7 @@ function RegisterForm() {
             {hasPaymentStep && isMonthlyOnlyPackage && (
               <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm">
                 <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Payment Preference</p>
-                {isRegularPackage ? (
-                  <>
-                    <p className="mt-1 font-semibold text-slate-800">
-                      Billed Monthly — ${(selectedPackage.perClassCents / 100).toFixed(0)}/class for classes actually held
-                    </p>
-                    {regularEstimate && regularEstimate.monthKey ? (
-                      <p className="text-slate-500">
-                        ~${(regularEstimate.estimatedAmountCents / 100).toFixed(2)} estimated for {regularEstimate.monthLabel} ({regularEstimate.classesInMonth} class{regularEstimate.classesInMonth === 1 ? '' : 'es'})
-                      </p>
-                    ) : (
-                      <p className="text-slate-500">Your first month&apos;s exact amount is confirmed after enrollment.</p>
-                    )}
-                  </>
-                ) : learningPathTuition && learningPathTuition.billingMonthCount > 0 ? (
+                {learningPathTuition && learningPathTuition.billingMonthCount > 0 ? (
                   <>
                     <p className="mt-1 font-semibold text-slate-800">
                       Billed Monthly — ${(selectedPackage.perClassCents / 100).toFixed(0)}/class for your {selectedPackage.classCount} classes
@@ -918,11 +865,6 @@ function RegisterForm() {
                 <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Payment Preference</p>
                 <p className="mt-1 font-semibold text-slate-800">
                   Pay in Full — ${(payInFullPricing.payableSubtotalCents / 100).toFixed(2)} (plus applicable taxes)
-                </p>
-                <p className={`text-xs font-semibold ${payInFullPricing.promotionApplied ? 'text-orange-600' : 'text-slate-400'}`}>
-                  {payInFullPricing.promotionApplied
-                    ? `${PACKAGE_PROMO.label} applied — save $${(payInFullPricing.promotionDiscountCents / 100).toFixed(2)}`
-                    : 'No promotion applied.'}
                 </p>
                 <p className="mt-1 text-xs text-slate-400">No payment is due today.</p>
                 <button type="button" onClick={() => setSubStep(paymentSubStep)} className="mt-2 text-xs font-semibold text-[#0c6162] hover:underline">Change payment preference</button>

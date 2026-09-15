@@ -41,14 +41,23 @@ export function skillTagsForCategory(category?: string) {
 // saved offering exists. Other programs show placeholder cards until created
 // for real in Firestore via the separate program-management portal.
 //
-// `weeklySchedules` is the one exception: it's the recurring day/time batches
+// `weeklySchedules` is the one exception: it's the recurring day/time slots
 // these programs actually run each week, published ahead of the real
-// Firestore offerings so families can see them on the program cards. Once
-// real offerings with published class dates exist for a program, their live
-// schedule takes over and this static one is no longer shown (see
+// Firestore offerings so families can see them on the program cards and in
+// the /robotics "When Classes Run" section. Once real offerings with
+// published class dates exist for a program, their live schedule takes over
+// on the program cards and this static one is no longer shown there (see
 // ProgramCard in robotics-programs.tsx). Each entry's shape matches
 // Firestore's offering.weekday / offering.startTime / offering.endTime so it
 // formats identically via formatTimeOfDay/formatWeeklyClassSchedule.
+//
+// Current timetable (Young_Engineers_Kanata_Weekly_Schedule.pdf): every
+// program runs the SAME time slot on Monday, Wednesday and Friday —
+// Smartivo 4:30–5:30 p.m., Bricks Challenge 5:45–7:00 p.m., Algo Play
+// 7:15–8:30 p.m. That replaces the old one-day-per-program, two-batch
+// layout, which is why entries no longer carry a "Batch 1"/"Batch 2" label:
+// the weekday is now the only thing that distinguishes one slot from
+// another, and formatWeeklyClassSchedule already renders it.
 type LicensedRoboticsProgram = {
   id: string;
   title: string;
@@ -83,8 +92,9 @@ export const licensedRoboticsPrograms: LicensedRoboticsProgram[] = [
     image: "/images/robotics/programs/smartivo.png",
     logo: "/images/robotics/programs/smartivo-logo.png",
     weeklySchedules: [
-      { label: "Batch 1", weekday: "Monday", startTime: "16:15", endTime: "17:15" },
-      { label: "Batch 2", weekday: "Monday", startTime: "17:30", endTime: "18:30" },
+      { weekday: "Monday", startTime: "16:30", endTime: "17:30" },
+      { weekday: "Wednesday", startTime: "16:30", endTime: "17:30" },
+      { weekday: "Friday", startTime: "16:30", endTime: "17:30" },
     ],
   },
   {
@@ -103,8 +113,9 @@ export const licensedRoboticsPrograms: LicensedRoboticsProgram[] = [
     image: "/images/robotics/programs/bricks-challenge.png",
     logo: "/images/robotics/programs/bricks-challenge-logo.png",
     weeklySchedules: [
-      { label: "Batch 1", weekday: "Wednesday", startTime: "16:15", endTime: "17:30" },
-      { label: "Batch 2", weekday: "Wednesday", startTime: "17:45", endTime: "19:00" },
+      { weekday: "Monday", startTime: "17:45", endTime: "19:00" },
+      { weekday: "Wednesday", startTime: "17:45", endTime: "19:00" },
+      { weekday: "Friday", startTime: "17:45", endTime: "19:00" },
     ],
   },
   {
@@ -123,8 +134,9 @@ export const licensedRoboticsPrograms: LicensedRoboticsProgram[] = [
     image: "/images/robotics/programs/algo-play.png",
     logo: "/images/robotics/programs/algo-play-logo.png",
     weeklySchedules: [
-      { label: "Batch 1", weekday: "Friday", startTime: "16:15", endTime: "17:30" },
-      { label: "Batch 2", weekday: "Friday", startTime: "17:45", endTime: "19:00" },
+      { weekday: "Monday", startTime: "19:15", endTime: "20:30" },
+      { weekday: "Wednesday", startTime: "19:15", endTime: "20:30" },
+      { weekday: "Friday", startTime: "19:15", endTime: "20:30" },
     ],
   },
   {
@@ -181,8 +193,19 @@ export function formatWeeklyClassSchedule(
   return end ? `${dayLabel}, ${start}–${end}` : `${dayLabel}, ${start}`;
 }
 
-// Formats every batch in a licensedRoboticsPrograms `weeklySchedules` list,
-// pairing each formatted time with its batch label (e.g. "Batch 1").
+// A slot's time range on its own, without the weekday — e.g.
+// "4:30 p.m.–5:30 p.m." — for surfaces that group several days under one
+// shared time. Uses the same formatTimeOfDay as formatWeeklyClassSchedule so
+// the two never render a time differently.
+export function formatTimeRange(startTime?: string, endTime?: string) {
+  if (!startTime) return null;
+  const start = formatTimeOfDay(startTime);
+  return endTime ? `${start}\u2013${formatTimeOfDay(endTime)}` : start;
+}
+
+// Formats every slot in a licensedRoboticsPrograms `weeklySchedules` list.
+// `label` is optional and currently unused — the weekday inside each
+// formatted time is what distinguishes the slots (see the note above).
 export function formatWeeklyClassSchedules(
   schedules?: { label?: string; weekday?: string; startTime?: string; endTime?: string }[] | null
 ) {

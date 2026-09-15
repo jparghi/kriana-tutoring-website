@@ -293,7 +293,7 @@ export function BookingCatalog({
                   {selectedPackage.name} — {selectedPackage.classCount} classes · ${(selectedPackage.regularSubtotalCents / 100).toFixed(0)} package price (plus applicable taxes)
                 </p>
                 <p className="mt-0.5 text-xs text-slate-500">
-                  You&apos;ll choose how to pay — including the Back-to-School pay-in-full price, if eligible — after picking a schedule.
+                  Tuition is billed monthly, averaged across your learning path — you&apos;ll see the exact monthly amount after picking a schedule.
                 </p>
               </div>
               <button

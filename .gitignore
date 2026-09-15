@@ -6,3 +6,21 @@ docs/**/*.mp4
 
 # Local Netlify folder
 .netlify
+
+# Local social-media working folders (normally kept beside this repository)
+/Social Media/
+/demo/
+/social media/generated/
+/output/
+/tmp/
+
+# Source media and packaged exports; public website assets stay trackable
+*.[zZ][iI][pP]
+*.[mM][oO][vV]
+*.[hH][eE][iI][cC]
+*.[pP][sS][dD]
+!website/public/**
+
+# Local OS files and incremental build caches
+.DS_Store
+*.tsbuildinfo

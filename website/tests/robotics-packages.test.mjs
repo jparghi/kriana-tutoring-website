@@ -20,14 +20,22 @@ function allPackages(programId) {
   return ALL_PACKAGE_IDS.map(id => getRoboticsPackage(programId, id))
 }
 
-test('every fixed_learning_path package regular subtotal equals classCount * perClassCents; Regular has no fixed total', () => {
+test('every package is a fixed_learning_path whose subtotal equals classCount * perClassCents', () => {
   for (const pkg of allPackages(undefined)) {
-    if (pkg.planType === 'rolling_monthly') {
-      assert.equal(pkg.classCount, null)
-      assert.equal(pkg.regularSubtotalCents, null)
-      continue
-    }
+    assert.equal(pkg.planType, 'fixed_learning_path', `${pkg.id} must be a fixed learning path`)
     assert.equal(pkg.classCount * pkg.perClassCents, pkg.regularSubtotalCents, `${pkg.id} arithmetic mismatch`)
+  }
+})
+
+// No catalogue package is `rolling_monthly` any more (Regular became a fixed
+// 10-class package), but the resolver must keep handling that shape so
+// historical `variesByMonth: true` payment-preference snapshots still price
+// and render correctly.
+test('no catalogue package is rolling_monthly, in either rate card', () => {
+  for (const programId of [undefined, SMARTIVO_PROGRAM_ID]) {
+    for (const pkg of allPackages(programId)) {
+      assert.notEqual(pkg.planType, 'rolling_monthly')
+    }
   }
 })
 
@@ -35,24 +43,27 @@ test('exact default-catalogue values match the spec', () => {
   assert.deepEqual(
     allPackages(undefined).map(p => [p.id, p.classCount, p.perClassCents, p.regularSubtotalCents, p.promotionalPayInFullSubtotalCents, p.badge]),
     [
-      ['regular', null, 3200, null, null, null],
+      ['regular', 10, 3200, 32000, null, null],
       ['explorer', 10, 3000, 30000, null, null],
-      ['builder', 20, 2800, 56000, 53200, null],
-      ['engineer', 36, 2500, 90000, 87500, 'Best Value'],
+      ['builder', 20, 2800, 56000, null, 'Most Popular'],
+      ['engineer', 36, 2500, 90000, null, 'Best Value'],
     ]
   )
 })
 
 test('Smartivo catalogue matches the 60-minute rate card ($30 Regular / $26 Builder / $24 Engineer)', () => {
-  assert.equal(getRoboticsPackage(SMARTIVO_PROGRAM_ID, 'regular').perClassCents, 3000)
+  const smartivoRegular = getRoboticsPackage(SMARTIVO_PROGRAM_ID, 'regular')
+  assert.equal(smartivoRegular.perClassCents, 3000)
+  assert.equal(smartivoRegular.classCount, 10)
+  assert.equal(smartivoRegular.regularSubtotalCents, 30000)
   assert.deepEqual(
     ['builder', 'engineer'].map(id => {
       const p = getRoboticsPackage(SMARTIVO_PROGRAM_ID, id)
       return [p.id, p.classCount, p.perClassCents, p.regularSubtotalCents, p.promotionalPayInFullSubtotalCents, p.badge]
     }),
     [
-      ['builder', 20, 2600, 52000, 49400, 'Most Popular'],
-      ['engineer', 36, 2400, 86400, 84000, 'Best Value'],
+      ['builder', 20, 2600, 52000, null, 'Most Popular'],
+      ['engineer', 36, 2400, 86400, null, 'Best Value'],
     ]
   )
 })
@@ -73,12 +84,29 @@ test('Builder and Engineer are billed monthly only — no installment plan exist
   }
 })
 
-test('Regular has no pay-in-full option, only recurring monthly, and is never promotion-eligible', () => {
+test('Regular is a public 10-class learning path, payable in full or monthly, never promotion-eligible', () => {
   const regular = getRoboticsPackage(undefined, 'regular')
-  assert.deepEqual(regular.paymentOptions, { payInFullEnabled: false, recurringMonthlyEnabled: true })
-  assert.equal(regular.planType, 'rolling_monthly')
+  assert.deepEqual(regular.paymentOptions, { payInFullEnabled: true, recurringMonthlyEnabled: true })
+  assert.equal(regular.planType, 'fixed_learning_path')
+  assert.equal(regular.classCount, 10)
+  assert.equal(regular.minimumClassCommitment, 10)
   assert.equal(regular.promotionEligible, false)
   assert.equal(regular.publicVisible, true)
+})
+
+// Regular is the undiscounted rate every other package's savings are quoted
+// against, so it must always be the most expensive per class.
+test('Regular carries the rate card standard per-class rate in both catalogues', () => {
+  for (const [programId, expected] of [[undefined, 3200], [SMARTIVO_PROGRAM_ID, 3000]]) {
+    const regular = getRoboticsPackage(programId, 'regular')
+    assert.equal(regular.perClassCents, expected)
+    for (const id of ['builder', 'engineer']) {
+      assert.ok(
+        getRoboticsPackage(programId, id).perClassCents < regular.perClassCents,
+        `${id} must cost less per class than Regular`
+      )
+    }
+  }
 })
 
 test('Explorer stays pay-in-full only, private, and promotion-ineligible unless explicitly configured otherwise', () => {
@@ -135,7 +163,7 @@ test('getPaymentOptionsLabel uses pay-in-full or monthly-billing language, never
   assert.match(getPaymentOptionsLabel(getRoboticsPackage(undefined, 'builder')), /Billed monthly, averaged across your 20-class learning path\./)
   assert.match(getPaymentOptionsLabel(getRoboticsPackage(undefined, 'engineer')), /Billed monthly, averaged across your 36-class learning path\./)
   assert.match(getPaymentOptionsLabel(getRoboticsPackage(undefined, 'explorer')), /Paid in full/i)
-  assert.match(getPaymentOptionsLabel(getRoboticsPackage(undefined, 'regular')), /Billed monthly for classes actually scheduled/i)
+  assert.match(getPaymentOptionsLabel(getRoboticsPackage(undefined, 'regular')), /Billed monthly, averaged across your 10-class learning path\./)
   assert.equal(getPaymentOptionsLabel(null), '')
   for (const pkg of allPackages(undefined)) {
     const label = getPaymentOptionsLabel(pkg)
@@ -145,120 +173,71 @@ test('getPaymentOptionsLabel uses pay-in-full or monthly-billing language, never
   }
 })
 
-test('PACKAGE_PROMO has a real deadline (not a hand-flipped flag) and carries a register-by label', () => {
-  assert.equal(typeof PACKAGE_PROMO.endsAt, 'string')
-  assert.ok(!Number.isNaN(new Date(PACKAGE_PROMO.endsAt).getTime()), 'endsAt must be a parseable date')
-  assert.match(PACKAGE_PROMO.registerByLabel, /September 13, 2026/)
-  assert.equal(PACKAGE_PROMO.active, Date.now() <= new Date(PACKAGE_PROMO.endsAt).getTime())
+test('PACKAGE_PROMO is retired: no active campaign, no label, no deadline', () => {
+  assert.equal(PACKAGE_PROMO.active, false)
+  assert.equal(PACKAGE_PROMO.label, null)
+  assert.equal(PACKAGE_PROMO.registerByLabel, null)
+  assert.equal(PACKAGE_PROMO.endsAt, null)
 })
 
-test('PACKAGE_PROMO.active turns off automatically after its deadline, without editing this file', () => {
-  const before = Date
-  try {
-    globalThis.Date = class extends before {
-      static now() {
-        return new before(PACKAGE_PROMO.endsAt).getTime() + 1000
-      }
+test('no package is promotion-eligible, so no pricing can ever report a promotion', () => {
+  for (const programId of [undefined, SMARTIVO_PROGRAM_ID]) {
+    for (const pkg of allPackages(programId)) {
+      assert.equal(pkg.promotionEligible, false, `${pkg.id} must not be promotion-eligible`)
+      assert.equal(pkg.promotionalPayInFullSubtotalCents, null, `${pkg.id} must not carry a promotional price`)
+      if (!pkg.paymentOptions.payInFullEnabled) continue
+      const pricing = resolvePackagePricing(pkg, 'pay_in_full')
+      assert.equal(pricing.promotionApplied, false)
+      assert.equal(pricing.promotionDiscountCents, 0)
+      assert.equal(pricing.payableSubtotalCents, pkg.regularSubtotalCents)
     }
-    assert.equal(PACKAGE_PROMO.active, false)
-  } finally {
-    globalThis.Date = before
   }
 })
 
 // --- resolvePackagePricing: the core business rules ---
-// 1. The Back-to-School promotional price applies only to Pay in Full.
+// 1. No promotion exists, so pay-in-full is always the package's regular price.
 // 2. Recurring monthly is priced at the package's own per-class rate
-//    (Builder $28/Engineer $25), never promo-discounted, and for Regular
-//    only ever computed from a real offering's classesInMonth.
+//    (Regular $32/Builder $28/Engineer $25) across the whole learning path.
 
-test('Builder: pay in full uses $532 (promotional) while the promotion is active', () => {
-  const builder = getRoboticsPackage(undefined, 'builder')
-  const pricing = resolvePackagePricing(builder, 'pay_in_full')
-  if (PACKAGE_PROMO.active) {
-    assert.equal(pricing.payableSubtotalCents, 53200)
-    assert.equal(pricing.promotionApplied, true)
-    assert.equal(pricing.promotionDiscountCents, 2800)
-  } else {
-    assert.equal(pricing.payableSubtotalCents, 56000)
+test('Pay in full is the regular price for every public package — no promotion is applied', () => {
+  for (const [id, expectedTotal] of [['regular', 32000], ['builder', 56000], ['engineer', 90000]]) {
+    const pricing = resolvePackagePricing(getRoboticsPackage(undefined, id), 'pay_in_full')
+    assert.equal(pricing.payableSubtotalCents, expectedTotal, `${id} pay-in-full total`)
+    assert.equal(pricing.regularSubtotalCents, expectedTotal)
+    assert.equal(pricing.promotionApplied, false)
+    assert.equal(pricing.promotionDiscountCents, 0)
+  }
+})
+
+test('recurring_monthly totals $320/$560/$900 — the package own per-class rate across the whole path', () => {
+  for (const [id, expectedTotal] of [['regular', 32000], ['builder', 56000], ['engineer', 90000]]) {
+    const pricing = resolvePackagePricing(getRoboticsPackage(undefined, id), 'recurring_monthly')
+    assert.equal(pricing.payableSubtotalCents, expectedTotal, `${id} recurring total`)
+    assert.equal(pricing.regularSubtotalCents, expectedTotal)
     assert.equal(pricing.promotionApplied, false)
   }
-  assert.equal(pricing.regularSubtotalCents, 56000)
 })
 
-test('Engineer: pay in full uses $875 (promotional) while the promotion is active', () => {
-  const engineer = getRoboticsPackage(undefined, 'engineer')
-  const pricing = resolvePackagePricing(engineer, 'pay_in_full')
-  if (PACKAGE_PROMO.active) {
-    assert.equal(pricing.payableSubtotalCents, 87500)
-    assert.equal(pricing.promotionApplied, true)
-    assert.equal(pricing.promotionDiscountCents, 2500)
-  } else {
-    assert.equal(pricing.payableSubtotalCents, 90000)
-    assert.equal(pricing.promotionApplied, false)
-  }
-  assert.equal(pricing.regularSubtotalCents, 90000)
-})
-
-test('Builder/Engineer: recurring_monthly totals $560/$900 (the package own per-class rate), never the promotion', () => {
-  const before = Date
-  try {
-    for (const [id, expectedTotal] of [['builder', 56000], ['engineer', 90000]]) {
-      const pkg = getRoboticsPackage(undefined, id)
-      const pricing = resolvePackagePricing(pkg, 'recurring_monthly')
-      assert.equal(pricing.payableSubtotalCents, expectedTotal)
-      assert.equal(pricing.regularSubtotalCents, expectedTotal)
-      assert.equal(pricing.promotionApplied, false)
-    }
-    // Still true after the promo window closes — recurring_monthly never
-    // depended on it either way.
-    globalThis.Date = class extends before {
-      static now() {
-        return new before(PACKAGE_PROMO.endsAt).getTime() + 1000
-      }
-    }
-    assert.equal(resolvePackagePricing(getRoboticsPackage(undefined, 'builder'), 'recurring_monthly').payableSubtotalCents, 56000)
-  } finally {
-    globalThis.Date = before
-  }
-})
-
-test('Regular: recurring_monthly requires a real classesInMonth and prices at $32/class for that month only', () => {
+// Regular is no longer rolling_monthly, so it no longer needs (or reads)
+// classesInMonth — it prices its whole 10-class path like any other package.
+test('Regular: recurring_monthly prices the full 10-class path and ignores classesInMonth', () => {
   const regular = getRoboticsPackage(undefined, 'regular')
-  assert.equal(resolvePackagePricing(regular, 'recurring_monthly', { classesInMonth: 4 }).payableSubtotalCents, 12800)
-  assert.equal(resolvePackagePricing(regular, 'recurring_monthly', { classesInMonth: 3 }).payableSubtotalCents, 9600)
-  assert.equal(resolvePackagePricing(regular, 'recurring_monthly', { classesInMonth: 5 }).payableSubtotalCents, 16000)
-  assert.equal(resolvePackagePricing(regular, 'recurring_monthly', { classesInMonth: 0 }).payableSubtotalCents, 0)
+  assert.equal(resolvePackagePricing(regular, 'recurring_monthly').payableSubtotalCents, 32000)
+  assert.equal(resolvePackagePricing(regular, 'recurring_monthly', { classesInMonth: 4 }).payableSubtotalCents, 32000)
 })
 
-test('Regular: recurring_monthly throws rather than guessing when classesInMonth is missing or invalid', () => {
-  const regular = getRoboticsPackage(undefined, 'regular')
-  assert.throws(() => resolvePackagePricing(regular, 'recurring_monthly'))
-  assert.throws(() => resolvePackagePricing(regular, 'recurring_monthly', {}))
-  assert.throws(() => resolvePackagePricing(regular, 'recurring_monthly', { classesInMonth: -1 }))
-  assert.throws(() => resolvePackagePricing(regular, 'recurring_monthly', { classesInMonth: 1.5 }))
-  assert.throws(() => resolvePackagePricing(regular, 'recurring_monthly', { classesInMonth: 'four' }))
-})
-
-test('promotion expiry restores regular pay-in-full pricing for both Builder and Engineer', () => {
-  const before = Date
-  try {
-    globalThis.Date = class extends before {
-      static now() {
-        return new before(PACKAGE_PROMO.endsAt).getTime() + 1000
-      }
-    }
-    const builderPricing = resolvePackagePricing(getRoboticsPackage(undefined, 'builder'), 'pay_in_full')
-    assert.equal(builderPricing.payableSubtotalCents, 56000)
-    assert.equal(builderPricing.promotionApplied, false)
-    assert.equal(builderPricing.promotionDiscountCents, 0)
-
-    const engineerPricing = resolvePackagePricing(getRoboticsPackage(undefined, 'engineer'), 'pay_in_full')
-    assert.equal(engineerPricing.payableSubtotalCents, 90000)
-    assert.equal(engineerPricing.promotionApplied, false)
-  } finally {
-    globalThis.Date = before
-  }
+// The rolling_monthly branch still has to behave for historical snapshots.
+test('a rolling_monthly package still requires a real classesInMonth rather than guessing', () => {
+  const legacyRollingPkg = Object.freeze({
+    id: 'legacy-rolling', planType: 'rolling_monthly', classCount: null,
+    perClassCents: 3200, regularSubtotalCents: null, promotionEligible: false,
+  })
+  assert.equal(resolvePackagePricing(legacyRollingPkg, 'recurring_monthly', { classesInMonth: 4 }).payableSubtotalCents, 12800)
+  assert.equal(resolvePackagePricing(legacyRollingPkg, 'recurring_monthly', { classesInMonth: 0 }).payableSubtotalCents, 0)
+  assert.throws(() => resolvePackagePricing(legacyRollingPkg, 'recurring_monthly'))
+  assert.throws(() => resolvePackagePricing(legacyRollingPkg, 'recurring_monthly', { classesInMonth: -1 }))
+  assert.throws(() => resolvePackagePricing(legacyRollingPkg, 'recurring_monthly', { classesInMonth: 1.5 }))
+  assert.throws(() => resolvePackagePricing(legacyRollingPkg, 'recurring_monthly', { classesInMonth: 'four' }))
 })
 
 test('resolvePackagePricing returns null for an unknown package or method', () => {
@@ -330,27 +309,27 @@ test('buildPackageSnapshot produces an immutable, v6 snapshot with explicit regu
     classCount: 20,
     perClassCents: 2800,
     regularSubtotalCents: 56000,
-    promotionalPayInFullSubtotalCents: 53200,
+    promotionalPayInFullSubtotalCents: null,
     currency: 'CAD',
     paymentOptions: { payInFullEnabled: true, recurringMonthlyEnabled: true },
-    promotionEligible: true,
-    promotionName: PACKAGE_PROMO.label,
+    promotionEligible: false,
+    promotionName: null,
   })
   assert.equal(buildPackageSnapshot(undefined, 'bogus'), null)
 })
 
-test('buildPackageSnapshot for Regular has null class count/total and reflects its recurring-only payment options', () => {
+test('buildPackageSnapshot for Regular carries its 10-class count/total and both payment options', () => {
   const snapshot = buildPackageSnapshot(undefined, 'regular')
   assert.deepEqual(snapshot, {
     version: 6,
     id: 'regular',
     name: 'Regular',
-    classCount: null,
+    classCount: 10,
     perClassCents: 3200,
-    regularSubtotalCents: null,
+    regularSubtotalCents: 32000,
     promotionalPayInFullSubtotalCents: null,
     currency: 'CAD',
-    paymentOptions: { payInFullEnabled: false, recurringMonthlyEnabled: true },
+    paymentOptions: { payInFullEnabled: true, recurringMonthlyEnabled: true },
     promotionEligible: false,
     promotionName: null,
   })
@@ -401,22 +380,17 @@ test('existing version-3/4 snapshots (billingCadence / flat subtotalCents) remai
 
 // --- Payment preference snapshot (v2 for pay_in_full/installments, v3 for recurring_monthly) ---
 
-test('buildPaymentPreferenceSnapshot: pay-in-full normalizes to installmentCount 1 and uses the promotional price', () => {
+test('buildPaymentPreferenceSnapshot: pay-in-full normalizes to installmentCount 1 and uses the regular price', () => {
   const snapshot = buildPaymentPreferenceSnapshot(undefined, 'builder', { method: 'pay_in_full', installmentCount: 4 })
   assert.equal(snapshot.version, 2)
   assert.equal(snapshot.method, 'pay_in_full')
   assert.equal(snapshot.installmentCount, 1)
   assert.equal(snapshot.currency, 'CAD')
   assert.equal(snapshot.regularSubtotalCents, 56000)
-  if (PACKAGE_PROMO.active) {
-    assert.equal(snapshot.payableSubtotalCents, 53200)
-    assert.equal(snapshot.promotionApplied, true)
-    assert.equal(snapshot.promotionDiscountCents, 2800)
-  } else {
-    assert.equal(snapshot.payableSubtotalCents, 56000)
-    assert.equal(snapshot.promotionApplied, false)
-  }
-  assert.deepEqual(snapshot.installmentAmountsCents, [snapshot.payableSubtotalCents])
+  assert.equal(snapshot.payableSubtotalCents, 56000)
+  assert.equal(snapshot.promotionApplied, false)
+  assert.equal(snapshot.promotionDiscountCents, 0)
+  assert.deepEqual(snapshot.installmentAmountsCents, [56000])
 })
 
 test('buildPaymentPreferenceSnapshot never builds an installments snapshot, for any package or count', () => {
@@ -504,26 +478,48 @@ test('buildPaymentPreferenceSnapshot: recurring_monthly for Builder/Engineer req
   assert.equal(buildPaymentPreferenceSnapshot(undefined, 'builder', { method: 'recurring_monthly' }, { billingMonthCount: 'six' }), null)
 })
 
-test('buildPaymentPreferenceSnapshot: recurring_monthly for Regular prices one specific month and flags variesByMonth', () => {
+test('buildPaymentPreferenceSnapshot: recurring_monthly for Regular averages its $320 path across real billing months', () => {
   const snapshot = buildPaymentPreferenceSnapshot(
-    undefined, 'regular', { method: 'recurring_monthly' }, { classesInMonth: 4, billingMonthLabel: 'October 2026' }
+    undefined, 'regular', { method: 'recurring_monthly' }, { billingMonthCount: 3 }
   )
   assert.equal(snapshot.version, 3)
   assert.equal(snapshot.method, 'recurring_monthly')
-  assert.equal(snapshot.classesInMonth, 4)
-  assert.equal(snapshot.billingMonthLabel, 'October 2026')
-  assert.equal(snapshot.variesByMonth, true)
-  assert.equal(snapshot.payableSubtotalCents, 12800)
+  assert.equal(snapshot.billingMonthCount, 3)
+  assert.equal(snapshot.variesByMonth, false)
+  assert.equal(snapshot.payableSubtotalCents, 32000)
+  assert.deepEqual(snapshot.monthlyAmountsCents, [10667, 10667, 10666])
+  assert.equal(snapshot.monthlyAmountsCents.reduce((a, b) => a + b, 0), 32000)
   assert.equal(snapshot.promotionApplied, false)
+  // No longer a rolling plan: a month-scoped context can't stand in for a
+  // real billing-month count.
+  assert.equal(snapshot.classesInMonth, undefined)
 })
 
-test('buildPaymentPreferenceSnapshot: recurring_monthly for Regular requires both classesInMonth and billingMonthLabel', () => {
+test('buildPaymentPreferenceSnapshot: recurring_monthly for Regular requires a real billingMonthCount', () => {
   assert.equal(buildPaymentPreferenceSnapshot(undefined, 'regular', { method: 'recurring_monthly' }), null)
-  assert.equal(buildPaymentPreferenceSnapshot(undefined, 'regular', { method: 'recurring_monthly' }, { classesInMonth: 4 }), null)
-  assert.equal(buildPaymentPreferenceSnapshot(undefined, 'regular', { method: 'recurring_monthly' }, { billingMonthLabel: 'October 2026' }), null)
-  assert.equal(buildPaymentPreferenceSnapshot(undefined, 'regular', { method: 'recurring_monthly' }, { classesInMonth: -1, billingMonthLabel: 'October 2026' }), null)
+  assert.equal(buildPaymentPreferenceSnapshot(undefined, 'regular', { method: 'recurring_monthly' }, {}), null)
+  assert.equal(buildPaymentPreferenceSnapshot(undefined, 'regular', { method: 'recurring_monthly' }, { billingMonthCount: 0 }), null)
+  assert.equal(buildPaymentPreferenceSnapshot(undefined, 'regular', { method: 'recurring_monthly' }, { classesInMonth: 4, billingMonthLabel: 'October 2026' }), null)
 })
 
 test('buildPaymentPreferenceSnapshot rejects recurring_monthly for a package that does not offer it', () => {
   assert.equal(buildPaymentPreferenceSnapshot(undefined, 'explorer', { method: 'recurring_monthly' }, { billingMonthCount: 3 }), null)
+})
+
+// --- Marketing surfaces resolve a rate card without a Firestore lookup ---
+
+test('the Smartivo licensed slug resolves the same 60-minute rate card as its Firestore id', () => {
+  for (const id of ['regular', 'builder', 'engineer']) {
+    assert.deepEqual(
+      getRoboticsPackage('smartivo', id),
+      getRoboticsPackage(SMARTIVO_PROGRAM_ID, id),
+      `${id} must price identically by slug and by Firestore id`,
+    )
+  }
+  // Every other program (including the other licensed slugs) keeps the
+  // 75-minute rate card.
+  for (const slug of ['bricks-challenge', 'algo-play', undefined]) {
+    assert.equal(getRoboticsPackage(slug, 'regular').perClassCents, 3200)
+    assert.equal(getRoboticsPackage(slug, 'engineer').perClassCents, 2500)
+  }
 })

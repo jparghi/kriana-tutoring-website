@@ -21,13 +21,35 @@ const VARIANTS = {
 
 export function RoboticsCtaButtons({
   variant = "light",
+  mode = "availability",
   initialData,
 }: {
   variant?: "light" | "dark";
+  /** "discovery" sends the reader straight down the page — programs, then
+   * price — which is the order a parent actually decides in, and needs no
+   * availability data at all. "availability" (the default) links out to the
+   * live booking catalogue with schedule/waitlist-aware wording. */
+  mode?: "availability" | "discovery";
   initialData?: CatalogData;
 }) {
   const { hasPublishedSchedule, hasOpenRequests, hasOpenWaitlist, loading } = useRoboticsAvailability(initialData);
   const styles = VARIANTS[variant];
+
+  // A parent landing from social asks "what is it? → is it for my child? →
+  // how much?" — so the hero answers the first two and then points at the
+  // price, rather than sending them off to a schedule listing.
+  if (mode === "discovery") {
+    return (
+      <div className="flex flex-wrap items-center gap-3">
+        <a href="#programs" className={styles.primary}>
+          Explore Programs
+        </a>
+        <a href="#pricing" className={styles.secondary}>
+          See Pricing
+        </a>
+      </div>
+    );
+  }
 
   // While availability is still loading, default to the copy/link for the
   // site's actual steady state (published, open-for-requests schedules)

@@ -9,6 +9,7 @@ import {
   isOfferingSoldOut,
 } from "../../lib/booking";
 import { ROBOTICS_CATEGORY } from "../../lib/site-links";
+import { getPubliclyVisiblePackages } from "../../lib/robotics-packages.js";
 import {
   findLicensedRoboticsProgram,
   formatWeeklyClassSchedules,
@@ -62,6 +63,18 @@ function withLicensedProgramAssets(program: Program): Program {
     skillTags: licensedProgram.skillTags,
     futureReadyCopy: licensedProgram.futureReadyCopy,
   };
+}
+
+/** The program's lowest published per-class rate — the "From $X/class"
+ * headline. Resolved from the canonical catalogue by the program's own id
+ * (lib/robotics-packages.js keys both the licensed slug and the Firestore
+ * id), never hardcoded, so this can't drift from what booking charges.
+ * Returns null for a coming-soon program, which has no rate card to quote. */
+function startingPerClassCents(program: Program): number | null {
+  if (program.comingSoon) return null;
+  const packages = getPubliclyVisiblePackages(program.id) as { perClassCents: number }[];
+  if (!packages.length) return null;
+  return Math.min(...packages.map((pkg) => pkg.perClassCents));
 }
 
 function ProgramCard({
@@ -119,6 +132,7 @@ function ProgramCard({
       : hasWaitlist ? "bg-orange-50 text-orange-700" : "bg-slate-100 text-slate-600";
 
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+  const startingCents = startingPerClassCents(program);
 
   return (
     <div
@@ -164,6 +178,21 @@ function ProgramCard({
             {availabilityLabel}
           </span>
         </div>
+
+        {/* Price is the third thing a parent wants to know, right after
+            "what is it" and "is it for my child" — so it sits on the card
+            rather than behind a click on "Request a Spot". */}
+        {startingCents !== null && (
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span className="text-xl font-black text-[#0A2D5A]">
+              From ${(startingCents / 100).toFixed(0)}
+              <span className="ml-1 text-xs font-semibold text-slate-500">/class + tax</span>
+            </span>
+            <a href="#pricing" className="text-xs font-bold text-[#0c6162] hover:underline">
+              View pricing →
+            </a>
+          </div>
+        )}
 
         {weeklyBatches.length > 0 && (
           <div className="space-y-1">

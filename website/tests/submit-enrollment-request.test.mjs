@@ -271,14 +271,24 @@ test('validatePayload rejects recurring_monthly for Explorer (pay-in-full only, 
   assert.equal(result.error, 'Monthly billing is not available for the selected package.')
 })
 
-test('validateCatalogueRequest exempts Regular from the offering-classCount check (it has no fixed class count)', () => {
-  const request = baseRequest({ packageId: 'regular' })
-  const { session } = validateCatalogueRequest(
-    request,
-    doc(roboticsProgram()),
-    doc(openOffering({ classCount: 0 })),
+test('validateCatalogueRequest holds Regular to its 10-class count like any other learning path', () => {
+  // Regular is no longer exempt: it is a fixed 10-class package, so an
+  // offering with fewer remaining classes must be rejected.
+  assert.throws(
+    () => validateCatalogueRequest(
+      baseRequest({ packageId: 'regular' }),
+      doc(roboticsProgram()),
+      doc(openOffering({ classCount: 9 })),
+    ),
+    /does not have enough classes remaining/,
   )
-  assert.equal(session.classCount, 0)
+
+  const { session } = validateCatalogueRequest(
+    baseRequest({ packageId: 'regular' }),
+    doc(roboticsProgram()),
+    doc(openOffering({ classCount: 10 })),
+  )
+  assert.equal(session.classCount, 10)
 })
 
 test('buildRecurringMonthlyContext for Builder/Engineer returns a real billingMonthCount from the offering schedule', () => {
@@ -288,12 +298,14 @@ test('buildRecurringMonthlyContext for Builder/Engineer returns a real billingMo
   assert.equal(context.billingMonthCount, 6) // matches the hand-traced fixture in robotics-monthly-tuition.test.mjs
 })
 
-test('buildRecurringMonthlyContext for Regular returns classesInMonth/billingMonthLabel from the offering schedule', () => {
+test('buildRecurringMonthlyContext for Regular returns a real billingMonthCount, not a single-month estimate', () => {
   const regular = getRoboticsPackage(undefined, 'regular')
   const session = openOffering({ firstClassDate: '2026-09-14', weekday: 'Monday', timezone: 'America/Toronto' })
   const context = buildRecurringMonthlyContext(regular, session)
-  assert.equal(context.classesInMonth, 3) // Sep 14, 21, 28
-  assert.equal(context.billingMonthLabel, 'September 2026')
+  // 10 weekly Monday classes from Sep 14, 2026 span September–November.
+  assert.equal(context.billingMonthCount, 3)
+  assert.equal(context.classesInMonth, undefined)
+  assert.equal(context.billingMonthLabel, undefined)
 })
 
 test('buildRecurringMonthlyContext returns null when the offering has no computable schedule, so the caller rejects rather than guessing', () => {

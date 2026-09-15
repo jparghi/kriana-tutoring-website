@@ -15,24 +15,27 @@
 // complete package. Every future package must declare its own
 // `paymentOptions`; it is never inferred from class count or price.
 //
-// There is no installment-plan option. Builder/Engineer/Regular are billed
-// monthly; Explorer (internal only) is paid in full. Do not reintroduce a
-// per-package installment rate without also restoring the UI, the Netlify
-// validation branch, and the acknowledgement-email rendering that were
-// removed alongside it.
+// There is no installment-plan option. Regular/Builder/Engineer may each be
+// paid in full or billed monthly; Explorer (internal only) is paid in full.
+// Do not reintroduce a per-package installment rate without also restoring
+// the UI, the Netlify validation branch, and the acknowledgement-email
+// rendering that were removed alongside it.
 function paymentOptions({ payInFullEnabled = true, recurringMonthlyEnabled = false } = {}) {
   return Object.freeze({ payInFullEnabled, recurringMonthlyEnabled })
 }
 
-// `regularSubtotalCents` is the package's bulk pay-in-full price (what you'd
-// pay in full without the Back-to-School promotion). `promotionalPayInFullSubtotalCents`
-// is a separate, explicit value (never derived from perClassCents/discountClasses
-// at runtime) that only ever applies when paying in full during an active
-// promotion.
+// `regularSubtotalCents` is the package's pay-in-full price. Only
+// `paymentOptions.payInFullEnabled` packages need it. See
+// resolvePackagePricing, which is the one place all of this is turned into
+// "what does this family actually owe."
 //
-// Only `paymentOptions.payInFullEnabled` packages need
-// `regularSubtotalCents`. See resolvePackagePricing, which is the one place
-// all of this is turned into "what does this family actually owe."
+// NO PROMOTION IS CURRENTLY RUNNING. The Back-to-School "first class free"
+// campaign has been removed: every package is `promotionEligible: false`
+// with a null `promotionalPayInFullSubtotalCents`. The promotion *mechanism*
+// below is intentionally kept so a future campaign is a data change here
+// (set the two fields plus PACKAGE_PROMO) rather than a rewrite — but until
+// then nothing downstream should render promotional copy, because
+// `promotionApplied` can never be true.
 //
 // Class packages are program-scoped: each Robotics program can have its own
 // Builder/Engineer pricing (see PACKAGE_CATALOGS_BY_PROGRAM_ID below).
@@ -51,12 +54,11 @@ const EXPLORER_PACKAGE = Object.freeze({
   sortOrder: 2,
   // Pay-in-full only, paid as a single upfront invoice for all classes.
   paymentOptions: paymentOptions(),
-  // Not enrolled in the Back-to-School promotion. Must stay unchanged
-  // unless a future configuration change here explicitly opts it in.
+  // No promotion is running; see the PACKAGE_PROMO note above.
   promotionEligible: false,
   promotionalPayInFullSubtotalCents: null,
   // Internal fallback / save-the-sale package — intentionally not shown
-  // in the public package grids (PackageChooser, PackagesPricingSection).
+  // in the public package grids (PackageChooser, RoboticsPricingSection).
   // Still fully enabled everywhere else: valid packageId for direct/Shared
   // links, registration, checkout, and existing Explorer registrations
   // are completely unaffected. Flip this back to true to re-list it
@@ -64,29 +66,33 @@ const EXPLORER_PACKAGE = Object.freeze({
   publicVisible: false,
 })
 
-// The no-commitment option. Unlike Explorer/Builder/Engineer, Regular has no
-// fixed class count or total — a family is billed for whatever classes are
-// actually scheduled in a given calendar month at this per-class rate, so
-// there's nothing here for the arithmetic self-check below to verify against
-// (see `planType === 'rolling_monthly'` skip in that loop). The actual
-// monthly amount can only be computed once a real offering schedule is known
-// (see lib/robotics-monthly-tuition.js) — never hardcode a Regular monthly
-// total anywhere downstream.
+// The shortest-commitment public option: a fixed 10-class package at the
+// program's standard (undiscounted) per-class rate. This is the rate every
+// other package's savings are quoted against, so `perClassCents` here is the
+// program's rate card "Regular" column.
+//
+// Regular used to be a `rolling_monthly` plan with no class count, billed for
+// whatever classes happened to land in a calendar month. It is now a normal
+// `fixed_learning_path` package like Builder and Engineer — families commit
+// to 10 classes and may pay in full or have that total averaged across the
+// real billing months. The `rolling_monthly` code paths in this module and
+// in lib/robotics-monthly-tuition.js are deliberately left intact: no
+// catalogue package uses them today, but historical registrations carry
+// `rolling_monthly` payment-preference snapshots (v3, `variesByMonth: true`)
+// that readers must still render correctly.
 function buildRegularPackage(perClassCents) {
   return Object.freeze({
   id: 'regular',
   name: 'Regular',
-  planType: 'rolling_monthly',
-  classCount: null,
+  planType: 'fixed_learning_path',
+  classCount: 10,
   perClassCents,
-  regularSubtotalCents: null,
+  regularSubtotalCents: perClassCents * 10,
   currency: 'CAD',
   badge: null,
   sortOrder: 1,
-  minimumClassCommitment: null,
-  paymentOptions: paymentOptions({ payInFullEnabled: false, recurringMonthlyEnabled: true }),
-  // Not enrolled in the Back-to-School promotion — the promotion is a
-  // pay-in-full incentive only, and Regular has no pay-in-full option.
+  minimumClassCommitment: 10,
+  paymentOptions: paymentOptions({ payInFullEnabled: true, recurringMonthlyEnabled: true }),
   promotionEligible: false,
   promotionalPayInFullSubtotalCents: null,
   publicVisible: true,
@@ -134,10 +140,10 @@ const DEFAULT_PACKAGE_CATALOG = buildPackageCatalog({
   builder: {
     perClassCents: 2800, // $28/class pay-in-full
     regularSubtotalCents: 56000, // $560
-    badge: null,
+    badge: 'Most Popular',
     paymentOptions: paymentOptions({ recurringMonthlyEnabled: true }),
-    promotionEligible: true,
-    promotionalPayInFullSubtotalCents: 53200, // $560 - $28 first class free
+    promotionEligible: false,
+    promotionalPayInFullSubtotalCents: null,
     publicVisible: true,
   },
   engineer: {
@@ -145,8 +151,8 @@ const DEFAULT_PACKAGE_CATALOG = buildPackageCatalog({
     regularSubtotalCents: 90000, // $900
     badge: 'Best Value',
     paymentOptions: paymentOptions({ recurringMonthlyEnabled: true }),
-    promotionEligible: true,
-    promotionalPayInFullSubtotalCents: 87500, // $900 - $25 first class free
+    promotionEligible: false,
+    promotionalPayInFullSubtotalCents: null,
     publicVisible: true,
   },
 })
@@ -162,10 +168,8 @@ const SMARTIVO_PACKAGE_CATALOG = buildPackageCatalog({
     regularSubtotalCents: 52000, // $520
     badge: 'Most Popular',
     paymentOptions: paymentOptions({ recurringMonthlyEnabled: true }),
-    promotionEligible: true,
-    // Back-to-School Launch Offer: first class free, i.e. regular minus one
-    // pay-in-full class ($520 - $26 = $494).
-    promotionalPayInFullSubtotalCents: 49400,
+    promotionEligible: false,
+    promotionalPayInFullSubtotalCents: null,
     publicVisible: true,
   },
   engineer: {
@@ -173,9 +177,8 @@ const SMARTIVO_PACKAGE_CATALOG = buildPackageCatalog({
     regularSubtotalCents: 86400, // $864
     badge: 'Best Value',
     paymentOptions: paymentOptions({ recurringMonthlyEnabled: true }),
-    promotionEligible: true,
-    // $864 - $24 = $840.
-    promotionalPayInFullSubtotalCents: 84000,
+    promotionEligible: false,
+    promotionalPayInFullSubtotalCents: null,
     publicVisible: true,
   },
 })
@@ -186,8 +189,17 @@ const SMARTIVO_PACKAGE_CATALOG = buildPackageCatalog({
 // here if the Smartivo program doc is ever deleted and recreated.
 const SMARTIVO_PROGRAM_ID = 'cCdBSnKOgTBcO4ZIPXs4' // Smartivo
 
+// The licensed-program slug from lib/robotics-content.ts, keyed here as well
+// so marketing surfaces can price a program before (or without) resolving its
+// Firestore document. Registration and checkout always pass the real
+// Firestore id; this alias exists so the /robotics rate card can never quote
+// the 75-minute rates for a 60-minute Smartivo class just because the
+// Firestore lookup came back empty.
+const SMARTIVO_LICENSED_SLUG = 'smartivo'
+
 const PACKAGE_CATALOGS_BY_PROGRAM_ID = Object.freeze({
   [SMARTIVO_PROGRAM_ID]: SMARTIVO_PACKAGE_CATALOG,
+  [SMARTIVO_LICENSED_SLUG]: SMARTIVO_PACKAGE_CATALOG,
 })
 
 /** The canonical class-package catalogue for a given program. Every Robotics
@@ -258,24 +270,24 @@ export function getDemoPricing() {
 // so it's configured here directly. Registrations already submitted keep
 // their locked-in packageSnapshot regardless of later changes here.
 //
-// `active` is a real deadline, not a hand-flipped flag — the campaign ends
-// naturally the night before classes begin (Sunday, September 13, 2026,
-// 11:59 p.m. ET) rather than needing someone to remember to turn it off.
-// It's a getter so it's re-evaluated on every access — this module can stay
-// loaded in a warm server process for days, so a value baked in once at
-// import time would keep the promo "on" past its deadline until the next
-// deploy/cold start. Avoid extending this deadline after the fact: a promo
-// advertised with a firm end date that then keeps sliding undermines the
-// urgency (and the trust) it's meant to create.
-const PROMO_ENDS_AT = '2026-09-13T23:59:59-04:00' // Sunday, Sep 13, 2026, 11:59:59 p.m. ET
-
+// THERE IS NO ACTIVE PROMOTION. The Back-to-School "first class free"
+// campaign ran to September 13, 2026 and has been retired: `active` is
+// permanently false and `label` is null, and no package is
+// `promotionEligible` any more, so `resolvePackagePricing` can never report
+// `promotionApplied: true`.
+//
+// To run a future campaign, give this object a real `endsAt` deadline and
+// restore the date-based getter below (a real deadline, not a hand-flipped
+// flag, so the campaign ends on its own rather than needing someone to
+// remember), then opt individual packages in via `promotionEligible` +
+// `promotionalPayInFullSubtotalCents`. The promotional copy that used to
+// render off these fields was removed from the register page, the booking
+// catalogue and the acknowledgement email and would need restoring too.
 export const PACKAGE_PROMO = Object.freeze({
-  get active() {
-    return Date.now() <= new Date(PROMO_ENDS_AT).getTime()
-  },
-  label: 'Back-to-School Offer: First Class Free',
-  registerByLabel: 'Register by September 13, 2026. Limited spaces available.',
-  endsAt: PROMO_ENDS_AT,
+  active: false,
+  label: null,
+  registerByLabel: null,
+  endsAt: null,
 })
 
 export function isValidPackageId(programId, packageId) {
@@ -306,23 +318,25 @@ export function getPaymentOptionsLabel(pkg) {
 }
 
 /** The one canonical, server-safe pricing resolver. Given a package and a
- * payment method, returns exactly what the family owes and whether the
- * Back-to-School promotion applied — this is the single source of truth for
- * "how much" everywhere in the app (package cards, the payment-preference
+ * payment method, returns exactly what the family owes and whether a
+ * promotion applied (never, while none is configured — see PACKAGE_PROMO) —
+ * this is the single source of truth for "how much" everywhere in the app (package cards, the payment-preference
  * step, review screens, server snapshots, emails).
  *
  * THE CORE BUSINESS RULE: the promotion is a pay-in-full incentive only.
  *   - method 'pay_in_full', promo active + package promotion-eligible:
  *       payableSubtotalCents = the package's explicit promotional price.
- *   - method 'pay_in_full', promo inactive (or package not eligible):
+ *   - method 'pay_in_full', promo inactive (or package not eligible) — the
+ *       only case that can occur today:
  *       payableSubtotalCents = the package's regular (bulk) price.
  *   - method 'recurring_monthly', ALWAYS, promo active or not:
- *       - `fixed_learning_path` packages (Builder/Engineer):
+ *       - `fixed_learning_path` packages (Regular/Builder/Engineer):
  *         payableSubtotalCents = classCount × perClassCents — the package's
  *         own rate (e.g. $28/class). This is the total that gets averaged
  *         across billing months (see lib/robotics-monthly-tuition.js), not a
  *         separately-priced payment method.
- *       - `rolling_monthly` packages (Regular): there is no fixed total —
+ *       - `rolling_monthly` packages (none in the catalogue today): there
+ *         is no fixed total —
  *         the family is billed for whatever classes actually land in one
  *         calendar month. Requires `context.classesInMonth` (a real count
  *         from an actual offering schedule); throws rather than guessing if
@@ -335,6 +349,8 @@ export function resolvePackagePricing(pkg, method, context = {}) {
 
   if (method === 'pay_in_full') {
     const regularSubtotalCents = pkg.regularSubtotalCents
+    // Always false while no campaign is configured — every package is
+    // `promotionEligible: false` and PACKAGE_PROMO.active is false.
     const promotionApplied = Boolean(pkg.promotionEligible) && PACKAGE_PROMO.active
       && Number.isSafeInteger(pkg.promotionalPayInFullSubtotalCents)
     const payableSubtotalCents = promotionApplied ? pkg.promotionalPayInFullSubtotalCents : regularSubtotalCents
@@ -365,8 +381,8 @@ export function resolvePackagePricing(pkg, method, context = {}) {
       }
     }
 
-    // fixed_learning_path (Builder/Engineer): the full path total at the
-    // package's own per-class rate — never promo-discounted.
+    // fixed_learning_path (Regular/Builder/Engineer): the full path total at
+    // the package's own per-class rate — never promo-discounted.
     const pathTotalCents = pkg.classCount * pkg.perClassCents
     return {
       method: 'recurring_monthly',
@@ -413,6 +429,9 @@ export function buildPackageSnapshot(programId, packageId) {
       recurringMonthlyEnabled: pkg.paymentOptions.recurringMonthlyEnabled,
     },
     promotionEligible: pkg.promotionEligible,
+    // Always null today — no package is promotion-eligible and
+    // PACKAGE_PROMO carries no label. Historical snapshots keep whatever
+    // promotion name was in force when they were written.
     promotionName: pkg.promotionEligible ? PACKAGE_PROMO.label : null,
   }
 }

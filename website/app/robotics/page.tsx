@@ -5,15 +5,23 @@ import Link from "next/link";
 import { Footer } from "../../components/footer";
 import { RoboticsPrograms } from "../../components/robotics/robotics-programs";
 import { RoboticsCtaButtons } from "../../components/robotics/robotics-cta-buttons";
+import { RoboticsPricingSection } from "../../components/robotics/robotics-pricing-section";
+import { RoboticsSectionNav } from "../../components/robotics/robotics-section-nav";
 import { SkillsSection } from "../../components/robotics/skills-section";
 import { MapPinIcon } from "../../components/icons";
 import {
   BIRTHDAY_PARTY_PATH,
+  ROBOTICS_BOOKING_URL,
   SCHOOL_PROGRAM_BOOKING_URL,
   // SUMMER_CAMP_BOOKING_URL, // unused while "Camps & PA Days" tile is hidden — see additionalOfferings below
   YOUNG_ENGINEERS_URL,
 } from "../../lib/site-links";
-import { YE_AMBER, /* YE_BLUE, */ YE_RED, licensedRoboticsPrograms } from "../../lib/robotics-content";
+import {
+  YE_AMBER,
+  /* YE_BLUE, */ YE_RED,
+  formatTimeRange,
+  licensedRoboticsPrograms,
+} from "../../lib/robotics-content";
 import { breadcrumbSchema, localBusinessSchema, siteUrl, toJsonLd } from "../../lib/seo";
 import { getCatalogServer } from "../../lib/catalog.server";
 import { ROBOTICS_CATEGORY } from "../../lib/site-links";
@@ -47,6 +55,33 @@ const futureReadyJourney = [
   { title: "Improve", description: "Refine the design through creative thinking." },
 ];
 
+// Every program currently runs one time slot repeated across Monday,
+// Wednesday and Friday, so each card leads with the time and lists the days
+// rather than repeating "…, 4:30 p.m.–5:30 p.m." three times. If a program
+// ever runs different times on different days, `timeLabel` is null and the
+// card falls back to listing each day/time pair in full. A program without a
+// published weekly schedule is omitted rather than shown as an empty card.
+const weeklyScheduleCards = licensedRoboticsPrograms
+  .filter((program) => !program.comingSoon && program.weeklySchedules?.length)
+  .map((program) => {
+    const slots = program.weeklySchedules!;
+    const sharesOneTime = slots.every(
+      (slot) => slot.startTime === slots[0].startTime && slot.endTime === slots[0].endTime
+    );
+    return {
+      id: program.id,
+      title: program.title,
+      ageRange: program.ageRange.replace("-", "\u2013"),
+      durationMin: program.durationMin,
+      timeLabel: sharesOneTime ? formatTimeRange(slots[0].startTime, slots[0].endTime) : null,
+      days: slots.map((slot) => slot.weekday),
+      slots: slots.map((slot) => ({
+        weekday: slot.weekday,
+        time: formatTimeRange(slot.startTime, slot.endTime),
+      })),
+    };
+  });
+
 const additionalOfferings = [
   // Camps & PA Days hidden for now — re-enable by uncommenting when ready to promote again.
   // {
@@ -73,6 +108,14 @@ const additionalOfferings = [
 ];
 
 const faqs = [
+  {
+    q: "How much do classes cost?",
+    a: "Rates depend on the program and how many classes you enrol for. Smartivo (60 minutes) is $30/class for the 10-class Regular package, $26/class for the 20-class Builder package and $24/class for the 36-class Engineer package. Bricks Challenge and Algo Play (75 minutes) are $32, $28 and $25/class for the same three packages. Pricing is per child and applicable taxes are extra — see the pricing section above for each program's totals.",
+  },
+  {
+    q: "Do I have to pay for the whole package up front?",
+    a: "Yes — monthly billing is how robotics tuition works. The package total is averaged across the real months your child's schedule runs, so the amount stays the same each month even when a month has fewer class dates because of holidays or school breaks. No payment is collected when you request a spot.",
+  },
   {
     q: "Does my child need previous robotics experience?",
     a: "No. Programs are designed to welcome first-time builders as well as returning students, with activities that scale to each child's skill level.",
@@ -145,7 +188,9 @@ export default async function RoboticsPage() {
       provider: { "@id": localBusinessSchema["@id"] },
       hasCourseInstance: program.weeklySchedules!.map((batch) => ({
         "@type": "CourseInstance",
-        name: batch.label,
+        // Slots no longer carry a "Batch N" label — the weekday identifies
+        // the instance now (see the weeklySchedules note in robotics-content).
+        name: `${program.title} — ${batch.weekday}`,
         courseMode: "Onsite",
         courseSchedule: {
           "@type": "Schedule",
@@ -235,11 +280,13 @@ export default async function RoboticsPage() {
                 Serving Kanata &amp; Stittsville
               </p>
               <div className="mt-7">
-                <RoboticsCtaButtons variant="light" initialData={catalogData} />
+                <RoboticsCtaButtons variant="light" mode="discovery" initialData={catalogData} />
               </div>
             </div>
           </div>
         </section>
+
+        <RoboticsSectionNav />
 
         {/* Young Engineers mission band */}
         <section className="bg-[#0083CB] px-6 py-10 text-white sm:px-10">
@@ -251,7 +298,116 @@ export default async function RoboticsPage() {
           </div>
         </section>
 
-        {/* Keep the program video directly below the new hero */}
+        {/* 4. Program cards + upcoming classes / launch list */}
+        <section id="programs" className="relative scroll-mt-20 overflow-hidden bg-slate-50 px-6 py-16 sm:px-10">
+          <div className="relative mx-auto max-w-6xl">
+            <h2 className="text-2xl font-semibold text-[#0A2D5A] sm:text-3xl">Find the Right Engineering Challenge</h2>
+            <p className="mt-3 max-w-2xl text-base text-slate-600">
+              Explore hands-on programs that develop age-appropriate coding, engineering and future-ready thinking.
+            </p>
+            <div className="mt-10">
+              <RoboticsPrograms initialData={catalogData} />
+            </div>
+          </div>
+        </section>
+
+        <RoboticsPricingSection />
+
+        {/* $10 demo — the lowest-commitment way in, placed right after the
+            price so a 20- or 36-class package never reads as the only option.
+            /demo tells the reader whether a date is on sale or whether to
+            join the waitlist, so this band never claims one or the other. */}
+        <section id="demo" className="scroll-mt-20 bg-[#0A2D5A] px-6 py-16 text-white sm:px-10">
+          <div className="mx-auto max-w-3xl text-center">
+            <p className="text-xs font-black uppercase tracking-[0.28em] text-[#F2A100]">Try it first</p>
+            <h2 className="mt-3 text-3xl font-black sm:text-4xl">Not sure which program is right?</h2>
+            <p className="mt-4 text-lg leading-8 text-white/85">
+              Book a hands-on demo class for <span className="font-black text-[#F2A100]">$10</span> and let your child
+              try it before you commit. Your $10 is credited toward tuition when they enrol.
+            </p>
+            <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+              <Link
+                href="/demo"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#F2A100] px-8 py-3.5 text-sm font-black uppercase tracking-[0.18em] text-[#0A2D5A] shadow-[0_8px_28px_rgba(242,161,0,0.35)] transition-all duration-300 hover:scale-[1.03]"
+              >
+                Book a $10 Demo
+              </Link>
+              <a
+                href="#pricing"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-white/30 bg-white/10 px-8 py-3.5 text-sm font-semibold uppercase tracking-[0.18em] text-white backdrop-blur transition-all duration-300 hover:bg-white/20"
+              >
+                See Pricing
+              </a>
+            </div>
+            <p className="mt-4 text-xs leading-5 text-white/60">
+              If no demo date is currently open, you can join the waitlist for the next one.
+            </p>
+          </div>
+        </section>
+
+        {/* Weekly schedule — answers "when?" immediately after "how much?".
+            Driven by the same licensedRoboticsPrograms constant as the
+            program cards and the Course structured data, so all three can
+            never disagree. Real published offerings (with actual class dates
+            and location) are shown on the program cards above. */}
+        <section id="schedule" className="scroll-mt-20 bg-slate-50 px-6 py-16 sm:px-10">
+          <div className="mx-auto max-w-5xl">
+            <div className="mx-auto max-w-2xl text-center">
+              <p className="text-xs font-black uppercase tracking-[0.28em] text-[#0083CB]">Weekly schedule</p>
+              <h2 className="mt-3 text-3xl font-bold text-[#0A2D5A] sm:text-4xl">When Classes Run</h2>
+              <p className="mt-3 text-base leading-7 text-slate-600">
+                Classes run weekly in the Beaverbrook area of Kanata. Exact dates and locations are confirmed with
+                each published schedule.
+              </p>
+            </div>
+
+            <div className="mt-10 grid gap-5 sm:grid-cols-3">
+              {weeklyScheduleCards.map((entry) => (
+                <div key={entry.id} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <h3 className="text-base font-black text-[#0A2D5A]">{entry.title}</h3>
+                  <p className="mt-0.5 text-sm font-semibold text-slate-500">
+                    Ages {entry.ageRange} · {entry.durationMin} min
+                  </p>
+                  {entry.timeLabel ? (
+                    <>
+                      <p className="mt-4 text-xl font-black text-[#0A2D5A]">{entry.timeLabel}</p>
+                      <ul className="mt-3 flex flex-wrap gap-2" aria-label={`${entry.title} class days`}>
+                        {entry.days.map((day) => (
+                          <li
+                            key={day}
+                            className="rounded-full bg-[#0083CB]/10 px-3 py-1 text-xs font-bold text-[#0083CB]"
+                          >
+                            {day}
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  ) : (
+                    <ul className="mt-4 space-y-2">
+                      {entry.slots.map((slot) => (
+                        <li key={slot.weekday} className="flex flex-wrap items-baseline gap-x-1.5 text-sm text-slate-600">
+                          <span className="font-bold text-slate-800">{slot.weekday}:</span>
+                          <span>{slot.time}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <p className="mt-8 text-center text-sm text-slate-500">
+              Days or times don&apos;t work?{" "}
+              <Link href="/contact#consultation-form" className="font-semibold text-[#0c6162] hover:underline">
+                Tell us what does.
+              </Link>
+            </p>
+          </div>
+        </section>
+
+        {/* See it in action — after the conversion block (programs,
+            price, demo, schedule), which is what a parent arriving from
+            social is actually looking for first. */}
         <section className="bg-white px-6 py-16 sm:px-10">
           <div className="mx-auto max-w-5xl">
             <div className="mx-auto max-w-2xl text-center">
@@ -277,19 +433,6 @@ export default async function RoboticsPage() {
                   <source src="/videos/robotics-highlight.mp4" type="video/mp4" />
                 </video>
               </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 4. Program cards + upcoming classes / launch list */}
-        <section id="programs" className="relative overflow-hidden bg-slate-50 px-6 py-16 sm:px-10">
-          <div className="relative mx-auto max-w-6xl">
-            <h2 className="text-2xl font-semibold text-[#0A2D5A] sm:text-3xl">Find the Right Engineering Challenge</h2>
-            <p className="mt-3 max-w-2xl text-base text-slate-600">
-              Explore hands-on programs that develop age-appropriate coding, engineering and future-ready thinking.
-            </p>
-            <div className="mt-10">
-              <RoboticsPrograms initialData={catalogData} />
             </div>
           </div>
         </section>
@@ -468,7 +611,7 @@ export default async function RoboticsPage() {
         </section>
 
         {/* 9. FAQ */}
-        <section className="bg-slate-50 px-6 py-16 sm:px-10">
+        <section id="faq" className="scroll-mt-20 bg-slate-50 px-6 py-16 sm:px-10">
           <div className="mx-auto max-w-3xl">
             <h2 className="text-2xl font-semibold text-[#0A2D5A] sm:text-3xl">Frequently Asked Questions</h2>
             <div className="mt-8 space-y-3">
@@ -486,6 +629,31 @@ export default async function RoboticsPage() {
                   <p className="mt-3 text-sm leading-relaxed text-slate-600">{faq.a}</p>
                 </details>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Final CTA */}
+        <section className="bg-white px-6 py-16 sm:px-10">
+          <div className="mx-auto max-w-3xl rounded-[2rem] border border-slate-200 bg-slate-50 px-6 py-12 text-center shadow-sm sm:px-10">
+            <h2 className="text-2xl font-bold text-[#0A2D5A] sm:text-3xl">Ready to get started?</h2>
+            <p className="mt-3 text-base leading-7 text-slate-600">
+              Request a spot in a weekly program, or try a class for $10 first. No payment is collected when you
+              request a spot.
+            </p>
+            <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+              <Link
+                href={ROBOTICS_BOOKING_URL}
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0c6162] px-8 py-3.5 text-sm font-bold uppercase tracking-[0.18em] text-white shadow-[0_8px_32px_rgba(12,97,98,0.45)] transition-all duration-300 hover:scale-[1.03] hover:bg-[#0a5051]"
+              >
+                Request a Spot
+              </Link>
+              <Link
+                href="/demo"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-8 py-3.5 text-sm font-semibold uppercase tracking-[0.18em] text-slate-700 shadow-sm transition-all duration-300 hover:border-brand-sky hover:text-brand-sky"
+              >
+                Book a $10 Demo
+              </Link>
             </div>
           </div>
         </section>

@@ -348,8 +348,10 @@ export function validateCatalogueRequest(request, programDoc, sessionDoc) {
     if (!selectedPackage) {
       throw new RequestRejectedError(400, 'Selected class package is not recognized.')
     }
-    // Regular (`rolling_monthly`) has no fixed class count to check against —
-    // it's a rolling weekly commitment, not a fixed-length learning path.
+    // Every catalogue package is a fixed-length learning path (Regular
+    // included, at 10 classes), so all of them are checked against the
+    // offering's remaining class count. The `rolling_monthly` guard stays
+    // because a package with no fixed class count has nothing to check.
     if (selectedPackage.planType !== 'rolling_monthly') {
       const offeringClassCount = Number(session.classCount)
       if (!Number.isSafeInteger(offeringClassCount) || offeringClassCount < selectedPackage.classCount) {
@@ -487,7 +489,7 @@ function formatAmount(cents) {
   return `$${(Number(cents ?? 0) / 100).toFixed(2)} CAD`
 }
 
-// A recurring-monthly package (Builder/Engineer/Regular) never shows a fixed
+// A recurring-monthly package (Regular/Builder/Engineer) never shows a fixed
 // subtotal in the "Package" line — the amount is billed per invoice, based
 // on that month's classes, not a single lump total. Explorer (pay-in-full
 // only) keeps the classCount + subtotal summary as before.
@@ -502,18 +504,24 @@ function packageSummaryLine(packageSnapshot) {
 function paymentPreferenceHtml(snapshot) {
   if (!snapshot) return ''
   if (snapshot.method === 'pay_in_full') {
+    // No promotion is running (see PACKAGE_PROMO in lib/robotics-packages.js),
+    // so `promotionApplied` is always false for a newly built snapshot. This
+    // branch still renders for historical snapshots taken while a campaign
+    // was live, which must keep showing the discount they were priced with.
     const promoNote = snapshot.promotionApplied
-      ? ` — includes the Back-to-School first-class-free offer (save ${formatAmount(snapshot.promotionDiscountCents)})`
+      ? ` — includes ${escapeHtml(snapshot.promotionName || 'a promotional offer')} (save ${formatAmount(snapshot.promotionDiscountCents)})`
       : ''
     return `<p style="margin:0 0 8px"><strong>Payment preference:</strong> Pay in full — ${formatAmount(snapshot.payableSubtotalCents)} (plus applicable taxes)${promoNote}</p>`
   }
   if (snapshot.method === 'recurring_monthly') {
     if (snapshot.variesByMonth) {
-      // Regular: no fixed schedule, so no fixed total either — only this
-      // one month's estimate is known at request time. Never claim
-      // automatic/recurring charging exists; this is a billing preference
-      // staff invoice against each month, cancellable before the next one.
-      return `<p style="margin:0 0 8px"><strong>Payment preference:</strong> Billed monthly for classes actually held (no long-term commitment) — ${escapeHtml(snapshot.billingMonthLabel)} is estimated at ${formatAmount(snapshot.payableSubtotalCents)} for ${snapshot.classesInMonth} class${snapshot.classesInMonth === 1 ? '' : 'es'} (plus applicable taxes). The exact amount for each month depends on that month's calendar and is confirmed before billing; the family may cancel before the next billing month. The Back-to-School offer applies only when paying in full.</p>`
+      // Historical only: a `rolling_monthly` package (the old Regular) had no
+      // fixed schedule, so no fixed total either — only that one month's
+      // estimate was known at request time. No catalogue package produces
+      // this shape any more, but stored snapshots must still render. Never
+      // claim automatic/recurring charging exists; this is a billing
+      // preference staff invoice against each month.
+      return `<p style="margin:0 0 8px"><strong>Payment preference:</strong> Billed monthly for classes actually held (no long-term commitment) — ${escapeHtml(snapshot.billingMonthLabel)} is estimated at ${formatAmount(snapshot.payableSubtotalCents)} for ${snapshot.classesInMonth} class${snapshot.classesInMonth === 1 ? '' : 'es'} (plus applicable taxes). The exact amount for each month depends on that month's calendar and is confirmed before billing; the family may cancel before the next billing month.</p>`
     }
     return `<p style="margin:0 0 8px"><strong>Payment preference:</strong> Billed monthly — each invoice is based on the number of classes scheduled that month (plus applicable taxes).</p>`
   }
@@ -755,6 +763,9 @@ function computeDemoCreditApplication(demoCredit, paymentPreferenceSnapshot) {
  * caller can reject rather than silently save an incomplete snapshot. */
 export function buildRecurringMonthlyContext(pkg, session) {
   if (!pkg) return null
+  // No catalogue package is `rolling_monthly` any more — Regular is a fixed
+  // 10-class learning path — but the branch stays for any future rolling
+  // package rather than silently mispricing one.
   if (pkg.planType === 'rolling_monthly') {
     const estimate = getRegularMonthlyEstimate(session, pkg)
     if (!estimate.monthKey) return null
