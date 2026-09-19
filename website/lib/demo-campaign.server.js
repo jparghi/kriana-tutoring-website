@@ -126,3 +126,37 @@ function withPageState(campaign) {
     : derived
   return { ...campaign, pageState }
 }
+
+// Live state of each session's own offering, for demos that run several
+// sessions with separate capacity (one `programOfferings` doc per session —
+// see data/demos.ts). Uses the same authoritative checks as the submit
+// endpoints, so a session is only ever reported 'open' when
+// submit-demo-registration.js would accept a booking for it.
+//
+// Returns { [offeringId]: { status, waitlistOpen } } where status is
+// 'open' | 'full' | 'closed' | 'unavailable'. A failed read of one offering
+// degrades that session to 'unavailable' rather than taking the page down.
+export async function resolveDemoSessionOfferings(programId, offeringIds, db) {
+  const ids = offeringIds.filter(Boolean)
+  const out = {}
+  if (!programId || !ids.length) return out
+  if (!db) db = getAdminDb()
+
+  const programDoc = await db.collection('programs').doc(programId).get()
+  await Promise.all(ids.map(async offeringId => {
+    try {
+      const offeringDoc = await db.collection('programOfferings').doc(offeringId).get()
+      const live = assertLiveDemoOffering({ programId, demoOfferingId: offeringId }, programDoc, offeringDoc)
+      const state = demoPublicBookingState(live.offering)
+      out[offeringId] = {
+        status: state === 'open' || state === 'full' || state === 'closed' ? state : 'unavailable',
+        waitlistOpen: live.offering.waitlistEnabled === true,
+        offering: live.offering,
+      }
+    } catch (error) {
+      if (!(error instanceof RequestRejectedError)) console.error('demo session offering read failed', offeringId, error)
+      out[offeringId] = { status: 'unavailable', waitlistOpen: false }
+    }
+  }))
+  return out
+}

@@ -22,6 +22,7 @@ export const DEMO_ELIGIBLE_PROGRAM_IDS = Object.freeze([
   'lqA6LK62gr7AphDOpesA', // Bricks Challenge
   'XzltkMNsZwofCqArSJ3z', // Algo Play
   'young-engineers-demo-kanata-sep-2026', // Sept 12, 2026 Kanata demo — a standalone campaign program, not tied to any regular product
+  'young-engineers-demo-stittsville-oct-2026', // Oct 2, 2026 Stittsville demo (two sessions, one offering each)
 ])
 
 export function isDemoEligibleProgramId(id) {

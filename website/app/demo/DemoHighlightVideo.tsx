@@ -3,14 +3,27 @@
 import { useRef, useState } from 'react'
 import { trackEvent } from '../../lib/analytics'
 
-// Real footage from the sold-out September 12 Kanata demo.
+// Real footage from a completed demo (defaults to the September 12 Kanata reel).
 //
 // preload="none" + a poster keeps the ~4 MB file off the critical path —
 // nothing but the poster image is fetched until a parent taps play, so the
 // video can't hurt LCP on the mobile visits this page is built for. No
 // autoplay: the reel is scored to music, and an autoplaying muted version
 // would throw that away while still costing every visitor the download.
-export function DemoHighlightVideo({ offeringId }: { offeringId: string | null }) {
+const DEFAULT_SRC = '/videos/demo/young-engineers-demo-sept-2026-highlight.mp4'
+const DEFAULT_POSTER = '/images/demo/demo-sept-2026-highlight-poster.jpg'
+
+export function DemoHighlightVideo({
+  offeringId,
+  src = DEFAULT_SRC,
+  poster = DEFAULT_POSTER,
+  label = 'Play the September 12 demo highlight video',
+}: {
+  offeringId: string | null
+  src?: string
+  poster?: string
+  label?: string
+}) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [started, setStarted] = useState(false)
   const playTracked = useRef(false)
@@ -31,8 +44,8 @@ export function DemoHighlightVideo({ offeringId }: { offeringId: string | null }
       <video
         ref={videoRef}
         className="aspect-[9/16] w-full bg-slate-900 object-cover"
-        src="/videos/demo/young-engineers-demo-sept-2026-highlight.mp4"
-        poster="/images/demo/demo-sept-2026-highlight-poster.jpg"
+        src={src}
+        poster={poster}
         preload="none"
         controls
         playsInline
@@ -41,7 +54,7 @@ export function DemoHighlightVideo({ offeringId }: { offeringId: string | null }
       {!started && (
         <button
           type="button"
-          aria-label="Play the September 12 demo highlight video"
+          aria-label={label}
           onClick={() => videoRef.current?.play()}
           className="absolute inset-0 flex items-center justify-center bg-slate-900/20 transition-colors hover:bg-slate-900/30"
         >
