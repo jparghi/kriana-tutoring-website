@@ -27,6 +27,7 @@ import { getDemoPricing } from '../../lib/robotics-packages.js'
 import { DEMO_ELIGIBLE_PROGRAM_IDS, isDemoEligibleProgramId } from '../../lib/demo-eligibility.js'
 import { computeChildEligibilityKeyHash } from '../../lib/demo-eligibility-crypto.js'
 import { sendDemoAcknowledgement } from './_lib/demo-email.js'
+import { LEAD_ACTIVITY_TYPE, createLeadFromRegistration, logLeadActivity } from './_lib/demo-lead.js'
 
 const JSON_HEADERS = {
   'Content-Type': 'application/json',
@@ -455,13 +456,33 @@ export const handler = async event => {
     }
 
     const saved = await saveDemoRegistration(db, validated)
+
+    // Demo Lead Tracker: only once the registration has committed. Idempotent
+    // (lead doc id === registration id) and never throws, so it can't fail a
+    // saved registration; a duplicate request retries it, which heals a lead
+    // that was missed the first time.
+    await createLeadFromRegistration(db, {
+      registrationId: saved.id,
+      reference: saved.reference,
+      request: validated,
+      program: saved.program,
+      offering: saved.offering,
+    })
+
     if (!saved.duplicate) {
-      await sendDemoAcknowledgement({
+      const emailed = await sendDemoAcknowledgement({
         registration: { ...validated.registration, priceCents: saved.priceCents, currency: saved.currency },
         program: saved.program,
         offering: saved.offering,
         reference: saved.reference,
       })
+      if (emailed) {
+        await logLeadActivity(db, {
+          registrationId: saved.id,
+          type: LEAD_ACTIVITY_TYPE.ACK_EMAIL_SENT,
+          description: 'Registration received email sent to parent',
+        })
+      }
     }
 
     return json(201, { registrationNumber: saved.reference, demoRegistrationId: saved.id })

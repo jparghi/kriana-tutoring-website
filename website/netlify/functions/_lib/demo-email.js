@@ -70,7 +70,7 @@ function etransferMessage(programTitle, reference) {
 export async function sendDemoAcknowledgement({ registration, program, offering, reference }) {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     console.warn('Demo registration saved; SMTP credentials are not configured, so email was skipped.')
-    return
+    return false
   }
 
   const programTitle = escapeHtml(program?.title || 'Kriana program')
@@ -148,6 +148,9 @@ export async function sendDemoAcknowledgement({ registration, program, offering,
   for (const result of results) {
     if (result.status === 'rejected') console.error('Demo registration acknowledgement email failed:', result.reason)
   }
+  // True only when the PARENT's email went out — the Demo Lead Tracker
+  // timeline records it (submit-demo-registration.js).
+  return results[0].status === 'fulfilled'
 }
 
 /**
