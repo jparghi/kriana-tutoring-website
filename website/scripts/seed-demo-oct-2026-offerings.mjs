@@ -26,7 +26,7 @@ const { getAdminDb } = await import(new URL('../netlify/functions/_lib/firebase-
 const APPLY = process.argv.includes('--apply')
 const CAPACITY_PER_SESSION = 8
 const PROGRAM_ID = 'young-engineers-demo-stittsville-oct-2026'
-const TITLE = 'Young Engineers Demo Class — Stittsville'
+const TITLE = 'Young Engineers PD Day STEM Workshop'
 
 const program = {
   demoEligible: true,
@@ -52,6 +52,7 @@ const offeringFor = session => ({
   programId: PROGRAM_ID,
   status: 'Open',
   eventTitle: TITLE,
+  eventType: 'PD_DAY_WORKSHOP',
   location: '205 Metric Circle, Stittsville, ON K2V 0L3',
   eventStartAt: Timestamp.fromDate(new Date(session.start)),
   eventEndAt: Timestamp.fromDate(new Date(session.end)),

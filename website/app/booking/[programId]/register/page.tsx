@@ -1,5 +1,6 @@
 'use client'
 
+import { eventTerms } from '../../../../lib/demo-event-copy.js'
 import { useEffect, useRef, useState, Suspense } from 'react'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -61,6 +62,8 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
   // Display-only — the server independently resolves the same value from
   // the offering doc and never trusts anything the browser sends.
   const { priceCents, currency } = getDemoPricing(offering)
+  // Wording follows the offering's eventType (demo vs workshop).
+  const terms = eventTerms(offering?.eventType)
   const priceLabel = `$${(priceCents / 100).toFixed(2)} ${currency}`
   const priceDisplay = priceLabel.split(' ')[0]
   const [form, setFormState] = useState({
@@ -137,7 +140,7 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
       if (!registerResponse.ok) {
         throw new Error(registerResult.error || (isWaitlist
           ? 'We could not add you to the waitlist. Please try again.'
-          : 'We could not submit your demo registration. Please try again.'))
+          : 'We could not submit your registration. Please try again.'))
       }
 
       if (isWaitlist) {
@@ -160,6 +163,7 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
         programId,
         program: program.title,
         eventTitle: offering.eventTitle ?? '',
+        eventType: offering.eventType ?? '',
         eventDate: formatEventDateTime(offering),
         eventTime: formatEventTimeRange(offering),
         eventLocation: offering.location ?? '',
@@ -181,7 +185,7 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
         <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg, #F2A100, #ED174B)' }} />
         <div className="px-5 py-4 flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-0.5">{isWaitlist ? 'Demo Waitlist' : `${priceDisplay} Demo Class`}</p>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-0.5">{isWaitlist ? terms.waitlistLabel : terms.priceTag(priceDisplay)}</p>
             <h2 className="font-black text-slate-800">{program.title}</h2>
             {/* This campaign's demo has a fixed date/time/location (set on
                 the offering doc by an admin) — never say "we'll follow up
@@ -191,7 +195,7 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
             <p className="text-sm text-slate-500 mt-0.5">
               {formatEventDateTime(offering)
                 ? `${formatEventDateTime(offering)}${offering.location ? ` · ${offering.location}` : ''}`
-                : "Our team will follow up to confirm your child's demo class details."}
+                : `Our team will follow up to confirm your child's ${terms.noun} details.`}
             </p>
             {/* Driven by program.learnMoreUrl (from robotics-content.ts, via
                 the public-catalog allowlist) — works for any demo-eligible
@@ -214,7 +218,7 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
           ) : (
             <div className="shrink-0 text-right">
               <p className="text-xl font-black text-slate-800">{priceLabel}</p>
-              <p className="text-xs text-slate-400">one-time demo charge</p>
+              <p className="text-xs text-slate-400">{terms.oneTimeCharge}</p>
             </div>
           )}
         </div>
@@ -225,23 +229,23 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
           <>
             <div className="mb-1">
               <h3 className="font-black text-slate-800 text-base">Join the Waitlist</h3>
-              <p className="text-sm text-slate-400 mt-0.5">This demo is fully booked. Leave your details and we&apos;ll contact you if a spot opens up.</p>
+              <p className="text-sm text-slate-400 mt-0.5">{terms.thisEvent} is fully booked. Leave your details and we&apos;ll contact you if a spot opens up.</p>
             </div>
 
             <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3">
               <p className="text-sm font-bold text-sky-800">Free to join — no payment is due.</p>
-              <p className="text-sm text-sky-800 mt-1">Joining doesn&apos;t reserve a spot. Families on the waitlist will be the first to hear about our next demo.</p>
+              <p className="text-sm text-sky-800 mt-1">Joining doesn&apos;t reserve a spot. Families on the waitlist will be the first to hear about our next {terms.kind === 'workshop' ? 'event' : 'demo'}.</p>
             </div>
           </>
         ) : (
           <>
             <div className="mb-1">
-              <h3 className="font-black text-slate-800 text-base">Register for the {priceDisplay} Demo Class</h3>
-              <p className="text-sm text-slate-400 mt-0.5">Just a few details to hold your child&apos;s demo spot.</p>
+              <h3 className="font-black text-slate-800 text-base">{terms.registerHeading(priceDisplay)}</h3>
+              <p className="text-sm text-slate-400 mt-0.5">Just a few details to hold your child&apos;s {terms.spot}.</p>
             </div>
 
             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-              <p className="text-sm font-bold text-amber-700">Try for {priceDisplay} — Demo is FREE when you enroll.</p>
+              <p className="text-sm font-bold text-amber-700">{terms.creditHeadline(priceDisplay)}</p>
               <p className="text-sm text-amber-700 mt-1">The {priceDisplay} is credited toward regular enrollment after your child attends.</p>
             </div>
           </>
@@ -271,8 +275,8 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
           <input type="checkbox" required checked={form.consentAccepted} onChange={e => set('consentAccepted', e.target.checked)} className="mt-0.5 accent-[#0c6162] w-4 h-4 shrink-0" />
           <span className="text-sm text-slate-600">
             {isWaitlist
-              ? <>I confirm this information is accurate and consent to Kriana using it to add my child to the waitlist for {offering.eventTitle || 'this demo class'} and contact me about the waitlist and future demos.</>
-              : <>I confirm this information is accurate and consent to Kriana using it to register my child for {offering.eventTitle || `this ${priceDisplay} demo class`} and contact me about this registration.</>}
+              ? <>I confirm this information is accurate and consent to Kriana using it to add my child to the waitlist for {offering.eventTitle || `this ${terms.noun}`} and contact me about the waitlist and future {terms.kind === 'workshop' ? 'events' : 'demos'}.</>
+              : <>I confirm this information is accurate and consent to Kriana using it to register my child for {offering.eventTitle || `this ${priceDisplay} ${terms.noun}`} and contact me about this registration.</>}
             {' '}<span className="text-red-500">*</span>
           </span>
         </label>
@@ -297,7 +301,7 @@ function DemoFullyBooked({ programId, program, offering }: { programId: string; 
   return (
     <BookingLayout backTo={`/booking/${programId}`} backLabel={program.title} maxWidth="max-w-xl">
       <div className="rounded-2xl border border-slate-100 bg-white px-6 py-10 text-center shadow-sm">
-        <h1 className="text-xl font-black text-slate-800">This demo is fully booked</h1>
+        <h1 className="text-xl font-black text-slate-800">{eventTerms(offering?.eventType).thisEvent} is fully booked</h1>
         <p className="mt-2 text-sm leading-relaxed text-slate-500">
           Thank you for your interest. We&apos;ve reached capacity, and registration for {offering.eventTitle || 'this demo'} is closed.
         </p>

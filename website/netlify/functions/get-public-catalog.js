@@ -24,7 +24,7 @@ const OFFERING_FIELDS = [
   // and lib/booking.ts's formatEventDateTime. publicRegistrationPaused is
   // the staff switch that stops public demo booking while seats remain —
   // see submit-demo-registration.js's demoPublicBookingState.
-  'eventTitle', 'eventStartAt', 'eventEndAt', 'publicRegistrationPaused',
+  'eventTitle', 'eventType', 'eventStartAt', 'eventEndAt', 'publicRegistrationPaused',
 ]
 const LEGACY_FIELDS = [
   'programId', 'title', 'location', 'startDateTime', 'endDateTime',

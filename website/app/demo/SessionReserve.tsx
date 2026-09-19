@@ -12,17 +12,19 @@ import { DemoRegisterCta } from './DemoRegisterCta'
 // session staff have paused reads as "Full" and offers the waitlist instead.
 export interface PickerSession {
   label: string
+  name?: string
   offeringId: string
   state: 'open' | 'full' | 'closed' | 'unavailable'
   waitlistOpen: boolean
 }
 
 export function SessionReserve({
-  sessions, programId, priceDisplay, attributionQuery, name, content,
+  sessions, programId, legend, reserveLabel, attributionQuery, name, content,
 }: {
   sessions: PickerSession[]
   programId: string
-  priceDisplay: string
+  legend: string // e.g. 'Choose Your Workshop Time'
+  reserveLabel: string // e.g. 'Reserve a Workshop Spot — $10'
   attributionQuery: string // already URL-encoded, allowlisted params only
   name: string // radio group name, unique per instance on the page
   content: string
@@ -39,7 +41,7 @@ export function SessionReserve({
   return (
     <div>
       <fieldset>
-        <legend className="mb-2 text-sm font-black text-slate-700">Choose a session</legend>
+        <legend className="mb-2 text-sm font-black text-slate-700">{legend}</legend>
         <div className="grid gap-2 sm:grid-cols-2">
           {sessions.map(session => {
             const enabled = selectable(session)
@@ -62,7 +64,8 @@ export function SessionReserve({
                   className="h-5 w-5 shrink-0 accent-[#F2A100]"
                 />
                 <span>
-                  <span className="block text-[15px] font-black text-[#0A2D5A]">{session.label}</span>
+                  {session.name && <span className="block text-[15px] font-black text-[#0A2D5A]">{session.name}</span>}
+                  <span className={session.name ? 'block text-sm font-semibold text-slate-600' : 'block text-[15px] font-black text-[#0A2D5A]'}>{session.label}</span>
                   {session.state === 'full' && <span className="block text-xs font-bold text-[#ED174B]">{session.waitlistOpen ? 'Full — join the waitlist' : 'Full'}</span>}
                   {(session.state === 'closed' || session.state === 'unavailable') && <span className="block text-xs font-semibold text-slate-500">Registration closed</span>}
                 </span>
@@ -76,7 +79,7 @@ export function SessionReserve({
         <DemoRegisterCta
           href={href}
           offeringId={selected.offeringId}
-          label={isWaitlist ? 'Join the Waitlist for This Session' : `Reserve My Child’s Spot — ${priceDisplay}`}
+          label={isWaitlist ? 'Join the Waitlist for This Session' : reserveLabel}
           eventName={isWaitlist ? 'demo_waitlist_click' : 'demo_registration_click'}
           content={content}
           className="mt-4 inline-block w-full rounded-xl bg-[#F2A100] px-6 py-4 text-center text-base font-black text-white shadow-sm transition-transform active:scale-[0.98] sm:w-auto sm:px-10"

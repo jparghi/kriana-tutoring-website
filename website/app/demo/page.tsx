@@ -3,7 +3,8 @@ import { cache } from "react"
 import { demos, type DemoEvent, type DemoStatus } from "../../data/demos"
 import { demoReviews } from "../../data/demo-reviews"
 import { resolveDemoCampaignOffering, resolveDemoSessionOfferings } from "../../lib/demo-campaign.server"
-import { resolveDemoHub } from "../../lib/demo-hub"
+import { eventTerms } from "../../lib/demo-event-copy"
+import { formatDemoDate, resolveDemoHub } from "../../lib/demo-hub"
 import { getDemoPricing } from "../../lib/robotics-packages.js"
 import { siteUrl, toJsonLd } from "../../lib/seo"
 import { Footer } from "../../components/footer"
@@ -32,12 +33,17 @@ const SHARE_IMAGE_PATH = "/images/gallery/young-engineers-demo-sept-2026-v1.jpg"
 // Firestore read to once per request.
 const getCampaign = cache(() => resolveDemoCampaignOffering())
 
-// /demo is a permanent hub, so its metadata is evergreen: it never depends on
-// which demo is currently featured. Event details live in the structured data.
+// /demo is a permanent hub, so metadata follows whichever event is next (by
+// date, from the data file — no Firestore read) and falls back to an evergreen
+// description once nothing is upcoming.
 export async function generateMetadata(): Promise<Metadata> {
-  const title = "Young Engineers Demo | Hands-On STEM for Kids | Kanata & Stittsville"
+  const next = resolveDemoHub(demos, null).active
+  const title = next
+    ? `${next.title} | Kanata & Stittsville`
+    : "Young Engineers Workshops & Demo Events | Kanata & Stittsville"
   const description =
-    "Join a Young Engineers hands-on STEM demo in Kanata/Stittsville. Kids ages 6–12 build, test and explore real engineering concepts through fun interactive activities."
+    next?.seoDescription ??
+    "Join a Young Engineers hands-on STEM workshop or demo in Kanata/Stittsville. Kids ages 6–12 build, test and explore real engineering concepts through fun interactive activities."
   return {
     // absolute: the root layout's "%s · Kriana Tutoring" template would
     // otherwise append the brand a second time.
@@ -49,7 +55,7 @@ export async function generateMetadata(): Promise<Metadata> {
       description,
       url: `${siteUrl}/demo`,
       type: "website",
-      images: [{ url: `${siteUrl}${SHARE_IMAGE_PATH}`, width: 720, height: 1280, alt: "A child building a Young Engineers model at a Kanata demo" }],
+      images: [{ url: `${siteUrl}${SHARE_IMAGE_PATH}`, width: 720, height: 1280, alt: "A child building a Young Engineers model at a Kanata event" }],
     },
     twitter: { card: "summary_large_image", title, description, images: [`${siteUrl}${SHARE_IMAGE_PATH}`] },
   }
@@ -72,7 +78,7 @@ function eventSchemas(demo: DemoEvent, status: DemoStatus, canRegister: boolean)
       address: demo.address || demo.location,
     },
     image: [`${siteUrl}${SHARE_IMAGE_PATH}`],
-    description: `Hands-on STEM, engineering and coding demo for children ages ${demo.ageRange}.`,
+    description: demo.seoDescription ?? demo.summary ?? `Hands-on STEM, engineering and coding ${eventTerms(demo.eventType).noun} for children ages ${demo.ageRange}.`,
     ...(availability
       ? { offers: { "@type": "Offer", price: demo.price.toFixed(2), priceCurrency: "CAD", availability: `https://schema.org/${availability}`, url: `${siteUrl}/demo` } }
       : {}),
@@ -87,8 +93,8 @@ function highlightVideoSchema(demo: DemoEvent) {
   return {
     "@context": "https://schema.org",
     "@type": "VideoObject",
-    name: `Young Engineers ${demo.location} Demo — highlights`,
-    description: "Highlights from a Young Engineers STEM and robotics demo class in Kanata.",
+    name: `Young Engineers ${demo.location} ${eventTerms(demo.eventType).short} — highlights`,
+    description: `Highlights from a Young Engineers STEM and robotics ${eventTerms(demo.eventType).noun} in Kanata.`,
     thumbnailUrl: `${siteUrl}${demo.highlightVideo.poster}`,
     contentUrl: `${siteUrl}${demo.highlightVideo.src}`,
     uploadDate: demo.sessions[0]?.startIso ?? demo.date,
@@ -135,6 +141,7 @@ export default async function DemoPage({
   }
 
   const { active, status, sessions, canRegister, past } = resolveDemoHub(demos, liveSessions)
+  const terms = eventTerms(active?.eventType)
   const attribution = pickAttributionParams(searchParams)
   const attributionQuery = new URLSearchParams(attribution).toString()
 
@@ -159,26 +166,27 @@ export default async function DemoPage({
   if (active && status === "REGISTRATION_OPEN") {
     fallback = {
       href: CONTACT_SMS_HREF,
-      label: `Text Us to Reserve — ${priceDisplay}`,
+      label: `Text Us to Reserve a ${terms.Noun} Spot — ${priceDisplay}`,
       eventName: "demo_registration_click",
-      note: "Online registration for this demo is opening shortly. Text or call and we’ll help you register.",
+      note: `Online registration for this ${terms.noun} is opening shortly. Text or call and we’ll help you register.`,
     }
   } else if (!active && canJoinWaitlist) {
-    fallback = { href: "#waitlist", label: "🔔 Join Next Demo Waitlist", eventName: "demo_waitlist_cta_clicked" }
+    fallback = { href: "#waitlist", label: "🔔 Join the Next Event Waitlist", eventName: "demo_waitlist_cta_clicked" }
   } else {
-    fallback = { href: CONTACT_SMS_HREF, label: "Text Us to Join the Next Demo", eventName: "demo_waitlist_cta_clicked" }
+    fallback = { href: CONTACT_SMS_HREF, label: "Text Us to Join the Next Event List", eventName: "demo_waitlist_cta_clicked" }
   }
   // Journey card + sticky bar scroll to the reserve section's picker.
   const journeyCta: HubCta = hasPickerSessions
-    ? { href: `#${RESERVE_SECTION_ID}`, label: "Reserve a Spot", eventName: "demo_registration_click" }
+    ? { href: `#${RESERVE_SECTION_ID}`, label: terms.reserveShort, eventName: "demo_registration_click" }
     : fallback
 
   const picker = (name: string, content: string) =>
     active?.programId && hasPickerSessions ? (
       <SessionReserve
-        sessions={sessions.map(s => ({ label: s.label, offeringId: s.offeringId ?? "", state: s.state, waitlistOpen: s.waitlistOpen }))}
+        sessions={sessions.map(s => ({ label: s.label, name: s.name, offeringId: s.offeringId ?? "", state: s.state, waitlistOpen: s.waitlistOpen }))}
         programId={active.programId}
-        priceDisplay={priceDisplay}
+        legend={terms.chooseTime}
+        reserveLabel={terms.reserveLabel(priceDisplay)}
         attributionQuery={attributionQuery}
         name={name}
         content={content}
@@ -215,7 +223,7 @@ export default async function DemoPage({
           shareUrl={`${siteUrl}/demo`}
           heroCtaId={HERO_CTA_ID}
         />
-        {latestPast && <PreviousDemoProof demo={latestPast} offeringId={campaignOfferingId} />}
+        {latestPast && <PreviousDemoProof demo={latestPast} offeringId={campaignOfferingId} next={active} />}
         <WhatChildrenDo />
         <WhatChildrenLearn />
         <ProgramsSection offeringId={campaignOfferingId} />
@@ -228,18 +236,20 @@ export default async function DemoPage({
               <DemoWaitlistForm programId={campaignProgramId} offeringId={campaignOfferingId} classesHref={ROBOTICS_BOOKING_URL} />
             </div>
           ) : active ? (
-            <p className="text-center text-sm text-slate-600">
-              <a href={CONTACT_SMS_HREF} className="font-bold text-[#0c6162] underline">Can’t Attend? Join the Next Demo Waitlist</a>
-            </p>
+            <div className="text-center text-sm text-slate-600">
+              <p className="font-bold text-slate-800">Can’t make {formatDemoDate(active.date)}?</p>
+              <p className="mt-1">Join our next Young Engineers event list.</p>
+              <a href={CONTACT_SMS_HREF} className="mt-2 inline-block font-bold text-[#0c6162] underline">Join the Next Event Waitlist</a>
+            </div>
           ) : (
             <ContactButtons />
           )}
         </ReserveSection>
-        <DemoFaq ageRange={active?.ageRange ?? latestPast?.ageRange ?? "6–12"} />
+        <DemoFaq ageRange={active?.ageRange ?? latestPast?.ageRange ?? "6–12"} eventType={active?.eventType} />
       </main>
 
       {hasPickerSessions && canRegister && (
-        <StickyReserveBar href={`#${RESERVE_SECTION_ID}`} label={`Reserve Demo — ${priceDisplay}`} offeringId={campaignOfferingId} watchIds={[HERO_CTA_ID, RESERVE_SECTION_ID]} />
+        <StickyReserveBar href={`#${RESERVE_SECTION_ID}`} label={terms.reserveLabel(priceDisplay)} offeringId={campaignOfferingId} watchIds={[HERO_CTA_ID, RESERVE_SECTION_ID]} />
       )}
       <Footer />
     </>

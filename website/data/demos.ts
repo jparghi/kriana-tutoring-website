@@ -9,10 +9,15 @@
 // make the page more conservative (SOLD_OUT / WAITLIST / COMPLETED pin it).
 // A demo whose last session has ended is treated as COMPLETED automatically.
 
+// 'DEMO' (default) or a *_WORKSHOP value. Only the wording differs — see
+// lib/demo-event-copy.js. Any other string is treated as a demo.
+export type DemoEventType = "DEMO" | "PD_DAY_WORKSHOP" | "STEM_WORKSHOP" | "HOLIDAY_WORKSHOP";
+
 export type DemoStatus = "WAITLIST" | "REGISTRATION_OPEN" | "SOLD_OUT" | "COMPLETED";
 
 export interface DemoSession {
   label: string; // "10:30 AM–12:00 PM"
+  name?: string; // "Morning Workshop"
   // Firestore programOfferings id for this session (one offering per session,
   // each with its own capacity and waitlist). Omit for past demos.
   offeringId?: string;
@@ -30,6 +35,12 @@ export interface DemoMedia {
 export interface DemoEvent {
   id: string;
   title: string;
+  eventType: DemoEventType;
+  // Optional marketing copy for the hero and SEO. Omit to use generic copy.
+  hook?: string[]; // headline lines under the title, e.g. ["No school?", "Make it a day to…"]
+  summary?: string; // supporting line under the hook
+  priceLabel?: string; // "Introductory Workshop"
+  seoDescription?: string;
   date: string; // YYYY-MM-DD (Ottawa local date)
   location: string; // short area name: "Kanata"
   address: string; // full street address, or "" when not public
@@ -54,6 +65,7 @@ export const demos: DemoEvent[] = [
   {
     id: "2026-09-12-kanata",
     title: "Young Engineers Demo — Kanata",
+    eventType: "DEMO",
     date: "2026-09-12",
     location: "Kanata",
     address: "",
@@ -87,7 +99,13 @@ export const demos: DemoEvent[] = [
   },
   {
     id: "2026-10-02-stittsville",
-    title: "Young Engineers Demo — Stittsville",
+    title: "Young Engineers PD Day STEM Workshop",
+    eventType: "PD_DAY_WORKSHOP",
+    hook: ["No school?", "Make it a day to build, create and discover."],
+    summary: "90 minutes of hands-on engineering, building and coding for kids ages 6–12.",
+    priceLabel: "Introductory Workshop",
+    seoDescription:
+      "Join our Young Engineers PD Day STEM Workshop in Stittsville on October 2. Kids ages 6–12 build, test and explore hands-on engineering and coding activities.",
     date: "2026-10-02",
     location: "Stittsville",
     address: "205 Metric Circle, Stittsville, ON K2V 0L3",
@@ -97,12 +115,14 @@ export const demos: DemoEvent[] = [
     sessions: [
       {
         label: "10:30 AM–12:00 PM",
+        name: "Morning Workshop",
         offeringId: "young-engineers-demo-stittsville-oct-2026-am",
         startIso: "2026-10-02T10:30:00-04:00",
         endIso: "2026-10-02T12:00:00-04:00",
       },
       {
         label: "2:00 PM–3:30 PM",
+        name: "Afternoon Workshop",
         offeringId: "young-engineers-demo-stittsville-oct-2026-pm",
         startIso: "2026-10-02T14:00:00-04:00",
         endIso: "2026-10-02T15:30:00-04:00",

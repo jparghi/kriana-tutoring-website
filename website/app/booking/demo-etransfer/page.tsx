@@ -1,5 +1,6 @@
 'use client'
 
+import { eventTerms } from '../../../lib/demo-event-copy.js'
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -93,6 +94,7 @@ function DemoETransferContent() {
   const programId = searchParams.get('programId') ?? ''
   const program = searchParams.get('program') ?? ''
   const eventTitle = searchParams.get('eventTitle') ?? ''
+  const terms = eventTerms(searchParams.get('eventType'))
   const eventDate = searchParams.get('eventDate') ?? ''
   const eventTime = searchParams.get('eventTime') ?? ''
   const eventLocation = searchParams.get('eventLocation') ?? ''
@@ -107,7 +109,7 @@ function DemoETransferContent() {
   // email (see demo-email.js's etransferMessage()) so the note the parent
   // sees here is the same one they see in their inbox.
   const messageLabel = eventTitle || program
-  const message = `${messageLabel || 'Kriana Demo'}${reference ? ` - ${reference}` : ''}`
+  const message = `${messageLabel || (terms.kind === 'workshop' ? 'Kriana Workshop' : 'Kriana Demo')}${reference ? ` - ${reference}` : ''}`
 
   useEffect(() => {
     trackEvent('demo_payment_instructions_viewed', { offeringId: null })
@@ -134,7 +136,7 @@ function DemoETransferContent() {
 
           <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-6">
             <p className="text-sm text-amber-800 font-medium">
-              Your child&apos;s demo spot is temporarily reserved. Send the e-transfer within <strong>{HOLD_HOURS} hours</strong> to confirm it.
+              Your child&apos;s {terms.spot} is temporarily reserved. Send the e-transfer within <strong>{HOLD_HOURS} hours</strong> to confirm it.
             </p>
           </div>
 
@@ -182,7 +184,7 @@ function DemoETransferContent() {
           </div>
 
           <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-            <p className="text-sm font-bold text-amber-700">Try for {amountDisplay} — Demo is FREE when you enroll.</p>
+            <p className="text-sm font-bold text-amber-700">{terms.creditHeadline(amountDisplay)}</p>
             <p className="text-sm text-amber-700 mt-1">
               Once your seat is confirmed and your child attends, your {amountDisplay} is credited toward regular Young Engineers enrollment. No-shows do not receive this credit.
             </p>

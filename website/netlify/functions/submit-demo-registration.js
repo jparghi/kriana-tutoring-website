@@ -371,6 +371,7 @@ export async function saveDemoRegistration(db, request) {
       // page and emails already told the family.
       eventSnapshot: {
         eventTitle: offering.eventTitle ?? null,
+        eventType: offering.eventType ?? null,
         eventStartAt: offering.eventStartAt ?? null,
         eventEndAt: offering.eventEndAt ?? null,
         timezone: offering.timezone ?? null,

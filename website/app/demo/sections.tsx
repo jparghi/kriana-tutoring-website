@@ -12,6 +12,7 @@ import {
 } from "@heroicons/react/24/outline"
 import type { DemoEvent, DemoMedia, DemoStatus } from "../../data/demos"
 import type { DemoReview } from "../../data/demo-reviews"
+import { eventTerms } from "../../lib/demo-event-copy"
 import { demoMonth, formatDemoDate } from "../../lib/demo-hub"
 import { licensedRoboticsPrograms } from "../../lib/robotics-content"
 import { GALLERY_PATH, ROBOTICS_PATH } from "../../lib/site-links"
@@ -85,10 +86,11 @@ function StatusBadge({ status, soldOut }: { status: DemoStatus; soldOut?: boolea
   )
 }
 
-function DetailRow({ icon, children }: { icon: "calendar" | "clock" | "pin"; children: React.ReactNode }) {
+function DetailRow({ icon, children }: { icon: "calendar" | "clock" | "pin" | "tag"; children: React.ReactNode }) {
   const path = {
     calendar: <><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></>,
     clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></>,
+    tag: <><path d="M20.6 13.4l-7.2 7.2a2 2 0 01-2.8 0L3 13V3h10l7.6 7.6a2 2 0 010 2.8z" /><circle cx="7.5" cy="7.5" r="1.2" /></>,
     pin: <><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" /><circle cx="12" cy="10" r="3" /></>,
   }[icon]
   return (
@@ -104,7 +106,7 @@ function SessionPills({ demo }: { demo: DemoEvent }) {
     <ul className="flex flex-wrap gap-2">
       {demo.sessions.map(session => (
         <li key={session.label} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-[#0A2D5A]">
-          {session.label}
+          {session.name ? <><span className="font-black">{session.name}</span> <span className="font-semibold text-slate-600">{session.label}</span></> : session.label}
         </li>
       ))}
     </ul>
@@ -129,23 +131,34 @@ export function DemoHero({
     <section className="px-5 pb-10 pt-6 sm:px-8" style={{ background: "linear-gradient(155deg, #FFF7E8 0%, #FFFFFF 50%, #F1F8F8 100%)" }}>
       <div className="mx-auto max-w-3xl">
         <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-xs font-black uppercase tracking-wide text-[#0c6162]">Young Engineers Kanata</p>
+          <p className="text-xs font-bold text-slate-500">Young Engineers Workshops &amp; Demo Events</p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <p className="text-xs font-black uppercase tracking-wide text-[#0c6162]">{showEvent ? "Next event" : "Young Engineers Kanata"}</p>
             {showEvent && <StatusBadge status={status} />}
           </div>
           <h1 className="mt-3 text-[32px] font-black leading-[1.08] text-[#0A2D5A] sm:text-5xl">
-            {showEvent ? (
-              <>Young Engineers Demo<span className="block text-[#F2A100]">{formatDemoDate(demo.date, "long")}, {demo.date.slice(0, 4)}</span></>
-            ) : (
-              <>Young Engineers <span className="text-[#F2A100]">Demo Hub</span></>
-            )}
+            {showEvent ? demo.title : <>Young Engineers <span className="text-[#F2A100]">Workshops &amp; Demo Events</span></>}
           </h1>
-          <p className="mt-3 text-lg font-semibold text-slate-700">Hands-on STEM, Engineering &amp; Coding for Kids</p>
-          <p className="mt-1 text-base font-semibold text-slate-500">Build • Create • Code • Explore</p>
+          {showEvent && demo.hook ? (
+            <>
+              <p className="mt-4 text-xl font-black leading-snug text-[#0A2D5A] sm:text-2xl">
+                {demo.hook[0]}
+                {demo.hook[1] && <span className="block text-[#F2A100]">{demo.hook[1]}</span>}
+              </p>
+              {demo.summary && <p className="mt-3 text-base font-semibold leading-relaxed text-slate-700 sm:text-lg">{demo.summary}</p>}
+              <p className="mt-1 text-sm font-semibold text-slate-500">Build • Create • Code • Explore</p>
+            </>
+          ) : (
+            <>
+              <p className="mt-3 text-lg font-semibold text-slate-700">Hands-on STEM, Engineering &amp; Coding for Kids</p>
+              <p className="mt-1 text-base font-semibold text-slate-500">Build • Create • Code • Explore</p>
+            </>
+          )}
 
           {showEvent ? (
             <ul className="mt-6 space-y-3">
               <DetailRow icon="calendar">{formatDemoDate(demo.date, "full")}</DetailRow>
+              {demo.priceLabel && <DetailRow icon="tag">{demo.priceLabel} — ${demo.price}</DetailRow>}
               <DetailRow icon="pin">
                 {demo.address.split(",")[0]}
                 <span className="block text-sm font-semibold text-slate-500">{demo.address.split(",").slice(1).join(",").trim()}</span>
@@ -172,14 +185,17 @@ export function DemoHero({
             )}
             <div>{actions}</div>
             <p className="mt-3 text-sm font-semibold text-slate-600">
-              {showEvent ? `Ages ${demo.ageRange} • Hands-on STEM experience • Limited capacity` : "Free to join • No payment required"}
+              {showEvent ? `Ages ${demo.ageRange} • Hands-on STEM experience` : "Free to join • No payment required"}
             </p>
             {note && <p className="mt-1 max-w-sm text-xs leading-relaxed text-slate-500">{note}</p>}
             <p className="mt-3 text-sm text-slate-600">
               Call/Text <a href={CONTACT_PHONE_HREF} className="font-bold text-[#0c6162] hover:underline">{CONTACT_PHONE_DISPLAY}</a>
             </p>
           </div>
-          <div className="mt-4"><ShareInviteButton url={shareUrl} title="Young Engineers Demo" /></div>
+          <div className="mt-4"><ShareInviteButton url={shareUrl} title={demo?.title ?? "Young Engineers Workshops & Demo Events"} /></div>
+          {showEvent && demo.hook && (
+            <p className="mt-5 text-sm font-bold italic text-[#0c6162]">&ldquo;They don&apos;t just build — they learn WHY it works.&rdquo;</p>
+          )}
           <p className="mt-5 text-xs font-semibold text-slate-400">Young Engineers Kanata · Operated by Kriana Tutoring</p>
         </div>
 
@@ -203,15 +219,17 @@ function PhotoGrid({ images, max }: { images: DemoMedia[]; max: number }) {
   )
 }
 
-export function PreviousDemoProof({ demo, offeringId }: { demo: DemoEvent; offeringId: string }) {
+export function PreviousDemoProof({ demo, offeringId, next }: { demo: DemoEvent; offeringId: string; next: DemoEvent | null }) {
   const month = demoMonth(demo.date)
+  const terms = eventTerms(demo.eventType)
+  const nextTerms = next ? eventTerms(next.eventType) : null
   return (
     <section className="px-5 py-12 sm:px-8" aria-labelledby="proof-heading">
       <div className="mx-auto max-w-3xl text-center">
         <SectionHeading
           id="proof-heading"
-          title="See What Happened at Our Last Demo"
-          sub={`Our ${month} Young Engineers Demo${demo.soldOut ? " SOLD OUT 🎉" : ""}`}
+          title="See What Kids Have Built at Our Previous Events"
+          sub={`Our ${month} Young Engineers ${terms.short}${demo.soldOut ? " SOLD OUT 🎉" : ""}`}
         />
         {demo.highlightVideo && (
           <div className="mt-7">
@@ -226,8 +244,23 @@ export function PreviousDemoProof({ demo, offeringId }: { demo: DemoEvent; offer
         {(demo.galleryImages?.length ?? 0) > 0 && <div className="mt-6 text-left"><PhotoGrid images={demo.galleryImages!} max={5} /></div>}
         <p className="mt-6 text-sm font-black uppercase tracking-wide text-[#0c6162]">Real kids • Real engineering • Real learning</p>
         <Link href={`#gallery-${demo.id}`} className="mt-5 inline-block rounded-xl border-2 border-[#0A2D5A] px-6 py-3 text-sm font-black text-[#0A2D5A] transition-colors hover:bg-[#0A2D5A]/5">
-          See {month} Demo Highlights
+          See {month} {terms.short} Highlights
         </Link>
+        {next && nextTerms && (
+          <div className="mx-auto mt-10 max-w-xl rounded-2xl border border-[#F2A100]/40 bg-[#FFF7E8] p-6">
+            <h3 className="text-xl font-black text-[#0A2D5A]">
+              Join Us for Our {formatDemoDate(next.date)} {next.title.replace(/^Young Engineers /, "")}
+            </h3>
+            <DemoRegisterCta
+              href="#reserve"
+              offeringId={offeringId}
+              label={nextTerms.reserveShort}
+              eventName="demo_registration_click"
+              content="proof_transition"
+              className="mt-4 inline-block w-full rounded-xl bg-[#F2A100] px-6 py-4 text-center text-base font-black text-white shadow-sm transition-transform active:scale-[0.98] sm:w-auto sm:px-10"
+            />
+          </div>
+        )}
       </div>
     </section>
   )
@@ -320,7 +353,7 @@ export function ProgramsSection({ offeringId }: { offeringId: string }) {
   return (
     <section className="bg-slate-50 px-5 py-12 sm:px-8" aria-labelledby="programs-heading">
       <div className="mx-auto max-w-4xl">
-        <SectionHeading id="programs-heading" title="Explore Young Engineers Programs" />
+        <SectionHeading id="programs-heading" title="Explore Young Engineers Programs" sub="Where kids can keep building after the event." />
         <ul className="mt-8 grid gap-4 md:grid-cols-3">
           {programs.map(program => (
             <li key={program.id} className="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -359,7 +392,7 @@ export function DemoJourney({
   return (
     <section className="px-5 py-12 sm:px-8" aria-labelledby="journey-heading">
       <div className="mx-auto max-w-3xl">
-        <SectionHeading id="journey-heading" title="Our Demo Journey" sub="Every demo builds on the last." />
+        <SectionHeading id="journey-heading" title="Young Engineers Workshops & Demo Events" sub="Every event builds on the last." />
         <ol className="mt-8 space-y-5 border-l-2 border-slate-200 pl-5 sm:pl-7">
           {ordered.map(demo => {
             const isActive = demo.id === activeId
@@ -372,7 +405,8 @@ export function DemoJourney({
                     <p className="text-sm font-black text-[#0A2D5A]">{formatDemoDate(demo.date, "full")}</p>
                     <StatusBadge status={status} soldOut={demo.soldOut} />
                   </div>
-                  <p className="mt-1 text-sm font-semibold text-slate-500">{demo.location}{demo.program ? ` · ${demo.program}` : ""}</p>
+                  <p className="mt-2 text-base font-black text-slate-800">{demo.title}</p>
+                  <p className="mt-0.5 text-sm font-semibold text-slate-500">{demo.location}{demo.program ? ` · ${demo.program}` : ""}{status !== "COMPLETED" ? ` · $${demo.price}` : ""}</p>
                   {status === "COMPLETED" ? (
                     <>
                       {demo.build && <p className="mt-3 text-sm text-slate-700"><span className="font-bold">Build:</span> {demo.build}</p>}
@@ -386,7 +420,7 @@ export function DemoJourney({
                         <DemoRegisterCta
                           href={cta.href}
                           offeringId={offeringId}
-                          label={status === "REGISTRATION_OPEN" ? "Reserve a Spot" : cta.label}
+                          label={status === "REGISTRATION_OPEN" ? eventTerms(demo.eventType).reserveShort : cta.label}
                           eventName={cta.eventName}
                           content="journey"
                           className="inline-block rounded-xl bg-[#F2A100] px-5 py-3 text-sm font-black text-white"
@@ -411,7 +445,7 @@ export function PastDemoGallery({ past }: { past: DemoEvent[] }) {
   return (
     <section className="bg-slate-50 px-5 py-12 sm:px-8" aria-labelledby="gallery-heading">
       <div className="mx-auto max-w-4xl">
-        <SectionHeading id="gallery-heading" title="Past Demos" />
+        <SectionHeading id="gallery-heading" title="Past Events" />
         <div className="mt-8 space-y-8">
           {past.map(demo => {
             const image = demo.highlightVideo
@@ -427,7 +461,7 @@ export function PastDemoGallery({ past }: { past: DemoEvent[] }) {
                   )}
                   <div className="p-5 sm:p-7">
                     <StatusBadge status="COMPLETED" soldOut={demo.soldOut} />
-                    <h3 className="mt-3 text-xl font-black text-[#0A2D5A]">{formatDemoDate(demo.date, "long")} Demo · {demo.location}</h3>
+                    <h3 className="mt-3 text-xl font-black text-[#0A2D5A]">{formatDemoDate(demo.date, "long")} {eventTerms(demo.eventType).short} · {demo.location}</h3>
                     {demo.build && (
                       <p className="mt-3 text-sm text-slate-500">The Challenge
                         <span className="block text-lg font-black text-slate-800">{demo.build}</span>
@@ -444,7 +478,7 @@ export function PastDemoGallery({ past }: { past: DemoEvent[] }) {
                       </>
                     )}
                     {(demo.galleryImages?.length ?? 0) > 0 && <div className="mt-5"><PhotoGrid images={demo.galleryImages!} max={8} /></div>}
-                    <Link href={GALLERY_PATH} className="mt-6 inline-block rounded-xl bg-[#0A2D5A] px-6 py-3 text-sm font-black text-white">View Demo Highlights</Link>
+                    <Link href={GALLERY_PATH} className="mt-6 inline-block rounded-xl bg-[#0A2D5A] px-6 py-3 text-sm font-black text-white">View {eventTerms(demo.eventType).short} Highlights</Link>
                   </div>
                 </div>
               </article>
@@ -494,10 +528,10 @@ export function ReserveSection({
     <section id={sectionId} className="scroll-mt-4 px-5 py-14 sm:px-8" style={{ background: "linear-gradient(155deg, #FFF7E8 0%, #FFFFFF 55%, #F1F8F8 100%)" }}>
       <div className="mx-auto max-w-xl text-center">
         <h2 className="text-2xl font-black text-[#0A2D5A] sm:text-3xl">
-          {demo ? "Ready to Let Your Child Experience It?" : "Want Your Child at the Next One?"}
+          {demo ? (eventTerms(demo.eventType).kind === "workshop" ? "Give Your Child a Great PD Day" : "Ready to Let Your Child Experience It?") : "Want Your Child at the Next One?"}
         </h2>
         {demo ? (
-          <p className="mx-auto mt-3 font-black text-[#0A2D5A]">{formatDemoDate(demo.date, "long")}, {demo.date.slice(0, 4)} · {demo.location}</p>
+          <p className="mx-auto mt-3 font-black text-[#0A2D5A]">{demo.title}<span className="block text-sm font-semibold text-slate-600">{formatDemoDate(demo.date, "long")}, {demo.date.slice(0, 4)} · {demo.location}</span></p>
         ) : (
           <p className="mx-auto mt-3 max-w-md text-base leading-relaxed text-slate-600">
             Join the waitlist and be among the first families notified when the next Young Engineers demo opens.
@@ -518,13 +552,20 @@ export function ReserveSection({
 
 // ─── FAQ ─────────────────────────────────────────────────────────────────
 
-export function DemoFaq({ ageRange }: { ageRange: string }) {
+export function DemoFaq({ ageRange, eventType }: { ageRange: string; eventType?: string }) {
+  const terms = eventTerms(eventType)
+  const workshop = terms.kind === "workshop"
   const faqs = [
-    { q: "What happens at a Young Engineers demo?", a: "Children build a hands-on model with our instructors, see the engineering idea behind it in action, and get a taste of our Bricks Challenge, Algo Play and Smartivo programs. Parents are welcome to watch." },
-    { q: "What ages is the demo for?", a: `This demo is designed for children ages ${ageRange}. Tell us your child's age and we'll point you to the right program.` },
-    { q: "Does my child need previous experience?", a: "No. Demos welcome first-time builders, and activities scale to each child's skill level." },
+    {
+      q: `What happens at a Young Engineers ${terms.faqTitle}?`,
+      a: workshop
+        ? "Your child takes part in a 90-minute hands-on session with our instructors: building a working engineering model, testing it, and finding out why it works. Everything is provided."
+        : "Children build a hands-on model with our instructors and see the engineering idea behind it in action. Parents are welcome to watch.",
+    },
+    { q: `What ages is the ${terms.faqTitle} for?`, a: `This ${terms.faqTitle} is designed for children ages ${ageRange}. Tell us your child's age and we'll point you to the right program.` },
+    { q: "Does my child need previous experience?", a: "No. First-time builders are welcome, and activities scale to each child's skill level." },
     { q: "Do we need to bring anything?", a: "No. All building materials and equipment are provided on-site." },
-    { q: "Does joining the waitlist cost anything?", a: "No. It's free, commits you to nothing, and simply means you're notified first when the next demo opens." },
+    { q: "Does joining the event waitlist cost anything?", a: "No. It's free, commits you to nothing, and simply means you're notified first when the next Young Engineers event opens." },
   ]
   return (
     <section className="bg-slate-50 px-5 py-12 sm:px-8" aria-labelledby="faq-heading">

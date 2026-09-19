@@ -24,11 +24,11 @@ function WaitlistContent() {
         <p className="text-slate-500 mb-3">
           {program
             ? <><strong>{program}</strong> is {isDemo ? 'fully booked' : 'currently full'}.</>
-            : isDemo ? 'This demo is fully booked.' : 'This weekly program is currently full.'}
+            : isDemo ? 'This event is fully booked.' : 'This weekly program is currently full.'}
         </p>
         <p className="text-slate-500 mb-8">
           {isDemo
-            ? <>You&apos;re on the waitlist. If a spot opens up, we&apos;ll contact you, and families on the waitlist will be the first to hear about our next demo. A spot is not reserved, and no payment is due.</>
+            ? <>You&apos;re on the waitlist. If a spot opens up, we&apos;ll contact you, and families on the waitlist will be the first to hear about our next Young Engineers event. A spot is not reserved, and no payment is due.</>
             : <>We&apos;ve added your request to the waitlist. If a spot opens, we&apos;ll contact you by email with the next steps. A place is not confirmed yet, and no payment is due.</>}
         </p>
         {reference && (
