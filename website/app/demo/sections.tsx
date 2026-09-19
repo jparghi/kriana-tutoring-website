@@ -114,22 +114,20 @@ function SessionPills({ demo }: { demo: DemoEvent }) {
 // ─── 1. Hero ─────────────────────────────────────────────────────────────
 
 export function DemoHero({
-  demo, status, actions, note, hideSessionRow, fallbackImage, shareUrl, heroCtaId,
+  demo, status, actions, note, hideSessionRow, shareUrl, heroCtaId,
 }: {
   demo: DemoEvent | null
   status: DemoStatus
   actions: React.ReactNode // session picker + register button, or a fallback CTA
   note?: string
   hideSessionRow?: boolean // the picker already lists the sessions
-  fallbackImage?: DemoMedia
   shareUrl: string
   heroCtaId: string
 }) {
-  const image = demo?.heroImage ?? fallbackImage
   const showEvent = demo !== null
   return (
     <section className="px-5 pb-10 pt-6 sm:px-8" style={{ background: "linear-gradient(155deg, #FFF7E8 0%, #FFFFFF 50%, #F1F8F8 100%)" }}>
-      <div className="mx-auto grid max-w-5xl items-center gap-8 lg:grid-cols-[1fr_minmax(0,360px)] lg:gap-12">
+      <div className="mx-auto max-w-3xl">
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-xs font-black uppercase tracking-wide text-[#0c6162]">Young Engineers Kanata</p>
@@ -185,17 +183,6 @@ export function DemoHero({
           <p className="mt-5 text-xs font-semibold text-slate-400">Young Engineers Kanata · Operated by Kriana Tutoring</p>
         </div>
 
-        {image && (
-          <figure className="mx-auto w-full max-w-[340px] lg:mx-0 lg:max-w-none">
-            {/* Fixed-ratio box: the image can't shift the layout as it loads. */}
-            <div className="relative aspect-[4/5] overflow-hidden rounded-3xl border-4 border-white shadow-[0_20px_50px_rgba(12,97,98,0.18)]">
-              <Image src={image.src} alt={image.alt} fill priority sizes="(min-width: 1024px) 360px, 340px" className="object-cover object-[50%_65%]" />
-            </div>
-            <figcaption className="mt-2 text-center text-xs text-slate-500">
-              {demo?.heroImage ? "From this demo" : "From our last demo in Kanata"}
-            </figcaption>
-          </figure>
-        )}
       </div>
     </section>
   )

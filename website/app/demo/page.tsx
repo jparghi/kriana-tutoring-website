@@ -212,7 +212,6 @@ export default async function DemoPage({
           actions={picker("hero-session", "hero")}
           note={hasPickerSessions ? undefined : fallback.note}
           hideSessionRow={hasPickerSessions}
-          fallbackImage={latestPast?.heroImage}
           shareUrl={`${siteUrl}/demo`}
           heroCtaId={HERO_CTA_ID}
         />
