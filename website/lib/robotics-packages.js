@@ -245,24 +245,34 @@ for (const catalog of ALL_PACKAGE_CATALOGS) {
   }
 }
 
-// The $10 Young Engineers Demo Class is a separate, standalone product — not
-// a class package. It is intentionally NOT added to any package catalogue
+// The Young Engineers Demo Class is a separate, standalone product — not a
+// class package. It is intentionally NOT added to any package catalogue
 // above: their import-time arithmetic self-check (classCount * perClassCents
 // === regularSubtotalCents) assumes a multi-class package, which a single
-// $10 session would violate. Price is always resolved server-side from
-// here, never from anything the browser sends.
+// demo session would violate. DEMO_PACKAGE.priceCents is only the fallback
+// used when an offering doesn't carry its own tuitionCents (e.g. legacy
+// offerings created before per-offering demo pricing) — the real price is
+// always resolved server-side by getDemoPricing(offering), never from
+// anything the browser sends.
 export const DEMO_PACKAGE = Object.freeze({
   id: 'demo',
-  name: '$10 Demo Class',
+  name: 'Demo Class',
   priceCents: 1000,
   currency: 'CAD',
 })
 
-/** Canonical, server-safe source of the $10 demo price. Mirrors the
- * "resolve pricing from a code-configured source, never the client" pattern
- * used by resolvePackagePricing above. */
-export function getDemoPricing() {
-  return { priceCents: DEMO_PACKAGE.priceCents, currency: DEMO_PACKAGE.currency }
+/** Canonical, server-safe source of a demo offering's price: the price staff
+ * set on that offering in the portal (offering.tuitionCents), falling back
+ * to DEMO_PACKAGE.priceCents for an offering that doesn't set one. Mirrors
+ * the "resolve pricing from a code-configured source, never the client"
+ * pattern used by resolvePackagePricing above — the offering itself is
+ * already server-read/validated by the caller, never trusted from the
+ * request body. */
+export function getDemoPricing(offering) {
+  const tuitionCents = Number(offering?.tuitionCents)
+  const priceCents = Number.isInteger(tuitionCents) && tuitionCents > 0 ? tuitionCents : DEMO_PACKAGE.priceCents
+  const currency = typeof offering?.currency === 'string' && offering.currency ? offering.currency : DEMO_PACKAGE.currency
+  return { priceCents, currency }
 }
 
 // Sitewide class-package promotion. Not Firestore-driven (unlike per-program

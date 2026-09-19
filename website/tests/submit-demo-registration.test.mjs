@@ -215,8 +215,17 @@ test('validatePayload never accepts or reads packageId or price from the body', 
   assert.ok(!('priceCents' in result))
 })
 
-test('getDemoPricing always resolves to 1000 cents CAD', () => {
+test('getDemoPricing falls back to 1000 cents CAD when the offering has no tuitionCents', () => {
   assert.deepEqual(getDemoPricing(), { priceCents: 1000, currency: 'CAD' })
+  assert.deepEqual(getDemoPricing({}), { priceCents: 1000, currency: 'CAD' })
+  assert.deepEqual(getDemoPricing({ tuitionCents: 0 }), { priceCents: 1000, currency: 'CAD' })
+})
+
+test('getDemoPricing resolves from the offering when it carries its own price', () => {
+  assert.deepEqual(
+    getDemoPricing({ tuitionCents: 1500, currency: 'USD' }),
+    { priceCents: 1500, currency: 'USD' },
+  )
 })
 
 const REQUIRED_STRING_FIELDS = ['parentName', 'parentEmail', 'parentPhone', 'childName']
@@ -413,6 +422,21 @@ test('saveDemoRegistration succeeds and writes registered/pending_attendance rec
   assert.equal(creditCreate.data.status, 'pending_attendance')
   assert.equal(creditCreate.data.amountCents, 1000)
   assert.equal(creditCreate.ref.id, registrationCreate.ref.id, 'demoCredits doc id must equal the demoRegistration id (1:1)')
+})
+
+test('saveDemoRegistration resolves priceCents from the offering, not a fixed $10', async () => {
+  const { db } = makeFakeDb({
+    [`programs/${TEST_PROGRAM_ID}`]: demoProgram(),
+    'programOfferings/demo-off-1': demoOffering({ tuitionCents: 1500, currency: 'CAD' }),
+  })
+  const result = await saveDemoRegistration(db, baseRequest())
+  assert.equal(result.priceCents, 1500)
+
+  const registrationCreate = db.lastWrites.creates.find(c => c.ref.collectionName === 'demoRegistrations')
+  assert.equal(registrationCreate.data.priceCents, 1500)
+
+  const creditCreate = db.lastWrites.creates.find(c => c.ref.collectionName === 'demoCredits')
+  assert.equal(creditCreate.data.amountCents, 1500)
 })
 
 test('saveDemoRegistration succeeds with no marketingAttribution at all — missing attribution never blocks registration', async () => {

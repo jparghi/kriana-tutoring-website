@@ -270,7 +270,6 @@ export async function saveDemoRegistration(db, request) {
   // doc itself and its 1:1 demoCredits doc — before it commits.
   const registrationRef = db.collection('demoRegistrations').doc()
   const requestKeyRef = idempotencyRef(db, request)
-  const { priceCents, currency } = getDemoPricing()
 
   return db.runTransaction(async tx => {
     // (a) Idempotency check.
@@ -284,6 +283,10 @@ export async function saveDemoRegistration(db, request) {
     const programDoc = await tx.get(programRef)
     const offeringDoc = await tx.get(offeringRef)
     const { program, offering } = validateDemoCatalogueRequest(request, programDoc, offeringDoc)
+    // Resolved from the just-validated, freshly-read offering doc — never
+    // from anything the browser sends, and never a stale value cached
+    // before this transaction re-read the offering.
+    const { priceCents, currency } = getDemoPricing(offering)
 
     // (c) Eligibility hash + one-time-offer lock check.
     const childEligibilityKeyHash = computeChildEligibilityKeyHash(registration)
@@ -416,7 +419,7 @@ export async function saveDemoRegistration(db, request) {
       createdAt: FieldValue.serverTimestamp(),
     })
 
-    return { id: registrationRef.id, reference: registrationNumber, duplicate: false, program, offering }
+    return { id: registrationRef.id, reference: registrationNumber, duplicate: false, program, offering, priceCents, currency }
   })
 }
 
@@ -453,7 +456,7 @@ export const handler = async event => {
     const saved = await saveDemoRegistration(db, validated)
     if (!saved.duplicate) {
       await sendDemoAcknowledgement({
-        registration: validated.registration,
+        registration: { ...validated.registration, priceCents: saved.priceCents, currency: saved.currency },
         program: saved.program,
         offering: saved.offering,
         reference: saved.reference,

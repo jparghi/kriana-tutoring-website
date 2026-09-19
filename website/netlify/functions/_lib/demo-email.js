@@ -76,7 +76,11 @@ export async function sendDemoAcknowledgement({ registration, program, offering,
   const parentName = escapeHtml(registration.parentName)
   const childName = escapeHtml(registration.childName)
   const safeReference = escapeHtml(reference)
-  const priceLabel = formatAmount(1000, 'CAD')
+  // registration.priceCents/currency are what saveDemoRegistration actually
+  // resolved and wrote from the offering (see getDemoPricing) — never a
+  // fixed amount, so this must match what was charged, not assumed.
+  const priceLabel = formatAmount(registration.priceCents, registration.currency)
+  const priceDisplay = priceLabel.split(' ')[0]
   const eventTitle = escapeHtml(offering?.eventTitle || '')
   const eventWhen = escapeHtml(formatEventDateTime(offering))
   const eventLocation = escapeHtml(offering?.location || '')
@@ -94,11 +98,11 @@ export async function sendDemoAcknowledgement({ registration, program, offering,
     <div style="max-width:600px;margin:24px auto;font-family:Arial,sans-serif;color:#1e293b">
       <div style="background:#0c6162;color:white;padding:28px;border-radius:16px 16px 0 0">
         <p style="margin:0 0 6px;font-size:12px;letter-spacing:.12em;text-transform:uppercase">Kriana Tutoring</p>
-        <h1 style="margin:0;font-size:24px">$10 Demo Class Registration Received</h1>
+        <h1 style="margin:0;font-size:24px">${priceDisplay} Demo Class Registration Received</h1>
       </div>
       <div style="border:1px solid #e2e8f0;border-top:0;padding:28px;border-radius:0 0 16px 16px">
         <p>Hi ${parentName},</p>
-        <p>We received your $10 demo class registration for <strong>${childName}</strong> for <strong>${eventTitle || 'your $10 demo class'}</strong>.</p>
+        <p>We received your ${priceDisplay} demo class registration for <strong>${childName}</strong> for <strong>${eventTitle || `your ${priceDisplay} demo class`}</strong>.</p>
         <div style="background:#f8fafc;padding:16px;border-radius:10px;margin:18px 0">
           ${eventTitle ? `<p style="margin:0 0 8px"><strong>Event:</strong> ${eventTitle}</p>` : ''}
           ${eventWhen ? `<p style="margin:0 0 8px"><strong>When:</strong> ${eventWhen}</p>` : ''}
@@ -106,10 +110,10 @@ export async function sendDemoAcknowledgement({ registration, program, offering,
           <p style="margin:0 0 8px"><strong>Charge:</strong> ${priceLabel}</p>
           <p style="margin:0"><strong>Reference:</strong> ${safeReference}</p>
         </div>
-        <p style="font-weight:700">Try for $10 — Demo is FREE when you enroll.</p>
-        <p>The $10 is credited toward regular enrollment after your child attends.</p>
+        <p style="font-weight:700">Try for ${priceDisplay} — Demo is FREE when you enroll.</p>
+        <p>The ${priceDisplay} is credited toward regular enrollment after your child attends.</p>
         <div style="background:#e6f4f4;border:1px solid rgba(12,97,98,0.2);padding:16px;border-radius:10px;margin:18px 0">
-          <p style="margin:0 0 10px;font-weight:700;color:#0c6162">Send Your $10 E-Transfer</p>
+          <p style="margin:0 0 10px;font-weight:700;color:#0c6162">Send Your ${priceDisplay} E-Transfer</p>
           <p style="margin:0 0 8px">Your child&apos;s demo spot is temporarily reserved. Please send an Interac e-Transfer within <strong>${ETRANSFER_HOLD_HOURS} hours</strong> to confirm it:</p>
           <p style="margin:0 0 4px"><strong>Send to:</strong> ${etransferEmail}</p>
           <p style="margin:0 0 4px"><strong>Amount:</strong> ${priceLabel}</p>
@@ -122,7 +126,7 @@ export async function sendDemoAcknowledgement({ registration, program, offering,
     </div>`
 
   const adminHtml = `
-    <h2>New $10 demo class registration</h2>
+    <h2>New ${priceDisplay} demo class registration</h2>
     <p><strong>Reference:</strong> ${safeReference}</p>
     ${eventTitle ? `<p><strong>Event:</strong> ${eventTitle}</p>` : ''}
     ${eventWhen ? `<p><strong>When:</strong> ${eventWhen}</p>` : ''}
@@ -130,14 +134,13 @@ export async function sendDemoAcknowledgement({ registration, program, offering,
     <p><strong>Charge:</strong> ${priceLabel}</p>
     <p><strong>Child:</strong> ${childName} (age ${escapeHtml(registration.childAge)})</p>
     <p><strong>Parent:</strong> ${parentName} · ${escapeHtml(registration.parentEmail)} · ${escapeHtml(registration.parentPhone)}</p>
-    ${interestLabel ? `<p><strong>Program of interest:</strong> ${interestLabel}</p>` : ''}
     <p><strong>Expected e-transfer message/note:</strong> ${etransferMessageText}</p>
     <p>Review the private demo registration record in the program management portal for all additional details, and confirm the e-transfer there once it arrives.</p>`
 
   const transport = createTransport()
   const results = await Promise.allSettled([
-    transport.sendMail({ from: fromAddress, to: registration.parentEmail, subject: `$10 Demo Class Registration Received — ${offering?.eventTitle || program?.title || 'Kriana program'}`, html: parentHtml }),
-    transport.sendMail({ from: fromAddress, to: adminEmail, subject: `New $10 demo registration — ${offering?.eventTitle || program?.title || 'Program'} — ${registration.childName}`, html: adminHtml }),
+    transport.sendMail({ from: fromAddress, to: registration.parentEmail, subject: `${priceDisplay} Demo Class Registration Received — ${offering?.eventTitle || program?.title || 'Kriana program'}`, html: parentHtml }),
+    transport.sendMail({ from: fromAddress, to: adminEmail, subject: `New ${priceDisplay} demo registration — ${offering?.eventTitle || program?.title || 'Program'} — ${registration.childName}`, html: adminHtml }),
   ])
   for (const result of results) {
     if (result.status === 'rejected') console.error('Demo registration acknowledgement email failed:', result.reason)

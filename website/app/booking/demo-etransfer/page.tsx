@@ -9,7 +9,9 @@ import { trackEvent } from '../../../lib/analytics'
 
 const ETRANSFER_EMAIL = process.env.NEXT_PUBLIC_ETRANSFER_EMAIL || 'info@krianatutoring.com'
 const HOLD_HOURS = 48
-const DEMO_AMOUNT_LABEL = '$10.00 CAD'
+// Fallback only for a link generated before amount/currency were carried
+// through as query params.
+const FALLBACK_DEMO_AMOUNT_LABEL = '$10.00 CAD'
 const CONTACT_PHONE_DISPLAY = '613-400-6921'
 const CONTACT_PHONE_HREF = 'tel:+16134006921'
 
@@ -94,6 +96,12 @@ function DemoETransferContent() {
   const eventDate = searchParams.get('eventDate') ?? ''
   const eventTime = searchParams.get('eventTime') ?? ''
   const eventLocation = searchParams.get('eventLocation') ?? ''
+  const amountCentsParam = Number(searchParams.get('amountCents'))
+  const currency = searchParams.get('currency') || 'CAD'
+  const amountLabel = Number.isSafeInteger(amountCentsParam) && amountCentsParam > 0
+    ? `$${(amountCentsParam / 100).toFixed(2)} ${currency}`
+    : FALLBACK_DEMO_AMOUNT_LABEL
+  const amountDisplay = amountLabel.split(' ')[0]
   // Event title (not the internal program name) is the identifiable part of
   // the e-transfer note — must match the same field in the acknowledgement
   // email (see demo-email.js's etransferMessage()) so the note the parent
@@ -119,7 +127,7 @@ function DemoETransferContent() {
               </svg>
             </div>
             <div>
-              <h1 className="text-lg font-black text-slate-800">Send Your $10 E-Transfer</h1>
+              <h1 className="text-lg font-black text-slate-800">Send Your {amountDisplay} E-Transfer</h1>
               <p className="text-sm text-slate-400">Spot held for {HOLD_HOURS} hours</p>
             </div>
           </div>
@@ -134,7 +142,7 @@ function DemoETransferContent() {
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Send E-Transfer To</p>
             <div className="bg-[#e6f4f4] rounded-xl border border-[#0c6162]/20">
               <CopyRow label="Email Address" value={ETRANSFER_EMAIL} mono />
-              <CopyRow label="Amount" value={DEMO_AMOUNT_LABEL} />
+              <CopyRow label="Amount" value={amountLabel} />
               <CopyRow label="Message / Note" value={message} />
             </div>
           </div>
@@ -174,9 +182,9 @@ function DemoETransferContent() {
           </div>
 
           <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-            <p className="text-sm font-bold text-amber-700">Try for $10 — Demo is FREE when you enroll.</p>
+            <p className="text-sm font-bold text-amber-700">Try for {amountDisplay} — Demo is FREE when you enroll.</p>
             <p className="text-sm text-amber-700 mt-1">
-              Once your seat is confirmed and your child attends, your $10 is credited toward regular Young Engineers enrollment. No-shows do not receive this credit.
+              Once your seat is confirmed and your child attends, your {amountDisplay} is credited toward regular Young Engineers enrollment. No-shows do not receive this credit.
             </p>
           </div>
 

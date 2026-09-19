@@ -15,7 +15,7 @@ import { ClassScheduleDisclosure } from '../../../../components/booking/ClassSch
 import { MonthlyTuitionInfo } from '../../../../components/booking/MonthlyTuitionInfo'
 import {
   getRoboticsPackage, isValidPackageId,
-  getPaymentOptionsLabel, resolvePackagePricing,
+  getPaymentOptionsLabel, resolvePackagePricing, getDemoPricing,
 } from '../../../../lib/robotics-packages.js'
 import { getLearningPathMonthlyTuition } from '../../../../lib/robotics-monthly-tuition.js'
 
@@ -36,7 +36,7 @@ function Field({ label, children, required, hint }: { label: string; children: R
 
 const inputClass = 'w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-base sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0c6162]/30 focus:border-[#0c6162] transition-all bg-white'
 
-// ─── $10 Young Engineers Demo Registration ─────────────────────────────────
+// ─── Young Engineers Demo Registration ─────────────────────────────────────
 //
 // Intentionally minimal — a 5-field form (parentName, parentEmail,
 // parentPhone, childName, childAge) plus required consent. No medicalNotes,
@@ -45,8 +45,8 @@ const inputClass = 'w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text
 // this product's spec. This component only renders when the program page's
 // demo CTA linked here (which itself only appears when
 // NEXT_PUBLIC_ENABLE_DEMO_PAYMENTS === 'true' and a published demo offering
-// exists), so in production today this code path is unreachable — but it
-// must still be correct and complete for when the flag is flipped on.
+// exists). Price is per-offering (offering.tuitionCents, set by staff in the
+// portal — see getDemoPricing), not a fixed amount.
 //
 // mode 'waitlist' is the same form, shown on the same register link when the
 // demo is fully booked (or public booking is paused) and the offering's
@@ -58,6 +58,11 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
   const router = useRouter()
   const searchParams = useSearchParams()
   const clientRequestId = useRef('')
+  // Display-only — the server independently resolves the same value from
+  // the offering doc and never trusts anything the browser sends.
+  const { priceCents, currency } = getDemoPricing(offering)
+  const priceLabel = `$${(priceCents / 100).toFixed(2)} ${currency}`
+  const priceDisplay = priceLabel.split(' ')[0]
   const [form, setFormState] = useState({
     parentName: '', parentEmail: '', parentPhone: '', childName: '', childAge: '', consentAccepted: false,
   })
@@ -158,6 +163,8 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
         eventDate: formatEventDateTime(offering),
         eventTime: formatEventTimeRange(offering),
         eventLocation: offering.location ?? '',
+        amountCents: String(priceCents),
+        currency,
       })
       router.push(`/booking/demo-etransfer?${params.toString()}`)
     } catch (err: any) {
@@ -174,7 +181,7 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
         <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg, #F2A100, #ED174B)' }} />
         <div className="px-5 py-4 flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-0.5">{isWaitlist ? 'Demo Waitlist' : '$10 Demo Class'}</p>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-0.5">{isWaitlist ? 'Demo Waitlist' : `${priceDisplay} Demo Class`}</p>
             <h2 className="font-black text-slate-800">{program.title}</h2>
             {/* This campaign's demo has a fixed date/time/location (set on
                 the offering doc by an admin) — never say "we'll follow up
@@ -206,7 +213,7 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
             <span className="shrink-0 text-xs font-bold bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full">Fully booked</span>
           ) : (
             <div className="shrink-0 text-right">
-              <p className="text-xl font-black text-slate-800">$10 CAD</p>
+              <p className="text-xl font-black text-slate-800">{priceLabel}</p>
               <p className="text-xs text-slate-400">one-time demo charge</p>
             </div>
           )}
@@ -229,13 +236,13 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
         ) : (
           <>
             <div className="mb-1">
-              <h3 className="font-black text-slate-800 text-base">Register for the $10 Demo Class</h3>
+              <h3 className="font-black text-slate-800 text-base">Register for the {priceDisplay} Demo Class</h3>
               <p className="text-sm text-slate-400 mt-0.5">Just a few details to hold your child&apos;s demo spot.</p>
             </div>
 
             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-              <p className="text-sm font-bold text-amber-700">Try for $10 — Demo is FREE when you enroll.</p>
-              <p className="text-sm text-amber-700 mt-1">The $10 is credited toward regular enrollment after your child attends.</p>
+              <p className="text-sm font-bold text-amber-700">Try for {priceDisplay} — Demo is FREE when you enroll.</p>
+              <p className="text-sm text-amber-700 mt-1">The {priceDisplay} is credited toward regular enrollment after your child attends.</p>
             </div>
           </>
         )}
@@ -265,7 +272,7 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
           <span className="text-sm text-slate-600">
             {isWaitlist
               ? <>I confirm this information is accurate and consent to Kriana using it to add my child to the waitlist for {offering.eventTitle || 'this demo class'} and contact me about the waitlist and future demos.</>
-              : <>I confirm this information is accurate and consent to Kriana using it to register my child for {offering.eventTitle || 'this $10 demo class'} and contact me about this registration.</>}
+              : <>I confirm this information is accurate and consent to Kriana using it to register my child for {offering.eventTitle || `this ${priceDisplay} demo class`} and contact me about this registration.</>}
             {' '}<span className="text-red-500">*</span>
           </span>
         </label>
@@ -276,7 +283,7 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
         <p className="text-center text-xs text-slate-400">
           {isWaitlist
             ? 'You’ll get an email confirming you’re on the waitlist.'
-            : <>You&apos;ll receive instructions to send your $10 CAD payment by e-transfer.</>}
+            : <>You&apos;ll receive instructions to send your {priceLabel} payment by e-transfer.</>}
         </p>
       </form>
     </BookingLayout>

@@ -3,6 +3,7 @@ import Image from "next/image"
 import { cache } from "react"
 import { resolveDemoCampaignOffering } from "../../lib/demo-campaign.server"
 import { describeDemoEvent } from "../../lib/demo-event"
+import { getDemoPricing } from "../../lib/robotics-packages.js"
 import { licensedRoboticsPrograms } from "../../lib/robotics-content"
 import { ROBOTICS_BOOKING_URL, ROBOTICS_PATH } from "../../lib/site-links"
 import { siteUrl, toJsonLd } from "../../lib/seo"
@@ -50,11 +51,13 @@ export async function generateMetadata(): Promise<Metadata> {
   // default and only becomes event-specific while a demo is actually on
   // sale. Never advertise open seats unless the offering is bookable.
   const isOpen = campaign.pageState === "registration_open"
+  const { priceCents } = getDemoPricing(campaign.offering)
+  const priceDisplay = `$${(priceCents / 100).toFixed(2)}`
   const title = isOpen
-    ? `$10 ${eventTitle} | Kriana Tutoring`
+    ? `${priceDisplay} ${eventTitle} | Kriana Tutoring`
     : "Young Engineers STEM & Robotics Demo in Kanata | Kriana Tutoring"
   const description = isOpen
-    ? `Reserve a hands-on Young Engineers demo for ages ${ageRange}${where}. Your $10 demo fee is credited when you enroll.`
+    ? `Reserve a hands-on Young Engineers demo for ages ${ageRange}${where}. Your ${priceDisplay} demo fee is credited when you enroll.`
     : "Discover hands-on Young Engineers STEM and robotics demos for kids in Kanata. See our latest demo in action and join the waitlist for the next event."
 
   return {
@@ -73,7 +76,7 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-function eventSchemaFor(event: DemoEvent, availability: "InStock" | "SoldOut") {
+function eventSchemaFor(event: DemoEvent, availability: "InStock" | "SoldOut", priceCents: number) {
   if (!event.startIso) return null
   return {
     "@context": "https://schema.org",
@@ -88,7 +91,7 @@ function eventSchemaFor(event: DemoEvent, availability: "InStock" | "SoldOut") {
       name: event.venueName || event.location,
       ...(event.address ? { address: event.address } : {}),
     },
-    offers: { "@type": "Offer", price: "10", priceCurrency: "CAD", availability: `https://schema.org/${availability}`, url: `${siteUrl}/demo` },
+    offers: { "@type": "Offer", price: (priceCents / 100).toFixed(2), priceCurrency: "CAD", availability: `https://schema.org/${availability}`, url: `${siteUrl}/demo` },
     organizer: { "@type": "Organization", name: "Kriana Tutoring", url: siteUrl },
   }
 }
@@ -496,14 +499,16 @@ export default async function DemoPage({
     />
   )
 
-  // ─── Registration open: the $10 booking flyer, unchanged ───
+  // ─── Registration open: the demo booking flyer ───
   if (campaign.pageState === "registration_open") {
     // The same register link serves both booking and the waitlist — the
     // register page decides which form to show from the offering's live
     // state, and each form's endpoint independently enforces it server-side.
     const ctaParams = new URLSearchParams({ offeringId, registrationType: "demo", ...attribution })
     const ctaHref = `/booking/${programId}/register?${ctaParams.toString()}`
-    const eventSchema = eventSchemaFor(event, "InStock")
+    const { priceCents } = getDemoPricing(campaign.offering)
+    const priceDisplay = `$${(priceCents / 100).toFixed(2)}`
+    const eventSchema = eventSchemaFor(event, "InStock", priceCents)
     const eventTitle = event.title || DEFAULT_EVENT_TITLE
 
     return (
@@ -538,6 +543,7 @@ export default async function DemoPage({
                   <DemoRegisterCta
                     href={ctaHref}
                     offeringId={offeringId}
+                    label={`Reserve My Child’s Spot — ${priceDisplay}`}
                     className="mt-4 block w-full rounded-xl bg-[#F2A100] px-5 py-3 text-center text-sm font-black text-white shadow-sm transition-all active:scale-[0.98] lg:hidden"
                   />
                 </div>
@@ -545,7 +551,7 @@ export default async function DemoPage({
                 {/* Headline, essentials, and the CTA — right under the info, not buried below */}
                 <div className="text-center lg:text-left">
                   <span className="inline-block rounded-full bg-sky-100 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-sky-700">
-                    $10 Demo Class
+                    {priceDisplay} Demo Class
                   </span>
                   <h1 className="mt-4 text-4xl font-black leading-[1.05] sm:text-5xl" style={{ color: "#F2A100" }}>
                     Young Engineers
@@ -562,13 +568,14 @@ export default async function DemoPage({
 
                   {/* Reserve spot — directly below the essentials, not at the page bottom */}
                   <div className="mt-6 rounded-2xl border border-slate-200 bg-white shadow-sm p-5 sm:p-6">
-                    <h2 className="text-lg font-black text-slate-800">Reserve Your Child&apos;s Spot for $10</h2>
+                    <h2 className="text-lg font-black text-slate-800">Reserve Your Child&apos;s Spot for {priceDisplay}</h2>
                     <p className="mt-1.5 text-sm text-slate-600 leading-relaxed">
-                      Attend the demo and enroll in an eligible Young Engineers program afterward, and your $10 demo fee will be credited toward registration.
+                      Attend the demo and enroll in an eligible Young Engineers program afterward, and your {priceDisplay} demo fee will be credited toward registration.
                     </p>
                     <DemoRegisterCta
                       href={ctaHref}
                       offeringId={offeringId}
+                      label={`Reserve My Child’s Spot — ${priceDisplay}`}
                       className="mt-4 inline-block w-full rounded-xl bg-[#F2A100] px-6 py-4 text-base font-black text-white shadow-sm transition-all active:scale-[0.98]"
                     />
                   </div>
@@ -598,10 +605,10 @@ export default async function DemoPage({
             <div className="mx-auto max-w-lg rounded-2xl bg-slate-50 border border-slate-100 p-6">
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Good to know</p>
               <ul className="space-y-2 text-xs text-slate-500 leading-relaxed">
-                <li>The fee is $10 CAD.</li>
+                <li>The fee is {priceDisplay} CAD.</li>
                 <li>Submitting the form temporarily holds a seat.</li>
                 <li>The seat is confirmed after Kriana receives and verifies payment.</li>
-                <li>The $10 credit becomes available after the child attends.</li>
+                <li>The {priceDisplay} credit becomes available after the child attends.</li>
                 <li>No-shows do not receive an enrollment credit.</li>
                 <li>The event has limited capacity.</li>
               </ul>
@@ -622,7 +629,9 @@ export default async function DemoPage({
 
   // A dated Event is only truthful while the event is still ahead of us; the
   // completed/waitlist states describe the footage instead.
-  const schema = pageState === "sold_out" ? eventSchemaFor(event, "SoldOut") : highlightVideoSchema(event)
+  const schema = pageState === "sold_out"
+    ? eventSchemaFor(event, "SoldOut", getDemoPricing(campaign.offering).priceCents)
+    : highlightVideoSchema(event)
 
   return (
     <>
