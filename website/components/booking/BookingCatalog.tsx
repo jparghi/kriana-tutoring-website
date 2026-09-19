@@ -12,6 +12,9 @@ import { findLicensedRoboticsProgram } from '../../lib/robotics-content'
 const ROBOTICS_CATEGORY = 'Robotics'
 const DEMO_CLASS_CATEGORY = 'Demo Class'
 
+// Retired demos: hidden from the /booking grid (program card and its demo card).
+const HIDDEN_CATALOG_PROGRAM_IDS = ['young-engineers-demo-kanata-sep-2026']
+
 // Fail-closed browser flag, mirrored server-side by ENABLE_DEMO_PAYMENTS in
 // every demo Netlify Function — hiding these cards is presentation only; the
 // server endpoints independently refuse to operate when their own flag is
@@ -246,8 +249,13 @@ export function BookingCatalog({
     }
   }, [])
 
-  const demoCards = buildDemoCards(programs, offeringsByProgram)
-  const programsAndDemos = [...programs, ...demoCards]
+  // Demo-category programs never get a plain card (each one already gets a
+  // synthetic "$10 Demo" card), and retired demos stay out of the catalog
+  // entirely. Firestore is untouched so existing registrants keep working.
+  const activePrograms = programs.filter((p: any) => !HIDDEN_CATALOG_PROGRAM_IDS.includes(p.id))
+  const visiblePrograms = activePrograms.filter((p: any) => p.category !== DEMO_CLASS_CATEGORY)
+  const demoCards = buildDemoCards(activePrograms, offeringsByProgram)
+  const programsAndDemos = [...visiblePrograms, ...demoCards]
   const categories = ['All', ...Array.from(new Set(programsAndDemos.map((p: any) => p.category).filter(Boolean)))]
   const filtered = selectedCategory === 'All' ? programsAndDemos : programsAndDemos.filter((p: any) => p.category === selectedCategory)
   const selectedPackage = selectedPackageId ? getRoboticsPackage('', selectedPackageId) : null
