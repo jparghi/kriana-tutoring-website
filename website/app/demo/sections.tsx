@@ -146,7 +146,7 @@ export function DemoHero({
                 {demo.hook[1] && <span className="block text-[#F2A100]">{demo.hook[1]}</span>}
               </p>
               {demo.summary && <p className="mt-3 text-base font-semibold leading-relaxed text-slate-700 sm:text-lg">{demo.summary}</p>}
-              <p className="mt-1 text-sm font-semibold text-slate-500">Build • Create • Code • Explore</p>
+              <p className="mt-1 text-sm font-semibold text-slate-500">Build • Create • Test • Explore</p>
             </>
           ) : (
             <>
