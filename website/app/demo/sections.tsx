@@ -528,7 +528,7 @@ export function ReserveSection({
     <section id={sectionId} className="scroll-mt-4 px-5 py-14 sm:px-8" style={{ background: "linear-gradient(155deg, #FFF7E8 0%, #FFFFFF 55%, #F1F8F8 100%)" }}>
       <div className="mx-auto max-w-xl text-center">
         <h2 className="text-2xl font-black text-[#0A2D5A] sm:text-3xl">
-          {demo ? (eventTerms(demo.eventType).kind === "workshop" ? "Give Your Child a Great PD Day" : "Ready to Let Your Child Experience It?") : "Want Your Child at the Next One?"}
+          {demo ? (eventTerms(demo.eventType).kind === "workshop" ? "Give Your Child a Great PA/PD Day" : "Ready to Let Your Child Experience It?") : "Want Your Child at the Next One?"}
         </h2>
         {demo ? (
           <p className="mx-auto mt-3 font-black text-[#0A2D5A]">{demo.title}<span className="block text-sm font-semibold text-slate-600">{formatDemoDate(demo.date, "long")}, {demo.date.slice(0, 4)} · {demo.location}</span></p>

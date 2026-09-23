@@ -111,7 +111,7 @@ function ProgramRateCard({
                 </p>
                 {totalSavingsCents > 0 ? (
                   <p className="mt-1 text-xs font-bold text-emerald-600">
-                    Save {dollars(totalSavingsCents)}
+                    Save {dollars(totalSavingsCents)} when paid in full
                   </p>
                 ) : (
                   <p className="mt-1 text-xs text-slate-400">Standard rate</p>

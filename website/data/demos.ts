@@ -99,13 +99,13 @@ export const demos: DemoEvent[] = [
   },
   {
     id: "2026-10-02-stittsville",
-    title: "Young Engineers PD Day STEM Workshop",
+    title: "Young Engineers PA/PD Day STEM Workshop",
     eventType: "PD_DAY_WORKSHOP",
     hook: ["No school?", "Make it a day to build, create and discover."],
     summary: "90 minutes of hands-on engineering and building with the Bricks Challenge for kids ages 6–12.",
     priceLabel: "Introductory Workshop",
     seoDescription:
-      "Join our Young Engineers PD Day STEM Workshop in Stittsville on October 2. Kids ages 6–12 build, test and explore hands-on engineering with the Bricks Challenge.",
+      "Join our Young Engineers PA/PD Day STEM Workshop in Stittsville on October 2. Kids ages 6–12 build, test and explore hands-on engineering with the Bricks Challenge.",
     date: "2026-10-02",
     location: "Stittsville",
     address: "205 Metric Circle, Stittsville, ON K2V 0L3",
