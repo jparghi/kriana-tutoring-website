@@ -130,8 +130,12 @@ export const demos: DemoEvent[] = [
     ],
     program: "Bricks Challenge",
     learningTopics: ["Gears", "Forces", "Structures", "Motors", "Problem-solving"],
-    // No approved October media yet: the hero falls back to the latest
-    // completed demo's approved image.
+    heroImage: {
+      src: "/images/demo/young-engineers-pd-day-workshop-oct-2026.jpg",
+      alt: "A Young Engineers instructor helping a girl build a gear model from bricks",
+      width: 1400,
+      height: 1002,
+    },
     registrationUrl: "https://krianatutoring.com/demo",
     programId: "young-engineers-demo-stittsville-oct-2026",
   },

@@ -9,13 +9,17 @@ import { DemoRegisterCta } from './DemoRegisterCta'
 // endpoint still make every real decision (open / paused / waitlist).
 //
 // Never shows counts or seats left: capacity is managed manually by staff. A
-// session staff have paused reads as "Full" and offers the waitlist instead.
+// session staff have paused reads as "Full" and offers the waitlist instead —
+// unless another session is still bookable: then the full one is shown as
+// SOLD OUT and can't be chosen, so the only path forward is the open session.
 export interface PickerSession {
   label: string
   name?: string
   offeringId: string
   state: 'open' | 'full' | 'closed' | 'unavailable'
   waitlistOpen: boolean
+  reserveLabel?: string // overrides the shared label, e.g. 'Reserve an Afternoon Spot — $10'
+  limited?: boolean // shows a small 'Few Spots Left' badge
 }
 
 export function SessionReserve({
@@ -29,7 +33,9 @@ export function SessionReserve({
   name: string // radio group name, unique per instance on the page
   content: string
 }) {
-  const selectable = (s: PickerSession) => s.state === 'open' || (s.state === 'full' && s.waitlistOpen)
+  const anyOpen = sessions.some(s => s.state === 'open')
+  const selectable = (s: PickerSession) => s.state === 'open' || (!anyOpen && s.state === 'full' && s.waitlistOpen)
+  const soldOut = (s: PickerSession) => anyOpen && s.state === 'full'
   const firstOpen = sessions.find(s => s.state === 'open') ?? sessions.find(selectable)
   const [selectedId, setSelectedId] = useState(firstOpen?.offeringId ?? '')
   const selected = sessions.find(s => s.offeringId === selectedId)
@@ -50,7 +56,7 @@ export function SessionReserve({
               <label
                 key={session.offeringId}
                 className={`flex min-h-[56px] items-center gap-3 rounded-xl border-2 px-4 py-3 text-left transition-colors ${
-                  !enabled ? 'cursor-not-allowed border-slate-200 bg-slate-50 opacity-60'
+                  !enabled ? 'cursor-not-allowed border-slate-200 bg-slate-50 opacity-70'
                     : checked ? 'cursor-pointer border-[#F2A100] bg-[#FFF7E8]' : 'cursor-pointer border-slate-200 bg-white hover:border-slate-300'
                 }`}
               >
@@ -63,10 +69,19 @@ export function SessionReserve({
                   onChange={() => setSelectedId(session.offeringId)}
                   className="h-5 w-5 shrink-0 accent-[#F2A100]"
                 />
-                <span>
+                <span className="min-w-0 flex-1">
                   {session.name && <span className="block text-[15px] font-black text-[#0A2D5A]">{session.name}</span>}
                   <span className={session.name ? 'block text-sm font-semibold text-slate-600' : 'block text-[15px] font-black text-[#0A2D5A]'}>{session.label}</span>
-                  {session.state === 'full' && <span className="block text-xs font-bold text-[#ED174B]">{session.waitlistOpen ? 'Full — join the waitlist' : 'Full'}</span>}
+                  {soldOut(session) && (
+                    <>
+                      <span className="block text-xs font-semibold text-slate-500">This session is fully booked.</span>
+                      <span className="mt-1.5 inline-block rounded-full bg-slate-200 px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wide text-slate-700">Sold out</span>
+                    </>
+                  )}
+                  {session.state === 'open' && session.limited && (
+                    <span className="mt-1.5 inline-block rounded-full bg-[#ED174B]/10 px-2.5 py-0.5 text-[11px] font-black text-[#ED174B]">Few Spots Left</span>
+                  )}
+                  {session.state === 'full' && !soldOut(session) && <span className="block text-xs font-bold text-[#ED174B]">{session.waitlistOpen ? 'Full — join the waitlist' : 'Full'}</span>}
                   {(session.state === 'closed' || session.state === 'unavailable') && <span className="block text-xs font-semibold text-slate-500">Registration closed</span>}
                 </span>
               </label>
@@ -79,7 +94,7 @@ export function SessionReserve({
         <DemoRegisterCta
           href={href}
           offeringId={selected.offeringId}
-          label={isWaitlist ? 'Join the Waitlist for This Session' : reserveLabel}
+          label={isWaitlist ? 'Join the Waitlist for This Session' : selected.reserveLabel ?? reserveLabel}
           eventName={isWaitlist ? 'demo_waitlist_click' : 'demo_registration_click'}
           content={content}
           className="mt-4 inline-block w-full rounded-xl bg-[#F2A100] px-6 py-4 text-center text-base font-black text-white shadow-sm transition-transform active:scale-[0.98] sm:w-auto sm:px-10"

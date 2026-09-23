@@ -4,7 +4,7 @@ import { demos, type DemoEvent, type DemoStatus } from "../../data/demos"
 import { demoReviews } from "../../data/demo-reviews"
 import { resolveDemoCampaignOffering, resolveDemoSessionOfferings } from "../../lib/demo-campaign.server"
 import { eventTerms } from "../../lib/demo-event-copy"
-import { formatDemoDate, resolveDemoHub } from "../../lib/demo-hub"
+import { formatDemoDate, partialSellout, resolveDemoHub, sessionShortName } from "../../lib/demo-hub"
 import { getDemoPricing } from "../../lib/robotics-packages.js"
 import { siteUrl, toJsonLd } from "../../lib/seo"
 import { Footer } from "../../components/footer"
@@ -13,8 +13,8 @@ import { DemoWaitlistForm } from "./DemoWaitlistForm"
 import { SessionReserve } from "./SessionReserve"
 import { StickyReserveBar } from "./StickyReserveBar"
 import {
-  CONTACT_SMS_HREF, ContactButtons, CtaButton, DemoFaq, DemoHero, DemoJourney, ParentReviews, PastDemoGallery,
-  PreviousDemoProof, ProgramsSection, ReserveSection, WhatChildrenDo, WhatChildrenLearn, type HubCta,
+  CONTACT_SMS_HREF, ContactButtons, CtaButton, DemoFaq, DemoHero, DemoJourney, FutureWorkshopList, ParentReviews, PastDemoGallery,
+  PreviousDemoProof, ProgramsSection, ReserveSection, WhatChildrenDo, WhatChildrenLearn, type HubCta, type PartialSelloutCopy,
 } from "./sections"
 import { ROBOTICS_BOOKING_URL } from "../../lib/site-links"
 
@@ -157,6 +157,25 @@ export default async function DemoPage({
     : Math.round((active?.price ?? 10) * 100)
   const priceDisplay = `$${priceCents % 100 === 0 ? priceCents / 100 : (priceCents / 100).toFixed(2)}`
 
+  // Morning sold out, afternoon still bookable: lead with that and steer to
+  // the open session. Driven by live offering state only — the same state
+  // submit-demo-registration.js enforces — so the page never shows a session
+  // as sold out that the endpoint would still book, or vice versa.
+  const partial = active ? partialSellout(sessions) : null
+  const openShort = partial ? sessionShortName(partial.open) : ""
+  const partialCopy: PartialSelloutCopy | null = partial ? {
+    status: `${partial.soldOut.name ?? sessionShortName(partial.soldOut)} SOLD OUT 🎉 — Limited ${openShort} Spots Remain`,
+    headline: `Our ${sessionShortName(partial.soldOut).toLowerCase()} session is sold out.`,
+    detail: `A few spots remain for the ${partial.open.label} ${terms.noun}.`,
+    openShort: openShort.toLowerCase(),
+  } : null
+  const reserveLabel = partial
+    ? `Reserve ${/^[aeiou]/i.test(openShort) ? "an" : "a"} ${openShort} Spot — ${priceDisplay}`
+    : terms.reserveLabel(priceDisplay)
+  const futureList = (content: string) => partialCopy && (
+    <FutureWorkshopList openShort={partialCopy.openShort} href={`/demo/waitlist${attributionQuery ? `?${attributionQuery}` : ""}`} offeringId={campaignOfferingId} content={content} />
+  )
+
   // Anything the parent can act on for a session: booking, or its waitlist.
   const hasPickerSessions = Boolean(active?.programId) && sessions.some(s => s.state === "open" || (s.state === "full" && s.waitlistOpen))
 
@@ -183,7 +202,10 @@ export default async function DemoPage({
   const picker = (name: string, content: string) =>
     active?.programId && hasPickerSessions ? (
       <SessionReserve
-        sessions={sessions.map(s => ({ label: s.label, name: s.name, offeringId: s.offeringId ?? "", state: s.state, waitlistOpen: s.waitlistOpen }))}
+        sessions={sessions.map(s => ({
+          label: s.label, name: s.name, offeringId: s.offeringId ?? "", state: s.state, waitlistOpen: s.waitlistOpen,
+          ...(partial && s.state === "open" ? { limited: true, reserveLabel } : {}),
+        }))}
         programId={active.programId}
         legend={terms.chooseTime}
         reserveLabel={terms.reserveLabel(priceDisplay)}
@@ -222,6 +244,8 @@ export default async function DemoPage({
           hideSessionRow={hasPickerSessions}
           shareUrl={`${siteUrl}/demo`}
           heroCtaId={HERO_CTA_ID}
+          partial={partialCopy}
+          secondary={futureList("hero_future_list")}
         />
         {latestPast && <PreviousDemoProof demo={latestPast} offeringId={campaignOfferingId} next={active} />}
         <WhatChildrenDo />
@@ -235,6 +259,8 @@ export default async function DemoPage({
             <div id="waitlist" className="scroll-mt-4">
               <DemoWaitlistForm programId={campaignProgramId} offeringId={campaignOfferingId} classesHref={ROBOTICS_BOOKING_URL} />
             </div>
+          ) : partialCopy ? (
+            futureList("reserve_future_list")
           ) : active ? (
             <div className="text-center text-sm text-slate-600">
               <p className="font-bold text-slate-800">Can’t make {formatDemoDate(active.date)}?</p>
@@ -249,7 +275,7 @@ export default async function DemoPage({
       </main>
 
       {hasPickerSessions && canRegister && (
-        <StickyReserveBar href={`#${RESERVE_SECTION_ID}`} label={terms.reserveLabel(priceDisplay)} offeringId={campaignOfferingId} watchIds={[HERO_CTA_ID, RESERVE_SECTION_ID]} />
+        <StickyReserveBar href={`#${RESERVE_SECTION_ID}`} label={reserveLabel} offeringId={campaignOfferingId} watchIds={[HERO_CTA_ID, RESERVE_SECTION_ID]} />
       )}
       <Footer />
     </>

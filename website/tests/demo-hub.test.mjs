@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { resolveDemoHub, formatDemoDate } from '../lib/demo-hub.js'
+import { resolveDemoHub, formatDemoDate, partialSellout, sessionShortName } from '../lib/demo-hub.js'
 
 const session = (date, from, to, offeringId) => ({ label: `${from}`, offeringId, startIso: `${date}T${from}:00-04:00`, endIso: `${date}T${to}:00-04:00` })
 const past = { id: 'sep', date: '2026-09-12', status: 'COMPLETED', sessions: [session('2026-09-12', '10:30', '11:30')] }
@@ -37,6 +37,21 @@ test('one session full: the other stays bookable, the full one offers its waitli
   assert.equal(hub.status, 'REGISTRATION_OPEN')
   assert.equal(hub.canRegister, true)
   assert.deepEqual(hub.sessions.map(s => [s.state, s.waitlistOpen]), [['full', true], ['open', true]])
+})
+
+test('partial sell-out names the sold-out and the still-open session', () => {
+  const named = { ...next, sessions: [{ ...next.sessions[0], name: 'Morning Workshop' }, { ...next.sessions[1], name: 'Afternoon Workshop' }] }
+  const hub = resolveDemoHub([past, named], { am: full, pm: open }, NOW)
+  const partial = partialSellout(hub.sessions)
+  assert.equal(partial.soldOut.offeringId, 'am')
+  assert.equal(partial.open.offeringId, 'pm')
+  assert.equal(sessionShortName(partial.soldOut), 'Morning')
+  assert.equal(sessionShortName(partial.open), 'Afternoon')
+})
+
+test('no partial sell-out while everything is open or everything is full', () => {
+  assert.equal(partialSellout(resolveDemoHub([past, next], { am: open, pm: open }, NOW).sessions), null)
+  assert.equal(partialSellout(resolveDemoHub([past, next], { am: full, pm: full }, NOW).sessions), null)
 })
 
 test('all sessions full: SOLD_OUT and no registration', () => {

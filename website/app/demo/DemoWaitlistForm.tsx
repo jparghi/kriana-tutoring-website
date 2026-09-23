@@ -35,14 +35,26 @@ function Field({ label, required, children }: { label: string; required?: boolea
   )
 }
 
+// Default wording is for the evergreen "next demo" waitlist; /demo/waitlist
+// passes workshop-list wording for the same list.
+const DEFAULT_COPY = {
+  success: 'We’ll notify you as soon as registration for our next Young Engineers Kanata Demo opens.',
+  consent: 'I confirm this information is accurate and consent to Kriana contacting me about the next Young Engineers demo and related programs.',
+  submit: 'Join the Next Demo Waitlist',
+  footnote: 'No payment required. We’ll notify you when registration for our next demo opens.',
+}
+export type WaitlistFormCopy = typeof DEFAULT_COPY
+
 export function DemoWaitlistForm({
   programId,
   offeringId,
   classesHref,
+  copy = DEFAULT_COPY,
 }: {
   programId: string
   offeringId: string
   classesHref: string
+  copy?: WaitlistFormCopy
 }) {
   const clientRequestId = useRef('')
   const [form, setForm] = useState({
@@ -141,7 +153,7 @@ export function DemoWaitlistForm({
         <div className="text-center">
           <h3 className="text-2xl font-black text-[#0A2D5A]">You&apos;re on the list! 🎉</h3>
           <p className="mx-auto mt-3 max-w-md text-base leading-relaxed text-slate-600">
-            We&apos;ll notify you as soon as registration for our next Young Engineers Kanata Demo opens.
+            {copy.success}
           </p>
           {done.reference && (
             <div className="mx-auto mt-5 inline-block rounded-xl bg-slate-50 px-5 py-3">
@@ -209,18 +221,17 @@ export function DemoWaitlistForm({
           onChange={e => set('consentAccepted', e.target.checked)}
           className="mt-0.5 h-4 w-4 shrink-0 accent-[#0c6162]" />
         <span className="text-sm leading-relaxed text-slate-600">
-          I confirm this information is accurate and consent to Kriana contacting me about the next Young Engineers
-          demo and related programs. <span className="text-[#ED174B]">*</span>
+          {copy.consent} <span className="text-[#ED174B]">*</span>
         </span>
       </label>
 
       <button type="submit" disabled={submitting}
         className="w-full rounded-xl px-6 py-4 text-base font-black text-white shadow-sm transition-transform active:scale-[0.98] disabled:opacity-50"
         style={{ backgroundColor: '#F2A100' }}>
-        {submitting ? 'Submitting…' : 'Join the Next Demo Waitlist'}
+        {submitting ? 'Submitting…' : copy.submit}
       </button>
       <p className="text-center text-xs text-slate-400">
-        No payment required. We&apos;ll notify you when registration for our next demo opens.
+        {copy.footnote}
       </p>
     </form>
   )

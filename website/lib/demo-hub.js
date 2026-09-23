@@ -73,6 +73,25 @@ export function resolveDemoHub(demos, live, now = Date.now()) {
   return { active, status, sessions, canRegister, past }
 }
 
+/** "Morning Workshop" -> "Morning"; falls back to the time label when unnamed. */
+export function sessionShortName(session) {
+  return (session.name || session.label).replace(/\s+(workshop|session|demo class|demo)$/i, '')
+}
+
+/**
+ * Some sessions sold out while others are still bookable — the page then
+ * leads with the sold-out news and steers to what's left. Derived only from
+ * live session state, so it can never announce a sell-out the register
+ * endpoint wouldn't also enforce.
+ * @param {LiveSession[]} sessions
+ * @returns {{ soldOut: LiveSession, open: LiveSession } | null}
+ */
+export function partialSellout(sessions) {
+  const soldOut = sessions.find(session => session.state === 'full')
+  const open = sessions.find(session => session.state === 'open')
+  return soldOut && open ? { soldOut, open } : null
+}
+
 /** "September 12" / "Oct 2" style labels from a YYYY-MM-DD, timezone-safe. */
 export function formatDemoDate(date, style = 'long') {
   const [year, month, day] = date.split('-').map(Number)

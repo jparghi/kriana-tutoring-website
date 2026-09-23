@@ -113,10 +113,42 @@ function SessionPills({ demo }: { demo: DemoEvent }) {
   )
 }
 
+// Some sessions sold out, others still bookable (see partialSellout in
+// lib/demo-hub.js). Copy is resolved in page.tsx from live session state.
+export interface PartialSelloutCopy {
+  status: string // "Morning Workshop SOLD OUT 🎉 — Limited Afternoon Spots Remain"
+  headline: string // "Our morning session is sold out."
+  detail: string // "A few spots remain for the 2:00 PM–3:30 PM workshop."
+  openShort: string // "afternoon"
+}
+
+// Secondary path for families who can't make the remaining session — kept
+// visually quieter than the reserve button so booking stays the priority.
+export function FutureWorkshopList({ openShort, href, offeringId, content }: { openShort: string; href: string; offeringId: string; content: string }) {
+  return (
+    <div className="rounded-2xl border border-[#0c6162]/15 bg-[#F1F8F8] p-5 text-left sm:flex sm:items-center sm:gap-6">
+      <div className="sm:flex-1">
+        <h3 className="text-lg font-black text-[#0A2D5A]">Can&apos;t make the {openShort} session?</h3>
+        <p className="mt-1 text-sm leading-relaxed text-slate-600">
+          Join our workshop list and we&apos;ll let you know about upcoming Young Engineers demos, PD Days and special STEM events.
+        </p>
+      </div>
+      <DemoRegisterCta
+        href={href}
+        offeringId={offeringId}
+        label="Join Future Workshop List"
+        eventName="demo_waitlist_cta_clicked"
+        content={content}
+        className="mt-4 inline-block w-full shrink-0 rounded-xl border-2 border-[#0c6162] bg-white px-5 py-3 text-center text-sm font-black text-[#0c6162] transition-colors hover:bg-[#0c6162]/5 sm:mt-0 sm:w-auto"
+      />
+    </div>
+  )
+}
+
 // ─── 1. Hero ─────────────────────────────────────────────────────────────
 
 export function DemoHero({
-  demo, status, actions, note, hideSessionRow, shareUrl, heroCtaId,
+  demo, status, actions, note, hideSessionRow, shareUrl, heroCtaId, partial, secondary,
 }: {
   demo: DemoEvent | null
   status: DemoStatus
@@ -125,16 +157,21 @@ export function DemoHero({
   hideSessionRow?: boolean // the picker already lists the sessions
   shareUrl: string
   heroCtaId: string
+  partial?: PartialSelloutCopy | null
+  secondary?: React.ReactNode // shown below the registration area
 }) {
   const showEvent = demo !== null
+  const image = showEvent ? demo.heroImage : undefined
   return (
     <section className="px-5 pb-10 pt-6 sm:px-8" style={{ background: "linear-gradient(155deg, #FFF7E8 0%, #FFFFFF 50%, #F1F8F8 100%)" }}>
-      <div className="mx-auto max-w-3xl">
+      <div className={image ? "mx-auto max-w-6xl md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,460px)] md:items-start md:gap-10" : "mx-auto max-w-3xl"}>
         <div>
           <p className="text-xs font-bold text-slate-500">Young Engineers Workshops &amp; Demo Events</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <p className="text-xs font-black uppercase tracking-wide text-[#0c6162]">{showEvent ? "Next event" : "Young Engineers Kanata"}</p>
-            {showEvent && <StatusBadge status={status} />}
+            {showEvent && partial ? (
+              <span className="inline-block rounded-full bg-[#ED174B]/10 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-[#ED174B]">{partial.status}</span>
+            ) : showEvent && <StatusBadge status={status} />}
           </div>
           <h1 className="mt-3 text-[32px] font-black leading-[1.08] text-[#0A2D5A] sm:text-5xl">
             {showEvent ? demo.title : <>Young Engineers <span className="text-[#F2A100]">Workshops &amp; Demo Events</span></>}
@@ -145,6 +182,12 @@ export function DemoHero({
                 {demo.hook[0]}
                 {demo.hook[1] && <span className="block text-[#F2A100]">{demo.hook[1]}</span>}
               </p>
+              {partial && (
+                <p className="mt-4 rounded-xl bg-[#ED174B]/[0.07] px-4 py-3 text-sm leading-relaxed text-[#B3123A] sm:text-base">
+                  <span className="block font-black">{partial.headline}</span>
+                  {partial.detail}
+                </p>
+              )}
               {demo.summary && <p className="mt-3 text-base font-semibold leading-relaxed text-slate-700 sm:text-lg">{demo.summary}</p>}
               <p className="mt-1 text-sm font-semibold text-slate-500">Build • Create • Test • Explore</p>
             </>
@@ -192,13 +235,18 @@ export function DemoHero({
               Call/Text <a href={CONTACT_PHONE_HREF} className="font-bold text-[#0c6162] hover:underline">{CONTACT_PHONE_DISPLAY}</a>
             </p>
           </div>
+          {secondary && <div className="mt-6">{secondary}</div>}
           <div className="mt-4"><ShareInviteButton url={shareUrl} title={demo?.title ?? "Young Engineers Workshops & Demo Events"} /></div>
           {showEvent && demo.hook && (
             <p className="mt-5 text-sm font-bold italic text-[#0c6162]">&ldquo;They don&apos;t just build — they learn WHY it works.&rdquo;</p>
           )}
           <p className="mt-5 text-xs font-semibold text-slate-400">Young Engineers Kanata · Operated by Kriana Tutoring</p>
         </div>
-
+        {image && (
+          <div className="mt-8 overflow-hidden rounded-3xl bg-slate-100 shadow-sm md:sticky md:top-6 md:mt-24">
+            <Image src={image.src} alt={image.alt} width={image.width} height={image.height} priority sizes="(min-width: 768px) 460px, 100vw" className="block h-auto w-full" />
+          </div>
+        )}
       </div>
     </section>
   )
