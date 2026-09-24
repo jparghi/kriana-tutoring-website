@@ -19,7 +19,7 @@ interface GalleryMediaBase {
   publicApproved: boolean;
   // Highlighted by the homepage/tutoring GalleryPreview.
   featured?: boolean;
-  // Leads the /gallery page, above the rest of the collection.
+  // The /gallery "Build spotlight" video, shown after the real-moments reels.
   spotlight?: boolean;
   order: number;
   event?: { title: string; date: string; location: string };

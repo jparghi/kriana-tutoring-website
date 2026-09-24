@@ -342,6 +342,12 @@ export default async function RoboticsPage() {
             <p className="mt-4 text-xs leading-5 text-white/60">
               If no demo date is currently open, you can join the waitlist for the next one.
             </p>
+            <p className="mt-3 text-sm text-white/80">
+              Want the details first?{" "}
+              <Link href="/resources/parent-guides" className="font-bold text-[#F2A100] hover:underline">
+                Read our parent guides
+              </Link>
+            </p>
           </div>
         </section>
 

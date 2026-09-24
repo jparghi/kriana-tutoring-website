@@ -63,7 +63,7 @@ export default function GalleryPage() {
         />
         <section
           aria-labelledby="gallery-title"
-          className="relative isolate overflow-hidden px-6 pb-12 pt-9 sm:px-10 lg:pb-16 lg:pt-12"
+          className="relative isolate overflow-hidden px-6 pb-4 pt-9 sm:px-10 lg:pb-6 lg:pt-12"
         >
           <div
             aria-hidden="true"
@@ -98,24 +98,6 @@ export default function GalleryPage() {
                 Real builds. Real learning. Real hands-on engineering.
               </p>
             </div>
-            {spotlight && (
-              <figure className="mx-auto mt-9 max-w-4xl lg:mt-12">
-                <div className="rounded-[2rem] border border-white bg-white p-2 shadow-[0_24px_65px_-20px_rgba(10,45,90,0.28)]">
-                  <GalleryVideo
-                    media={spotlight}
-                    priority
-                    playLabel="Watch it in action"
-                    sizes="(min-width: 1024px) 880px, calc(100vw - 64px)"
-                  />
-                </div>
-                <figcaption className="mx-auto mt-6 max-w-xl text-center">
-                  <h2 className="text-2xl font-semibold">{spotlight.title}</h2>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    {spotlight.caption}
-                  </p>
-                </figcaption>
-              </figure>
-            )}
           </div>
         </section>
 
@@ -123,7 +105,7 @@ export default function GalleryPage() {
         <section
           key={video.id}
           aria-labelledby={`more-title-${video.id}`}
-          className="relative isolate overflow-hidden border-t border-[#E5EBE1] px-6 py-14 sm:px-10 lg:py-20"
+          className={`relative isolate overflow-hidden px-6 py-14 sm:px-10 lg:py-20 ${videoIndex === 0 ? "pt-6 lg:pt-10" : "border-t border-[#E5EBE1]"}`}
         >
           <div
             aria-hidden="true"
@@ -184,7 +166,7 @@ export default function GalleryPage() {
                     className="absolute -inset-x-4 -inset-y-3 -rotate-3 rounded-[2.25rem] bg-[#EEDDAF] sm:-inset-x-5"
                   />
                   <div className="relative rounded-[2rem] border border-white bg-white p-2 shadow-[0_24px_65px_-20px_rgba(10,45,90,0.28)]">
-                    <GalleryVideo media={video} />
+                    <GalleryVideo media={video} priority={videoIndex === 0} />
                   </div>
                   <figcaption className="relative mt-5 flex items-center justify-center gap-2 text-xs font-medium text-[#0c6162]">
                     <SparklesIcon className="h-4 w-4" />
@@ -227,6 +209,36 @@ export default function GalleryPage() {
           </div>
         </section>
         ))}
+
+        {/* The wide build video sits below the real-moments reel: parents
+            arriving from a workshop email see real children building first. */}
+        {spotlight && (
+          <section
+            aria-label={spotlight.title}
+            className="border-t border-[#E5EBE1] px-6 py-14 sm:px-10 lg:py-20"
+          >
+            <div className="mx-auto max-w-6xl">
+              <p className="mb-6 text-center text-[0.65rem] font-bold uppercase tracking-[0.22em] text-[#0c6162]">
+                Build spotlight
+              </p>
+              <figure className="mx-auto max-w-4xl">
+                <div className="rounded-[2rem] border border-white bg-white p-2 shadow-[0_24px_65px_-20px_rgba(10,45,90,0.28)]">
+                  <GalleryVideo
+                    media={spotlight}
+                    playLabel="Watch it in action"
+                    sizes="(min-width: 1024px) 880px, calc(100vw - 64px)"
+                  />
+                </div>
+                <figcaption className="mx-auto mt-6 max-w-xl text-center">
+                  <h2 className="text-2xl font-semibold">{spotlight.title}</h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    {spotlight.caption}
+                  </p>
+                </figcaption>
+              </figure>
+            </div>
+          </section>
+        )}
 
         <section
           aria-labelledby="coming-soon-title"

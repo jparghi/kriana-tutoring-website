@@ -8,7 +8,8 @@ export function getPublicGalleryMedia() {
     .sort((a, b) => a.order - b.order);
 }
 
-/** The /gallery lead video, plus every other approved video in order. */
+/** The /gallery build spotlight (shown below the real-moments reels), plus
+ * every other approved video in order. */
 export function getGalleryVideos(): {
   spotlight: GalleryVideo | undefined;
   more: GalleryVideo[];
