@@ -6,6 +6,17 @@ The source is `Young_Engineers_Kanata_Demo_Reel_28.25s_Music.mp4` in the workspa
 the music and full sequence, scaled to 720 × 1280 with H.264/AAC and MP4 fast start.
 The poster is a frame at 8 seconds from that same reel.
 
+The `/gallery` spotlight (`spotlight: true`) is "Bricks Challenge: Carousel in
+Action", published at the owner's explicit request. Source: `Carousel BC.002.mp4`
+(1920 × 1080, 31 s, 75 MB; kept outside `public/`). Web copy: 1280 × 720 H.264
+CRF 27 (maxrate 1600k), AAC 112k, MP4 fast start, metadata stripped, ≈6 MB.
+Poster is the frame at 20 seconds. Both videos use `preload="none"`, so nothing
+downloads until the visitor presses play, and nothing autoplays.
+
+`featured` picks the homepage/tutoring GalleryPreview (still the Sept 12 reel);
+`spotlight` picks the video that leads `/gallery`. Other approved videos follow
+below it as social proof.
+
 `data/gallery.ts` is the central collection. `lib/gallery.server.ts` filters
 strictly approved entries before the page or preview receives them. The owner's
 explicit request to publish this specific reel authorizes its approval flag;

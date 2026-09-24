@@ -9,30 +9,30 @@ import {
 } from "@heroicons/react/24/outline";
 import { Footer } from "../../components/footer";
 import { GalleryVideo } from "../../components/gallery/gallery-video";
-import { getFeaturedGalleryVideo } from "../../lib/gallery.server";
+import { getGalleryVideos } from "../../lib/gallery.server";
 import { ASSESSMENT_BOOKING_URL, ROBOTICS_PATH } from "../../lib/site-links";
 import { breadcrumbSchema, siteUrl, toJsonLd } from "../../lib/seo";
 
-const video = getFeaturedGalleryVideo();
+const { spotlight, more } = getGalleryVideos();
 
 export const metadata: Metadata = {
-  title: "Gallery | A Look Inside Kriana",
+  title: "Gallery | See Young Engineers in Action",
   description:
-    "See learning in action at Kriana Tutoring in Kanata. Watch highlights from our Young Engineers demo, with more centre and learning photos coming soon.",
+    "Real builds. Real learning. Real hands-on engineering. Watch Young Engineers in action at Kriana Tutoring in Kanata, including our Bricks Challenge carousel and demo highlights.",
   alternates: { canonical: `${siteUrl}/gallery` },
   openGraph: {
-    title: "A little look inside Kriana",
+    title: "See Young Engineers in Action",
     description:
-      "Curious minds. Busy hands. Big discoveries. Watch our Young Engineers demo in Kanata.",
+      "Real builds. Real learning. Real hands-on engineering. Young Engineers at Kriana Tutoring, Kanata.",
     url: `${siteUrl}/gallery`,
-    ...(video
+    ...(spotlight
       ? {
           images: [
             {
-              url: video.poster,
-              width: video.width,
-              height: video.height,
-              alt: video.alt,
+              url: spotlight.poster,
+              width: spotlight.width,
+              height: spotlight.height,
+              alt: spotlight.alt,
             },
           ],
         }
@@ -40,9 +40,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "A little look inside Kriana",
-    description: "Watch our Young Engineers demo in Kanata.",
-    ...(video ? { images: [video.poster] } : {}),
+    title: "See Young Engineers in Action",
+    description: "Real builds. Real learning. Real hands-on engineering.",
+    ...(spotlight ? { images: [spotlight.poster] } : {}),
   },
 };
 
@@ -63,7 +63,7 @@ export default function GalleryPage() {
         />
         <section
           aria-labelledby="gallery-title"
-          className="relative isolate overflow-hidden px-6 pb-14 pt-9 sm:px-10 lg:pb-20 lg:pt-12"
+          className="relative isolate overflow-hidden px-6 pb-12 pt-9 sm:px-10 lg:pb-16 lg:pt-12"
         >
           <div
             aria-hidden="true"
@@ -82,20 +82,68 @@ export default function GalleryPage() {
                 Gallery
               </span>
             </nav>
+            <div className="mx-auto max-w-2xl text-center">
+              <p className="inline-flex items-center gap-2 rounded-full border border-[#0c6162]/15 bg-[#EDF4EA] px-4 py-2 text-[0.65rem] font-bold uppercase tracking-[0.2em] text-[#0c6162]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#0c6162]" />{" "}
+                Learning, in action
+              </p>
+              <h1
+                id="gallery-title"
+                className="mt-6 text-[2.6rem] font-semibold leading-[1.08] tracking-[-0.035em] sm:text-6xl"
+              >
+                See Young Engineers{" "}
+                <span className="whitespace-nowrap text-[#0c6162]">in Action</span>
+              </h1>
+              <p className="mt-5 text-lg leading-8 text-slate-600">
+                Real builds. Real learning. Real hands-on engineering.
+              </p>
+            </div>
+            {spotlight && (
+              <figure className="mx-auto mt-9 max-w-4xl lg:mt-12">
+                <div className="rounded-[2rem] border border-white bg-white p-2 shadow-[0_24px_65px_-20px_rgba(10,45,90,0.28)]">
+                  <GalleryVideo
+                    media={spotlight}
+                    priority
+                    playLabel="Watch it in action"
+                    sizes="(min-width: 1024px) 880px, calc(100vw - 64px)"
+                  />
+                </div>
+                <figcaption className="mx-auto mt-6 max-w-xl text-center">
+                  <h2 className="text-2xl font-semibold">{spotlight.title}</h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    {spotlight.caption}
+                  </p>
+                </figcaption>
+              </figure>
+            )}
+          </div>
+        </section>
+
+        {more.map((video, videoIndex) => (
+        <section
+          key={video.id}
+          aria-labelledby={`more-title-${video.id}`}
+          className="relative isolate overflow-hidden border-t border-[#E5EBE1] px-6 py-14 sm:px-10 lg:py-20"
+        >
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-40 top-20 -z-10 h-[38rem] w-[38rem] rounded-full bg-[#E8F1E9]/70 blur-3xl"
+          />
+          <div className="mx-auto max-w-6xl">
             <div className="grid items-center gap-10 lg:grid-cols-[1.12fr_0.88fr] lg:gap-x-20 lg:gap-y-0">
               <div className="lg:col-start-1 lg:row-start-1 lg:self-end">
                 <p className="inline-flex items-center gap-2 rounded-full border border-[#0c6162]/15 bg-[#EDF4EA] px-4 py-2 text-[0.65rem] font-bold uppercase tracking-[0.2em] text-[#0c6162]">
                   <span className="h-1.5 w-1.5 rounded-full bg-[#0c6162]" />{" "}
-                  Learning, in action
+                  Moments at Kriana
                 </p>
-                <h1
-                  id="gallery-title"
-                  className="mt-6 text-[2.6rem] font-semibold leading-[1.08] tracking-[-0.035em] sm:text-6xl lg:text-[4.4rem]"
+                <h2
+                  id={`more-title-${video.id}`}
+                  className="mt-6 text-[2.2rem] font-semibold leading-[1.08] tracking-[-0.035em] sm:text-5xl lg:text-6xl"
                 >
                   A little look
                   <br />
                   <span className="text-[#0c6162]">inside Kriana.</span>
-                </h1>
+                </h2>
                 <p className="mt-6 max-w-md text-lg leading-8 text-slate-600">
                   Curious minds, busy hands, and that proud{" "}
                   <span className="font-semibold text-[#0A2D5A]">
@@ -128,7 +176,7 @@ export default function GalleryPage() {
               </div>
               {video && (
                 <figure
-                  id="demo-highlight"
+                  id={videoIndex === 0 ? "demo-highlight" : undefined}
                   className="relative mx-auto w-full max-w-[330px] scroll-mt-28 sm:max-w-[350px] lg:col-start-2 lg:row-span-2 lg:row-start-1"
                 >
                   <div
@@ -148,9 +196,9 @@ export default function GalleryPage() {
                 <p className="text-[0.65rem] font-bold uppercase tracking-[0.22em] text-[#0c6162]">
                   Featured moment
                 </p>
-                <h2 className="mt-2 text-2xl font-semibold">
+                <h3 className="mt-2 text-2xl font-semibold">
                   {video?.title ?? "More discoveries on the way"}
-                </h2>
+                </h3>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
                   {video?.caption ??
                     "We’re gathering moments from our learning space. Check back soon."}
@@ -178,6 +226,7 @@ export default function GalleryPage() {
             </div>
           </div>
         </section>
+        ))}
 
         <section
           aria-labelledby="coming-soon-title"

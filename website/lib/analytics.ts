@@ -27,6 +27,9 @@ export type FunnelEvent =
   | 'demo_waitlist_cta_clicked'
   | 'demo_video_played'
   | 'demo_classes_cta_clicked'
+  // /demo/consent photo & media consent form.
+  | 'media_consent_submitted'
+  | 'media_consent_gallery_clicked'
 
 export interface FunnelEventData {
   campaignId?: string | null

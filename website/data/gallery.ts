@@ -17,7 +17,10 @@ interface GalleryMediaBase {
   height: number;
   categories: GalleryCategory[];
   publicApproved: boolean;
+  // Highlighted by the homepage/tutoring GalleryPreview.
   featured?: boolean;
+  // Leads the /gallery page, above the rest of the collection.
+  spotlight?: boolean;
   order: number;
   event?: { title: string; date: string; location: string };
 }
@@ -39,6 +42,23 @@ export type GalleryMedia = GalleryVideo | GalleryImage;
 // Keep unapproved originals outside public/, even when publicApproved is false.
 export const galleryMedia: GalleryMedia[] = [
   {
+    id: "bricks-challenge-carousel",
+    type: "video",
+    src: "/videos/gallery/bricks-challenge-carousel-v1.mp4",
+    poster: "/images/gallery/bricks-challenge-carousel-v1.jpg",
+    alt: "A motorized Young Engineers Bricks Challenge carousel model spinning on a white background",
+    title: "Bricks Challenge: Carousel in Action",
+    caption:
+      "Gears, motors and a lot of spin: the Bricks Challenge carousel, one of the builds kids make in our Young Engineers workshops.",
+    width: 1280,
+    height: 720,
+    durationLabel: "31 seconds",
+    categories: ["robotics"],
+    publicApproved: true,
+    spotlight: true,
+    order: 0,
+  },
+  {
     id: "young-engineers-demo-sept-2026",
     type: "video",
     src: "/videos/gallery/young-engineers-demo-sept-2026-v1.mp4",
@@ -53,7 +73,7 @@ export const galleryMedia: GalleryMedia[] = [
     categories: ["robotics", "demo"],
     publicApproved: true,
     featured: true,
-    order: 0,
+    order: 1,
     event: {
       title: "Young Engineers Demo",
       date: "2026-09-12",

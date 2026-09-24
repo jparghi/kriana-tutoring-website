@@ -8,9 +8,17 @@ export function getPublicGalleryMedia() {
     .sort((a, b) => a.order - b.order);
 }
 
-export function getFeaturedGalleryVideo(): GalleryVideo | undefined {
+/** The /gallery lead video, plus every other approved video in order. */
+export function getGalleryVideos(): {
+  spotlight: GalleryVideo | undefined;
+  more: GalleryVideo[];
+} {
   const videos = getPublicGalleryMedia().filter(
     (media): media is GalleryVideo => media.type === "video",
   );
-  return videos.find((media) => media.featured) ?? videos[0];
+  const spotlight =
+    videos.find((media) => media.spotlight) ??
+    videos.find((media) => media.featured) ??
+    videos[0];
+  return { spotlight, more: videos.filter((media) => media !== spotlight) };
 }
