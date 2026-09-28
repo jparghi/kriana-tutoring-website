@@ -72,7 +72,7 @@ export const demos: DemoEvent[] = [
     status: "COMPLETED",
     soldOut: true,
     price: 10,
-    ageRange: "7–12",
+    ageRange: "6–12",
     sessions: [
       {
         label: "10:30–11:30 AM",

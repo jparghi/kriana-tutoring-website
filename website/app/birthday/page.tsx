@@ -128,7 +128,7 @@ export default async function BirthdayPage() {
     "@type": "Service",
     name: "Young Engineers STEM Birthday Experience",
     description:
-      "A 75-minute instructor-led robotics and engineering activity for birthday parties, for up to 8 children ages 7-12, offered locally by Kriana Tutoring.",
+      "A 75-minute instructor-led robotics and engineering activity for birthday parties, for up to 8 children ages 6-12, offered locally by Kriana Tutoring.",
     provider: { "@id": localBusinessSchema["@id"] },
     areaServed: ["Kanata", "Stittsville", "Ottawa"],
     serviceType: "Robotics birthday party",
