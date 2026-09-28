@@ -79,7 +79,7 @@ export const licensedRoboticsPrograms: LicensedRoboticsProgram[] = [
   {
     id: "smartivo",
     title: "Smartivo",
-    ageRange: "4-7",
+    ageRange: "4-6",
     durationMin: 60,
     bookingTag: "Robotics & Coding",
     marketingEyebrow: "Early Coding Foundations",
@@ -100,7 +100,7 @@ export const licensedRoboticsPrograms: LicensedRoboticsProgram[] = [
   {
     id: "bricks-challenge",
     title: "Bricks Challenge",
-    ageRange: "7-12",
+    ageRange: "6-12",
     durationMin: 75,
     bookingTag: "Robotics",
     marketingEyebrow: "Engineering & Problem-Solving",
