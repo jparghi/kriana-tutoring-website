@@ -11,7 +11,6 @@ import { useEffect, useState } from "react";
 const SECTIONS = [
   { href: "#programs", label: "Programs" },
   { href: "#pricing", label: "Pricing" },
-  { href: "#schedule", label: "Schedule" },
   { href: "#demo", label: "Demo" },
   { href: "#faq", label: "FAQ" },
 ];

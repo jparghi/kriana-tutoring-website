@@ -19,7 +19,6 @@ import {
 import {
   YE_AMBER,
   /* YE_BLUE, */ YE_RED,
-  formatTimeRange,
   licensedRoboticsPrograms,
 } from "../../lib/robotics-content";
 import { breadcrumbSchema, localBusinessSchema, siteUrl, toJsonLd } from "../../lib/seo";
@@ -54,33 +53,6 @@ const futureReadyJourney = [
   { title: "Debug", description: "Find the problem and adjust the solution." },
   { title: "Improve", description: "Refine the design through creative thinking." },
 ];
-
-// Every program currently runs one time slot repeated across Monday,
-// Wednesday and Friday, so each card leads with the time and lists the days
-// rather than repeating "…, 4:30 p.m.–5:30 p.m." three times. If a program
-// ever runs different times on different days, `timeLabel` is null and the
-// card falls back to listing each day/time pair in full. A program without a
-// published weekly schedule is omitted rather than shown as an empty card.
-const weeklyScheduleCards = licensedRoboticsPrograms
-  .filter((program) => !program.comingSoon && program.weeklySchedules?.length)
-  .map((program) => {
-    const slots = program.weeklySchedules!;
-    const sharesOneTime = slots.every(
-      (slot) => slot.startTime === slots[0].startTime && slot.endTime === slots[0].endTime
-    );
-    return {
-      id: program.id,
-      title: program.title,
-      ageRange: program.ageRange.replace("-", "\u2013"),
-      durationMin: program.durationMin,
-      timeLabel: sharesOneTime ? formatTimeRange(slots[0].startTime, slots[0].endTime) : null,
-      days: slots.map((slot) => slot.weekday),
-      slots: slots.map((slot) => ({
-        weekday: slot.weekday,
-        time: formatTimeRange(slot.startTime, slot.endTime),
-      })),
-    };
-  });
 
 const additionalOfferings = [
   // Camps & PA Days hidden for now — re-enable by uncommenting when ready to promote again.
@@ -122,7 +94,7 @@ const faqs = [
   },
   {
     q: "What ages can participate?",
-    a: "Age ranges vary by program — check the age range and weekly schedule before requesting a spot.",
+    a: "Age ranges vary by program — check the age range on each program before requesting a spot.",
   },
   {
     q: "Are all building materials provided?",
@@ -138,7 +110,7 @@ const faqs = [
   },
   {
     q: "Where are classes held?",
-    a: "Class locations are listed with each published weekly schedule and confirmed when we review your request.",
+    a: "Classes run in the Beaverbrook area of Kanata. Exact locations are listed with each program and confirmed when we review your request.",
   },
   {
     q: "What happens if my child misses a class?",
@@ -351,68 +323,8 @@ export default async function RoboticsPage() {
           </div>
         </section>
 
-        {/* Weekly schedule — answers "when?" immediately after "how much?".
-            Driven by the same licensedRoboticsPrograms constant as the
-            program cards and the Course structured data, so all three can
-            never disagree. Real published offerings (with actual class dates
-            and location) are shown on the program cards above. */}
-        <section id="schedule" className="scroll-mt-20 bg-slate-50 px-6 py-16 sm:px-10">
-          <div className="mx-auto max-w-5xl">
-            <div className="mx-auto max-w-2xl text-center">
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-[#0083CB]">Weekly schedule</p>
-              <h2 className="mt-3 text-3xl font-bold text-[#0A2D5A] sm:text-4xl">When Classes Run</h2>
-              <p className="mt-3 text-base leading-7 text-slate-600">
-                Classes run weekly in the Beaverbrook area of Kanata. Exact dates and locations are confirmed with
-                each published schedule.
-              </p>
-            </div>
-
-            <div className="mt-10 grid gap-5 sm:grid-cols-3">
-              {weeklyScheduleCards.map((entry) => (
-                <div key={entry.id} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <h3 className="text-base font-black text-[#0A2D5A]">{entry.title}</h3>
-                  <p className="mt-0.5 text-sm font-semibold text-slate-500">
-                    Ages {entry.ageRange} · {entry.durationMin} min
-                  </p>
-                  {entry.timeLabel ? (
-                    <>
-                      <p className="mt-4 text-xl font-black text-[#0A2D5A]">{entry.timeLabel}</p>
-                      <ul className="mt-3 flex flex-wrap gap-2" aria-label={`${entry.title} class days`}>
-                        {entry.days.map((day) => (
-                          <li
-                            key={day}
-                            className="rounded-full bg-[#0083CB]/10 px-3 py-1 text-xs font-bold text-[#0083CB]"
-                          >
-                            {day}
-                          </li>
-                        ))}
-                      </ul>
-                    </>
-                  ) : (
-                    <ul className="mt-4 space-y-2">
-                      {entry.slots.map((slot) => (
-                        <li key={slot.weekday} className="flex flex-wrap items-baseline gap-x-1.5 text-sm text-slate-600">
-                          <span className="font-bold text-slate-800">{slot.weekday}:</span>
-                          <span>{slot.time}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            <p className="mt-8 text-center text-sm text-slate-500">
-              Days or times don&apos;t work?{" "}
-              <Link href="/contact#consultation-form" className="font-semibold text-[#0c6162] hover:underline">
-                Tell us what does.
-              </Link>
-            </p>
-          </div>
-        </section>
-
         {/* See it in action — after the conversion block (programs,
-            price, demo, schedule), which is what a parent arriving from
+            price, demo), which is what a parent arriving from
             social is actually looking for first. */}
         <section className="bg-white px-6 py-16 sm:px-10">
           <div className="mx-auto max-w-5xl">
