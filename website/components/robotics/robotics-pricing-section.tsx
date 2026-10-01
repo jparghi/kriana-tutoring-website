@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { getPubliclyVisiblePackages } from "../../lib/robotics-packages.js";
 import { licensedRoboticsPrograms } from "../../lib/robotics-content";
+import { SCHEDULING_CONTACT_URL } from "../../lib/site-links";
 
 // The /robotics rate card. Prices come straight from the canonical package
 // catalogue (lib/robotics-packages.js) — never hardcoded here — so this page
@@ -124,10 +125,10 @@ function ProgramRateCard({
 
       <div className="px-6 pb-6 pt-5">
         <Link
-          href={`/booking/${program.id}`}
+          href={SCHEDULING_CONTACT_URL}
           className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[#0c6162] px-5 py-3 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#0a5051]"
         >
-          Choose {program.title}
+          Ask About {program.title}
           <span aria-hidden="true">→</span>
         </Link>
       </div>
@@ -185,7 +186,7 @@ export function RoboticsPricingSection() {
             Pricing is per child and applicable taxes are extra. Tuition is billed monthly: the package total is
             averaged across the real months your child&apos;s schedule runs, so the monthly amount stays the same
             even when a month has fewer class dates because of holidays or school breaks. All building materials
-            are provided and kits stay at the learning centre. No payment is collected when you request a spot.
+            are provided and kits stay at the learning centre. No payment is collected until your child&apos;s class schedule is confirmed.
           </p>
         </div>
 

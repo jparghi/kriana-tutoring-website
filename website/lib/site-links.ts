@@ -9,6 +9,10 @@ export const GALLERY_PATH = "/gallery";
 export const ASSESSMENT_BOOKING_URL = "/booking/VQNj7NfFGCI5oun5PXQE";
 export const BIRTHDAY_PARTY_PATH = "/birthday";
 
+// Class schedules are not published on the site — the timetable changes
+// often, so every "when are classes?" CTA sends parents to talk to us.
+export const SCHEDULING_CONTACT_URL = "/contact#consultation-form";
+
 export const ROBOTICS_CATEGORY: (typeof PROGRAM_CATEGORIES)[number] = "Robotics";
 
 export function bookingUrlForCategory(category: (typeof PROGRAM_CATEGORIES)[number]) {

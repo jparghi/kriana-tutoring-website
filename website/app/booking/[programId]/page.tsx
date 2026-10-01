@@ -1,147 +1,35 @@
 'use client'
 
 import { Suspense, useEffect, useState } from 'react'
-import { useParams, useRouter, useSearchParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import {
-  getProgram, getActiveOfferings, getPackageClassSchedule,
-  formatOfferingDateRange, formatOfferingWeeklySchedule, isOfferingRequestWindowOpen, isOfferingSoldOut,
-  statusBadgeClass, applyProgramDiscount,
-} from '../../../lib/booking'
+import { getProgram, getActiveOfferings, applyProgramDiscount } from '../../../lib/booking'
 import { isRequestOnlyBookingFlow } from '../../../lib/booking-flow'
-import { BIRTHDAY_PARTY_PATH } from '../../../lib/site-links'
+import { BIRTHDAY_PARTY_PATH, SCHEDULING_CONTACT_URL } from '../../../lib/site-links'
 import BookingLayout from '../../../components/booking/BookingLayout'
-import { BookingStepper } from '../../../components/booking/BookingStepper'
-import { ClassScheduleDisclosure } from '../../../components/booking/ClassScheduleDisclosure'
-import { getLearningPathMonthlyTuition } from '../../../lib/robotics-monthly-tuition.js'
-import { getPubliclyVisiblePackages, getRoboticsPackage, isValidPackageId } from '../../../lib/robotics-packages.js'
+import { getPubliclyVisiblePackages } from '../../../lib/robotics-packages.js'
 
 const ROBOTICS_CATEGORY = 'Robotics'
 
-function OfferingCard({ offering, program, onSelect, hideTuition, selectedPackage }: { offering: any; program: any; onSelect: (s: any) => void; hideTuition?: boolean; selectedPackage?: any }) {
-  const soldOut = isOfferingSoldOut(offering)
-  const requestWindowOpen = isOfferingRequestWindowOpen(offering)
-  const hasWaitlist = soldOut && offering.waitlistEnabled && requestWindowOpen
-  const dateRange = formatOfferingDateRange(offering, selectedPackage)
-  const packageSchedule = selectedPackage ? getPackageClassSchedule(offering, selectedPackage) : null
-  const tuition = Number(offering.tuitionCents ?? 0)
-  const discount = applyProgramDiscount(tuition, program)
-
-  // Every package (Regular included, at 10 classes) is now a fixed learning
-  // path, so monthly tuition is always the averaged path total.
-  const learningPathTuition = selectedPackage ? getLearningPathMonthlyTuition(offering, selectedPackage) : null
-
+// Class schedules are not published on the site — the timetable changes
+// often and was confusing families — so this page describes the program
+// (and, for robotics, its learning-path pricing) and asks parents to contact
+// us to arrange a schedule instead of picking a published offering.
+function ContactToSchedule({ programTitle }: { programTitle: string }) {
   return (
-    <div className={`bg-white rounded-2xl border p-5 transition-all ${
-      soldOut || !requestWindowOpen ? 'border-slate-100 opacity-80' : 'border-slate-200 hover:border-[#0c6162] hover:shadow-sm cursor-pointer'
-    }`}>
-      <div className="flex items-start justify-between gap-4 mb-3">
-        <div>
-          <h4 className="font-bold text-slate-800">{offering.title}</h4>
-          {offering.location && (
-            <p className="text-sm text-slate-400 mt-0.5 flex items-center gap-1">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5 shrink-0">
-                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" /><circle cx="12" cy="9" r="2.5" />
-              </svg>
-              {offering.location}
-            </p>
-          )}
-        </div>
-        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${
-          requestWindowOpen ? statusBadgeClass(offering.status) : 'bg-slate-100 text-slate-600'
-        }`}>
-          {!requestWindowOpen ? 'Requests Closed' : soldOut ? 'Full' : 'Open'}
-        </span>
+    <div className="bg-white rounded-2xl border border-slate-100 p-8 text-center shadow-sm">
+      <h2 className="text-lg font-black text-slate-800">Contact us to schedule</h2>
+      <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-500">
+        Class days and times for {programTitle} change often, so we arrange each child&apos;s schedule directly.
+        Reach out and we&apos;ll find a time that works for your family.
+      </p>
+      <div className="mt-5 flex flex-wrap items-center justify-center gap-4 text-sm font-semibold">
+        <Link href={SCHEDULING_CONTACT_URL} className="rounded-xl bg-[#0c6162] px-5 py-2.5 text-white hover:opacity-90">
+          Contact Us to Schedule
+        </Link>
+        <Link href="/booking" className="text-[#0c6162] hover:underline">← Browse other programs</Link>
       </div>
-
-      <div className="space-y-1.5 text-sm text-slate-600 mb-4">
-        <div className="flex items-center gap-2">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4 text-slate-400 shrink-0">
-            <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
-          </svg>
-          {formatOfferingWeeklySchedule(offering)}
-        </div>
-        {dateRange && (
-          <div className="flex items-center gap-2">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4 text-slate-400 shrink-0">
-              <path d="M8 2v3M16 2v3M3 9h18M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2z" />
-            </svg>
-            {dateRange}
-          </div>
-        )}
-        {(() => {
-          // For a robotics package, the class count that matters to the family
-          // is the package's (e.g. Explorer = 10), not the offering's full
-          // school-year schedule length (e.g. 36 weekly classes total) — showing
-          // the offering's own classCount here made every package look like a
-          // 36-class commitment regardless of which one was actually selected.
-          const displayClassCount = selectedPackage ? selectedPackage.classCount : offering.classCount
-          return (displayClassCount > 0 || offering.durationMin) && (
-            <div className="flex items-center gap-2">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4 text-slate-400 shrink-0">
-                <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
-              </svg>
-              {[
-                displayClassCount > 0 ? `${displayClassCount} class${displayClassCount === 1 ? '' : 'es'}` : '',
-                offering.durationMin ? `${offering.durationMin} min each` : '',
-              ].filter(Boolean).join(' · ')}
-            </div>
-          )
-        })()}
-        {tuition > 0 && !hideTuition && (
-          <div className="flex items-center gap-2 font-semibold text-slate-700">
-            <span aria-hidden="true" className="w-4 text-center text-slate-400">$</span>
-            {discount.active ? (
-              <span className="flex items-center gap-1.5">
-                <span className="text-slate-400 line-through font-normal">${(tuition / 100).toFixed(2)}</span>
-                <span className="text-orange-600">${(discount.finalCents / 100).toFixed(2)}</span>
-                {offering.currency ?? 'CAD'} tuition
-                <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-2 py-0.5 text-[10px] font-bold text-white">
-                  🏷️ {discount.label}
-                </span>
-              </span>
-            ) : (
-              <>${(tuition / 100).toFixed(2)} {offering.currency ?? 'CAD'} tuition</>
-            )}
-          </div>
-        )}
-        {learningPathTuition && learningPathTuition.billingMonthCount > 0 && (
-          <div className="rounded-lg bg-[#0c6162]/5 px-3 py-2 font-semibold text-slate-700">
-            <span className="text-sm">
-              Billed monthly for your {selectedPackage.classCount} classes
-            </span>
-            <p className="mt-0.5 text-xs font-normal text-slate-400">
-              An invoice will be issued monthly based on your selected schedule (plus applicable taxes).
-            </p>
-          </div>
-        )}
-      </div>
-
-      {packageSchedule && packageSchedule.classDates.length > 0 && (
-        <div className="mb-4">
-          <ClassScheduleDisclosure schedule={packageSchedule} packageName={selectedPackage?.name} />
-        </div>
-      )}
-
-      <button
-        onClick={() => onSelect(offering)}
-        disabled={!requestWindowOpen || (soldOut && !offering.waitlistEnabled)}
-        className={`mt-4 w-full py-2.5 rounded-xl text-sm font-bold transition-all active:scale-[0.98] ${
-          hasWaitlist
-            ? 'bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-100'
-            : soldOut || !requestWindowOpen
-              ? 'bg-slate-50 text-slate-400 cursor-not-allowed border border-slate-100'
-              : 'text-white hover:opacity-90'
-        }`}
-        style={requestWindowOpen && !soldOut && !hasWaitlist ? { backgroundColor: '#0c6162' } : {}}
-      >
-        {hasWaitlist
-          ? 'Join Waitlist'
-          : !requestWindowOpen ? 'Requests Closed'
-          : soldOut ? 'Full'
-          : isRequestOnlyBookingFlow ? 'Request a Spot →' : 'Select This Program →'}
-      </button>
     </div>
   )
 }
@@ -172,14 +60,14 @@ const PACKAGE_DESCRIPTORS: Record<string, string[]> = {
   engineer: ['Longer learning journey', 'Greater continuity and progression'],
 }
 
-function PackageChooser({ programId }: { programId: string }) {
+function PackageOverview({ programId }: { programId: string }) {
   return (
     <div className="relative mb-8 overflow-hidden rounded-[1.75rem] border border-slate-100 bg-gradient-to-br from-white via-[#0c6162]/[0.03] to-[#0083CB]/[0.05] p-6 shadow-[0_20px_50px_rgba(15,23,42,0.08)] md:p-9">
       <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-[#0083CB]/10 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-[#0c6162]/10 blur-3xl" />
 
       <div className="relative">
-        <h2 className="text-xl font-black text-slate-800 sm:text-2xl">Choose Your Learning Path</h2>
+        <h2 className="text-xl font-black text-slate-800 sm:text-2xl">Learning Paths &amp; Pricing</h2>
         <p className="mt-1.5 max-w-2xl text-sm text-slate-500">
           Every path is a complete class package — the longer the path, the lower the per-class rate. Tuition is
           billed monthly, averaged across your learning path.
@@ -203,11 +91,10 @@ function PackageChooser({ programId }: { programId: string }) {
             const totalSavingsCents = savingsPerClassCents * pkg.classCount
 
             return (
-              <Link
+              <div
                 key={pkg.id}
-                href={`/booking/${programId}?package=${pkg.id}`}
-                className={`group relative flex flex-col rounded-2xl border bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_18px_40px_rgba(15,23,42,0.14)] ${
-                  isFeatured ? 'border-[#0083CB] ring-2 ring-[#0083CB]/25' : 'border-slate-200 hover:border-[#0c6162]/40'
+                className={`relative flex flex-col rounded-2xl border bg-white p-5 shadow-sm ${
+                  isFeatured ? 'border-[#0083CB] ring-2 ring-[#0083CB]/25' : 'border-slate-200'
                 }`}
               >
                 {pkg.badge && (
@@ -263,19 +150,12 @@ function PackageChooser({ programId }: { programId: string }) {
                   <p className="mt-0.5 text-xs text-slate-400">Standard per-class rate</p>
                 )}
                 <p className="mt-2 rounded-lg bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-600">
-                  Billed monthly — your exact monthly amount is shown after you choose a schedule
+                  Billed monthly, averaged across your learning path
                 </p>
                 {isFeatured && (
                   <p className="mt-1 text-xs font-semibold text-[#0083CB]">Lowest per-class rate</p>
                 )}
-
-                <span
-                  className="mt-4 inline-flex w-fit items-center gap-1 rounded-full px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition-transform duration-200 group-hover:scale-[1.03]"
-                  style={{ backgroundColor: isFeatured ? '#0083CB' : '#0c6162' }}
-                >
-                  Choose {pkg.name} →
-                </span>
-              </Link>
+              </div>
             )
           })
         })()}
@@ -304,7 +184,6 @@ function PackageChooser({ programId }: { programId: string }) {
 function ProgramDetailContent() {
   const { programId } = useParams<{ programId: string }>()
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [program, setProgram] = useState<any>(null)
   const [offerings, setOfferings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -332,23 +211,7 @@ function ProgramDetailContent() {
     }
   }, [program, router])
 
-  const packageParam = searchParams.get('package') || ''
   const isRobotics = program?.category === ROBOTICS_CATEGORY
-  const selectedPackage = isRobotics && isValidPackageId(programId, packageParam) ? getRoboticsPackage(programId, packageParam) : null
-
-  // A demo offering (offeringType === 'demo') is a distinct product from the
-  // regular weekly cohort offerings, sold from the /booking listing page —
-  // it must never appear in this page's "Weekly Program Schedules" list
-  // (which offers the Explorer/Builder/Engineer package flow).
-  const regularOfferings = offerings.filter(o => o.offeringType !== 'demo')
-
-  function handleSelectOffering(offering: any) {
-    const params = new URLSearchParams()
-    if (offering.source === 'legacySession') params.set('sessionId', offering.id)
-    else params.set('offeringId', offering.id)
-    if (selectedPackage) params.set('package', selectedPackage.id)
-    router.push(`/booking/${programId}/register?${params.toString()}`)
-  }
 
   if (loading) return (
     <BookingLayout backTo="/booking" backLabel="All Programs">
@@ -371,7 +234,9 @@ function ProgramDetailContent() {
     </BookingLayout>
   )
 
-  const nextOffering = regularOfferings[0]
+  // A demo offering (offeringType === 'demo') is a distinct product sold from
+  // the /demo and /booking listing pages — never use it for this header.
+  const nextOffering = offerings.find(o => o.offeringType !== 'demo')
   const listedTuition = Number(
     nextOffering?.tuitionCents
       || (program.isDepositOnly ? program.depositAmount : program.price)
@@ -382,8 +247,6 @@ function ProgramDetailContent() {
 
   return (
     <BookingLayout backTo="/booking" backLabel="All Programs">
-      <BookingStepper step={1} />
-
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-8">
         <div className="h-1.5 w-full" style={{ background: 'linear-gradient(90deg, #0c6162, #0d9e9f)' }} />
         {program.imageUrl && (
@@ -454,7 +317,7 @@ function ProgramDetailContent() {
                     <p className="text-sm font-bold text-slate-700">${(listedTuition / 100).toFixed(2)} {nextOffering?.currency ?? 'CAD'}</p>
                   )
                 ) : (
-                  <p className="text-sm font-bold text-slate-700">{offerings.length > 0 ? 'Confirmed after review' : 'Schedule pending'}</p>
+                  <p className="text-sm font-bold text-slate-700">{offerings.length > 0 ? 'Confirmed after review' : 'Contact us'}</p>
                 )}
               </div>
             )}
@@ -465,14 +328,6 @@ function ProgramDetailContent() {
               </div>
             )}
           </div>
-
-          {isRequestOnlyBookingFlow && regularOfferings.length > 0 && (
-            <div className="mt-4 bg-[#e6f4f4] border border-[#0c6162]/15 rounded-xl px-4 py-3">
-              <p className="text-sm text-[#0c6162] font-medium">
-                No payment is due when you request a spot. We will confirm availability, placement and payment details separately.
-              </p>
-            </div>
-          )}
 
           {!isRequestOnlyBookingFlow && program.isDepositOnly && (
             <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
@@ -492,52 +347,9 @@ function ProgramDetailContent() {
         </div>
       </div>
 
-      {isRobotics && !selectedPackage ? (
-        <PackageChooser programId={programId} />
-      ) : (
-        <>
-          {selectedPackage && (
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#0083CB]/25 bg-[#0083CB]/5 px-5 py-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wide text-[#0083CB]">Selected Package</p>
-                <p className="mt-0.5 text-sm font-semibold text-slate-800">
-                  {`${selectedPackage.name} — ${selectedPackage.classCount} classes · $${(selectedPackage.perClassCents / 100).toFixed(0)}/class`}
-                </p>
-                <p className="mt-0.5 text-xs text-slate-500">
-                  Billed monthly — you&apos;ll see the exact monthly amount after choosing a schedule below.
-                </p>
-              </div>
-              <Link href={`/booking/${programId}`} className="text-xs font-semibold text-slate-500 hover:text-slate-700">
-                Change package
-              </Link>
-            </div>
-          )}
+      {isRobotics && <PackageOverview programId={programId} />}
 
-          <h2 className="text-lg font-black text-slate-800 mb-4">
-            Weekly Program Schedules
-            <span className="ml-2 text-sm font-normal text-slate-400">({regularOfferings.length} published)</span>
-          </h2>
-
-          {regularOfferings.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-slate-100 p-10 text-center">
-              <p className="font-semibold text-slate-600">The next schedule is still being planned</p>
-              <p className="text-sm text-slate-400 mt-1">There is no registration form until real dates and times are published.</p>
-              <div className="mt-5 flex flex-wrap items-center justify-center gap-4 text-sm font-semibold">
-                <Link href="/contact#consultation-form" className="rounded-xl bg-[#0c6162] px-4 py-2.5 text-white hover:opacity-90">
-                  Ask About This Program
-                </Link>
-                <Link href="/booking" className="text-[#0c6162] hover:underline">← Browse other programs</Link>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {regularOfferings.map(offering => (
-                <OfferingCard key={offering.id} offering={offering} program={program} onSelect={handleSelectOffering} hideTuition={isRobotics} selectedPackage={selectedPackage} />
-              ))}
-            </div>
-          )}
-        </>
-      )}
+      <ContactToSchedule programTitle={program.title} />
     </BookingLayout>
   )
 }

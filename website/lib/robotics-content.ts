@@ -1,5 +1,4 @@
 import { BrainCircuitIcon, CompassIcon, GearIcon, SparkleIcon, TargetIcon, UsersIcon } from "../components/icons";
-import { formatTimeOfDay } from "./booking";
 
 // Young Engineers' own brand palette (pulled from their site's theme CSS),
 // used as accent color so the page reads as a joint Kriana + YE effort.
@@ -41,23 +40,8 @@ export function skillTagsForCategory(category?: string) {
 // saved offering exists. Other programs show placeholder cards until created
 // for real in Firestore via the separate program-management portal.
 //
-// `weeklySchedules` is the one exception: it's the recurring day/time slots
-// these programs actually run each week, published ahead of the real
-// Firestore offerings so families can see them on the program cards and in
-// the /robotics "When Classes Run" section. Once real offerings with
-// published class dates exist for a program, their live schedule takes over
-// on the program cards and this static one is no longer shown there (see
-// ProgramCard in robotics-programs.tsx). Each entry's shape matches
-// Firestore's offering.weekday / offering.startTime / offering.endTime so it
-// formats identically via formatTimeOfDay/formatWeeklyClassSchedule.
-//
-// Current timetable (Young_Engineers_Kanata_Weekly_Schedule.pdf): every
-// program runs the SAME time slot on Monday, Wednesday and Friday —
-// Smartivo 4:30–5:30 p.m., Bricks Challenge 5:45–7:00 p.m., Algo Play
-// 7:15–8:30 p.m. That replaces the old one-day-per-program, two-batch
-// layout, which is why entries no longer carry a "Batch 1"/"Batch 2" label:
-// the weekday is now the only thing that distinguishes one slot from
-// another, and formatWeeklyClassSchedule already renders it.
+// Class days/times are deliberately NOT published on the site — the
+// timetable changes often, so families contact us to arrange a schedule.
 type LicensedRoboticsProgram = {
   id: string;
   title: string;
@@ -72,7 +56,6 @@ type LicensedRoboticsProgram = {
   marketingEyebrow?: string;
   skillTags?: string[];
   futureReadyCopy?: string;
-  weeklySchedules?: { label?: string; weekday: string; startTime: string; endTime: string }[];
 };
 
 export const licensedRoboticsPrograms: LicensedRoboticsProgram[] = [
@@ -91,11 +74,6 @@ export const licensedRoboticsPrograms: LicensedRoboticsProgram[] = [
     learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/smartivo-enrichment-program/",
     image: "/images/robotics/programs/smartivo.png",
     logo: "/images/robotics/programs/smartivo-logo.png",
-    weeklySchedules: [
-      { weekday: "Monday", startTime: "16:30", endTime: "17:30" },
-      { weekday: "Wednesday", startTime: "16:30", endTime: "17:30" },
-      { weekday: "Friday", startTime: "16:30", endTime: "17:30" },
-    ],
   },
   {
     id: "bricks-challenge",
@@ -112,11 +90,6 @@ export const licensedRoboticsPrograms: LicensedRoboticsProgram[] = [
     learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/bricks-challenge-enrichment-program/",
     image: "/images/robotics/programs/bricks-challenge.png",
     logo: "/images/robotics/programs/bricks-challenge-logo.png",
-    weeklySchedules: [
-      { weekday: "Monday", startTime: "17:45", endTime: "19:00" },
-      { weekday: "Wednesday", startTime: "17:45", endTime: "19:00" },
-      { weekday: "Friday", startTime: "17:45", endTime: "19:00" },
-    ],
   },
   {
     id: "algo-play",
@@ -133,11 +106,6 @@ export const licensedRoboticsPrograms: LicensedRoboticsProgram[] = [
     learnMoreUrl: "https://kanata.youngengineers.org/enrichment-programs/algoplay-enrichment-program/",
     image: "/images/robotics/programs/algo-play.png",
     logo: "/images/robotics/programs/algo-play-logo.png",
-    weeklySchedules: [
-      { weekday: "Monday", startTime: "19:15", endTime: "20:30" },
-      { weekday: "Wednesday", startTime: "19:15", endTime: "20:30" },
-      { weekday: "Friday", startTime: "19:15", endTime: "20:30" },
-    ],
   },
   {
     id: "galileo-technic",
@@ -176,44 +144,6 @@ export const licensedRoboticsPrograms: LicensedRoboticsProgram[] = [
     logo: "/images/robotics/programs/algoc-logo.png",
   },
 ];
-
-// Formats a single licensedRoboticsPrograms weekly-schedule batch the same
-// way real Firestore offerings are formatted (see formatOfferingWeeklySchedule
-// in lib/booking.ts), e.g. "Mondays, 4:15 p.m.–5:15 p.m.", so the time format
-// stays identical whether a program's schedule is this static placeholder
-// or a live published offering.
-export function formatWeeklyClassSchedule(
-  schedule?: { weekday?: string; startTime?: string; endTime?: string } | null
-) {
-  if (!schedule?.weekday || !schedule?.startTime) return null;
-  const day = schedule.weekday;
-  const dayLabel = day.endsWith("s") ? day : `${day}s`;
-  const start = formatTimeOfDay(schedule.startTime);
-  const end = schedule.endTime ? formatTimeOfDay(schedule.endTime) : "";
-  return end ? `${dayLabel}, ${start}–${end}` : `${dayLabel}, ${start}`;
-}
-
-// A slot's time range on its own, without the weekday — e.g.
-// "4:30 p.m.–5:30 p.m." — for surfaces that group several days under one
-// shared time. Uses the same formatTimeOfDay as formatWeeklyClassSchedule so
-// the two never render a time differently.
-export function formatTimeRange(startTime?: string, endTime?: string) {
-  if (!startTime) return null;
-  const start = formatTimeOfDay(startTime);
-  return endTime ? `${start}\u2013${formatTimeOfDay(endTime)}` : start;
-}
-
-// Formats every slot in a licensedRoboticsPrograms `weeklySchedules` list.
-// `label` is optional and currently unused — the weekday inside each
-// formatted time is what distinguishes the slots (see the note above).
-export function formatWeeklyClassSchedules(
-  schedules?: { label?: string; weekday?: string; startTime?: string; endTime?: string }[] | null
-) {
-  if (!schedules?.length) return [];
-  return schedules
-    .map((schedule) => ({ label: schedule.label, time: formatWeeklyClassSchedule(schedule) }))
-    .filter((entry) => Boolean(entry.time)) as { label?: string; time: string }[];
-}
 
 const PLACEHOLDER_IMAGES = [
   "/images/young-engineers/robotics-and-coding.png",

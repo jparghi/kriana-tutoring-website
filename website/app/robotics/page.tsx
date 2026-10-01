@@ -11,7 +11,7 @@ import { SkillsSection } from "../../components/robotics/skills-section";
 import { MapPinIcon } from "../../components/icons";
 import {
   BIRTHDAY_PARTY_PATH,
-  ROBOTICS_BOOKING_URL,
+  SCHEDULING_CONTACT_URL,
   SCHOOL_PROGRAM_BOOKING_URL,
   // SUMMER_CAMP_BOOKING_URL, // unused while "Camps & PA Days" tile is hidden — see additionalOfferings below
   YOUNG_ENGINEERS_URL,
@@ -19,7 +19,6 @@ import {
 import {
   YE_AMBER,
   /* YE_BLUE, */ YE_RED,
-  licensedRoboticsPrograms,
 } from "../../lib/robotics-content";
 import { breadcrumbSchema, localBusinessSchema, siteUrl, toJsonLd } from "../../lib/seo";
 import { getCatalogServer } from "../../lib/catalog.server";
@@ -86,7 +85,7 @@ const faqs = [
   },
   {
     q: "Do I have to pay for the whole package up front?",
-    a: "Yes — monthly billing is how robotics tuition works. The package total is averaged across the real months your child's schedule runs, so the amount stays the same each month even when a month has fewer class dates because of holidays or school breaks. No payment is collected when you request a spot.",
+    a: "Yes — monthly billing is how robotics tuition works. The package total is averaged across the real months your child's schedule runs, so the amount stays the same each month even when a month has fewer class dates because of holidays or school breaks. No payment is collected until your child's class schedule is confirmed.",
   },
   {
     q: "Does my child need previous robotics experience?",
@@ -94,7 +93,7 @@ const faqs = [
   },
   {
     q: "What ages can participate?",
-    a: "Age ranges vary by program — check the age range on each program before requesting a spot.",
+    a: "Age ranges vary by program — check the age range on each program before contacting us.",
   },
   {
     q: "Are all building materials provided?",
@@ -110,7 +109,7 @@ const faqs = [
   },
   {
     q: "Where are classes held?",
-    a: "Classes run in the Beaverbrook area of Kanata. Exact locations are listed with each program and confirmed when we review your request.",
+    a: "Classes run in the Beaverbrook area of Kanata. Class days, times and the exact location are confirmed with you directly when you contact us.",
   },
   {
     q: "What happens if my child misses a class?",
@@ -118,7 +117,7 @@ const faqs = [
   },
   {
     q: "What are the cancellation and refund policies?",
-    a: "Cancellation, refund and payment terms are provided when we offer your child a place. No payment is due when you first request a spot.",
+    a: "Cancellation, refund and payment terms are provided when we offer your child a place. No payment is due when you first contact us.",
   },
   {
     q: "Are birthday parties and school workshops available?",
@@ -146,45 +145,10 @@ export default async function RoboticsPage() {
     url: `${siteUrl}/robotics`,
   };
 
-  // Course schema for the published weekly programs — keeps the recurring
-  // day/time batches in structured data in sync with the same
-  // licensedRoboticsPrograms constant that drives the on-page schedule badge
-  // (lib/robotics-content.ts). One CourseInstance per batch.
-  const courseSchemas = licensedRoboticsPrograms
-    .filter((program) => program.weeklySchedules?.length)
-    .map((program) => ({
-      "@context": "https://schema.org",
-      "@type": "Course",
-      name: `${program.title} — Young Engineers at Kriana Tutoring`,
-      description: program.description,
-      provider: { "@id": localBusinessSchema["@id"] },
-      hasCourseInstance: program.weeklySchedules!.map((batch) => ({
-        "@type": "CourseInstance",
-        // Slots no longer carry a "Batch N" label — the weekday identifies
-        // the instance now (see the weeklySchedules note in robotics-content).
-        name: `${program.title} — ${batch.weekday}`,
-        courseMode: "Onsite",
-        courseSchedule: {
-          "@type": "Schedule",
-          repeatFrequency: "P1W",
-          byDay: `https://schema.org/${batch.weekday}`,
-          startTime: batch.startTime,
-          endTime: batch.endTime,
-        },
-      })),
-    }));
-
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(breadcrumb) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(serviceSchema) }} />
-      {courseSchemas.map((schema) => (
-        <script
-          key={schema.name}
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: toJsonLd(schema) }}
-        />
-      ))}
 
       <main className="min-h-screen bg-white text-slate-900">
         {/* Breadcrumb */}
@@ -252,7 +216,7 @@ export default async function RoboticsPage() {
                 Serving Kanata &amp; Stittsville
               </p>
               <div className="mt-7">
-                <RoboticsCtaButtons variant="light" mode="discovery" initialData={catalogData} />
+                <RoboticsCtaButtons variant="light" mode="discovery" />
               </div>
             </div>
           </div>
@@ -397,7 +361,7 @@ export default async function RoboticsPage() {
               </div>
 
               <div className="mt-7">
-                <RoboticsCtaButtons variant="dark" initialData={catalogData} />
+                <RoboticsCtaButtons variant="dark" />
               </div>
               <p className="mt-4 text-xs leading-5 text-white/60">
                 AI features are included in selected lessons. Program availability may vary.
@@ -556,15 +520,15 @@ export default async function RoboticsPage() {
           <div className="mx-auto max-w-3xl rounded-[2rem] border border-slate-200 bg-slate-50 px-6 py-12 text-center shadow-sm sm:px-10">
             <h2 className="text-2xl font-bold text-[#0A2D5A] sm:text-3xl">Ready to get started?</h2>
             <p className="mt-3 text-base leading-7 text-slate-600">
-              Request a spot in a weekly program, or try a class for $10 first. No payment is collected when you
-              request a spot.
+              Contact us to find a class time that works for your child, or try a class for $10 first. Our
+              schedule changes often, so we&apos;ll confirm current days and times with you directly.
             </p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
               <Link
-                href={ROBOTICS_BOOKING_URL}
+                href={SCHEDULING_CONTACT_URL}
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0c6162] px-8 py-3.5 text-sm font-bold uppercase tracking-[0.18em] text-white shadow-[0_8px_32px_rgba(12,97,98,0.45)] transition-all duration-300 hover:scale-[1.03] hover:bg-[#0a5051]"
               >
-                Request a Spot
+                Contact Us to Schedule
               </Link>
               <Link
                 href="/demo"

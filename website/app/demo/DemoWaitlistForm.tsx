@@ -174,7 +174,7 @@ export function DemoWaitlistForm({
             className="mt-4 inline-block w-full rounded-xl px-6 py-4 text-center text-base font-black text-white shadow-sm transition-transform active:scale-[0.98]"
             style={{ backgroundColor: '#0c6162' }}
           >
-            View Classes &amp; Schedule
+            View Classes
           </a>
         </div>
       </div>

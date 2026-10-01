@@ -123,9 +123,9 @@ export default function ParentGuidesPage() {
 
         <section className="px-4 pb-16 sm:px-8">
           <div className="mx-auto max-w-4xl rounded-[2rem] border border-slate-200 bg-slate-50 px-6 py-10 text-center sm:px-10">
-            <h2 className="text-2xl font-bold text-[#0A2D5A]">Programs, schedules &amp; pricing</h2>
+            <h2 className="text-2xl font-bold text-[#0A2D5A]">Programs &amp; pricing</h2>
             <p className="mt-3 text-base leading-7 text-slate-600">
-              See class times and the latest pricing, or watch Young Engineers in action. Questions? Call or text{" "}
+              See programs and the latest pricing, or watch Young Engineers in action. To arrange a class schedule, call or text{" "}
               <a href="tel:+16134006921" className="font-semibold text-[#0c6162] hover:underline">613-400-6921</a>.
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">

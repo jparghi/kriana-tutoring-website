@@ -10,6 +10,7 @@ import {
   formatEventDateTime, formatEventTimeRange, isDemoOfferingPubliclyFull,
 } from '../../../../lib/booking'
 import { trackEvent, ALLOWED_ATTRIBUTION_PARAMS } from '../../../../lib/analytics'
+import { SCHEDULING_CONTACT_URL } from '../../../../lib/site-links'
 import BookingLayout from '../../../../components/booking/BookingLayout'
 import { BookingStepper } from '../../../../components/booking/BookingStepper'
 import { ClassScheduleDisclosure } from '../../../../components/booking/ClassScheduleDisclosure'
@@ -21,6 +22,12 @@ import {
 import { getLearningPathMonthlyTuition } from '../../../../lib/robotics-monthly-tuition.js'
 
 const ROBOTICS_CATEGORY = 'Robotics'
+// Class schedules are no longer published on the site (they change often and
+// were confusing families), so parents can't request a spot in a weekly
+// offering themselves — they contact us to arrange a schedule. The $10 demo
+// (registrationType=demo) is unaffected. Flip to true to restore the
+// self-serve weekly-program request form.
+const PUBLIC_SCHEDULE_REQUESTS_ENABLED = false
 const AGE_OPTIONS = [5, 6, 7, 8, 9, 10, 11, 12, 13]
 
 function Field({ label, children, required, hint }: { label: string; children: React.ReactNode; required?: boolean; hint?: string }) {
@@ -420,6 +427,21 @@ function RegisterForm() {
   if (loading) return (
     <BookingLayout backTo={`/booking/${programId}`} backLabel="Back to Program">
       <div className="flex items-center justify-center h-48 text-slate-400">Loading…</div>
+    </BookingLayout>
+  )
+
+  if (!isDemoRegistration && !PUBLIC_SCHEDULE_REQUESTS_ENABLED) return (
+    <BookingLayout backTo={`/booking/${programId}`} backLabel="Back to Program">
+      <div className="mx-auto max-w-lg rounded-2xl border border-slate-100 bg-white px-6 py-12 text-center shadow-sm">
+        <h1 className="text-xl font-black text-slate-800">Contact us to schedule</h1>
+        <p className="mt-2 text-sm leading-relaxed text-slate-500">
+          Class days and times change often, so we arrange each child&apos;s schedule directly. Reach out and
+          we&apos;ll find a time that works for your family.
+        </p>
+        <Link href={SCHEDULING_CONTACT_URL} className="mt-5 inline-block rounded-xl bg-[#0c6162] px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90">
+          Contact Us to Schedule
+        </Link>
+      </div>
     </BookingLayout>
   )
 

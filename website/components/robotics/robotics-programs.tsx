@@ -3,16 +3,11 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  getProgramsWithOfferings,
-  isOfferingRequestWindowOpen,
-  isOfferingSoldOut,
-} from "../../lib/booking";
-import { ROBOTICS_CATEGORY } from "../../lib/site-links";
+import { getProgramsWithOfferings } from "../../lib/booking";
+import { ROBOTICS_CATEGORY, SCHEDULING_CONTACT_URL } from "../../lib/site-links";
 import { getPubliclyVisiblePackages } from "../../lib/robotics-packages.js";
 import {
   findLicensedRoboticsProgram,
-  formatWeeklyClassSchedules,
   imageForCategory,
   licensedRoboticsPrograms,
   placeholderImageForIndex,
@@ -22,21 +17,6 @@ import {
 type Program = Record<string, any>;
 type Offering = Record<string, any>;
 export type CatalogData = { programs: Program[]; offeringsByProgram: Record<string, Offering[]> };
-
-function computeAvailability(offeringsByProgram: Record<string, Offering[]>) {
-  const offeringLists = Object.values(offeringsByProgram);
-  return {
-    hasPublishedSchedule: offeringLists.some((offerings) => offerings.length > 0),
-    hasOpenRequests: offeringLists.some((offerings) => offerings.some(
-      (offering: any) => isOfferingRequestWindowOpen(offering) && !isOfferingSoldOut(offering)
-    )),
-    hasOpenWaitlist: offeringLists.some((offerings) => offerings.some(
-      (offering: any) => isOfferingRequestWindowOpen(offering)
-        && isOfferingSoldOut(offering)
-        && offering.waitlistEnabled
-    )),
-  };
-}
 
 function normalizeProgramName(value?: string) {
   return (value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -56,8 +36,7 @@ function withLicensedProgramAssets(program: Program): Program {
     durationMin: program.durationMin ?? licensedProgram.durationMin,
     description: program.description || licensedProgram.description,
     learnMoreUrl: program.learnMoreUrl || licensedProgram.learnMoreUrl,
-    weeklySchedules: program.weeklySchedules || licensedProgram.weeklySchedules,
-    // Schedule and availability may come from Firestore, but public
+    // Availability may come from Firestore, but public
     // curriculum claims stay in the reviewed licensed-program catalogue.
     marketingEyebrow: licensedProgram.marketingEyebrow,
     skillTags: licensedProgram.skillTags,
@@ -80,29 +59,15 @@ function startingPerClassCents(program: Program): number | null {
 function ProgramCard({
   program,
   offerings,
-  isPlaceholder = false,
   image,
 }: {
   program: Program;
   offerings: Offering[];
-  isPlaceholder?: boolean;
   image?: string;
 }) {
   const comingSoon = Boolean(program.comingSoon);
   const nextOffering = comingSoon ? undefined : offerings[0];
-  const hasSchedule = !comingSoon && offerings.length > 0;
-  const allSoldOut = hasSchedule && offerings.every(isOfferingSoldOut);
-  const isOpen = !comingSoon && offerings.some(
-    (offering) => isOfferingRequestWindowOpen(offering) && !isOfferingSoldOut(offering)
-  );
-  const hasWaitlist = !comingSoon && offerings.some(
-    (offering) => isOfferingRequestWindowOpen(offering) && isOfferingSoldOut(offering) && offering.waitlistEnabled
-  );
   const accent = themeColorForCategory(program.category);
-  // Only show the static weekly-time placeholder while there's no real
-  // published offering yet — once one exists, its live schedule (with real
-  // class dates and location) is the source of truth instead.
-  const weeklyBatches = comingSoon || hasSchedule ? [] : formatWeeklyClassSchedules(program.weeklySchedules);
   const cardImage = image ?? program.image ?? imageForCategory(program.category);
   const programId = normalizeProgramName(program.id);
   const programTitle = normalizeProgramName(program.title);
@@ -116,20 +81,11 @@ function ProgramCard({
     programId === "robotoys" ||
     programTitle === "robotoys";
 
-  const availabilityLabel = comingSoon
-    ? "Coming soon"
-    : isOpen
-    ? "Requests Open"
-    : hasWaitlist ? "Waitlist Open"
-      : allSoldOut ? "Full"
-        : hasSchedule ? "Schedule Published" : "Schedule Pending";
-  const availabilityClasses = comingSoon
-    ? "bg-sky-50 text-sky-700"
-    : allSoldOut && !hasWaitlist
-    ? "bg-red-50 text-red-600"
-    : isOpen
-      ? "bg-emerald-50 text-emerald-700"
-      : hasWaitlist ? "bg-orange-50 text-orange-700" : "bg-slate-100 text-slate-600";
+  // Class days/times aren't published on the site — they change often —
+  // so the card only distinguishes "enrolling" from "coming soon" and sends
+  // parents to contact us to arrange a schedule.
+  const availabilityLabel = comingSoon ? "Coming soon" : "Now Enrolling";
+  const availabilityClasses = comingSoon ? "bg-sky-50 text-sky-700" : "bg-emerald-50 text-emerald-700";
 
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const startingCents = startingPerClassCents(program);
@@ -181,7 +137,7 @@ function ProgramCard({
 
         {/* Price is the third thing a parent wants to know, right after
             "what is it" and "is it for my child" — so it sits on the card
-            rather than behind a click on "Request a Spot". */}
+            rather than behind a click on "Contact Us to Schedule". */}
         {startingCents !== null && (
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
             <span className="text-xl font-black text-[#0A2D5A]">
@@ -191,25 +147,6 @@ function ProgramCard({
             <a href="#pricing" className="text-xs font-bold text-[#0c6162] hover:underline">
               View pricing →
             </a>
-          </div>
-        )}
-
-        {weeklyBatches.length > 0 && (
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-400">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4 shrink-0">
-                <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
-              </svg>
-              Weekly Class
-            </div>
-            <ul className="space-y-0.5 pl-6 text-sm text-slate-600">
-              {weeklyBatches.map((batch) => (
-                <li key={batch.time} className="flex flex-wrap items-baseline gap-x-1.5">
-                  {batch.label && <span className="font-semibold text-slate-800">{batch.label}:</span>}
-                  <span>{batch.time}</span>
-                </li>
-              ))}
-            </ul>
           </div>
         )}
 
@@ -274,33 +211,13 @@ function ProgramCard({
               </a>
             )}
           </div>
-        ) : isPlaceholder ? (
-          <div className="mt-auto flex gap-3 pt-2">
-            <Link
-              href="/contact#consultation-form"
-              className="inline-flex flex-1 items-center justify-center rounded-full bg-[#0c6162] px-5 py-2 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#0a5051]"
-            >
-              {isPlaceholder ? "Ask About Program" : "Ask About Schedule"}
-            </Link>
-            {program.learnMoreUrl && (
-              <a
-                href={program.learnMoreUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex flex-1 items-center justify-center gap-1 rounded-full border border-slate-200 px-5 py-2 text-sm font-bold text-slate-700 transition-all duration-200 hover:border-brand-sky hover:text-brand-sky"
-              >
-                Learn More
-                <span aria-hidden="true">↗</span>
-              </a>
-            )}
-          </div>
         ) : (
           <div className="mt-auto flex gap-3 pt-2">
             <Link
-              href={`/booking/${program.id}`}
+              href={SCHEDULING_CONTACT_URL}
               className="group/cta inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[#0c6162] px-5 py-2 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#0a5051]"
             >
-              {isOpen ? "Request a Spot" : hasWaitlist ? "Join Waitlist" : "View Schedule"}
+              Contact Us to Schedule
               <span aria-hidden="true" className="transition-transform duration-200 group-hover/cta:translate-x-1">
                 →
               </span>
@@ -378,43 +295,10 @@ export function RoboticsPrograms({ initialData }: { initialData?: CatalogData } 
             key={licensedProgram.id}
             program={displayProgram}
             offerings={savedProgram ? offeringsByProgram[savedProgram.id] ?? [] : []}
-            isPlaceholder={!savedProgram}
             image={displayProgram.image ?? placeholderImageForIndex(i)}
           />
         );
       })}
     </div>
   );
-}
-
-export function useRoboticsAvailability(initialData?: CatalogData) {
-  const initial = initialData ? computeAvailability(initialData.offeringsByProgram) : null;
-  const [hasPublishedSchedule, setHasPublishedSchedule] = useState(initial?.hasPublishedSchedule ?? false);
-  const [hasOpenRequests, setHasOpenRequests] = useState(initial?.hasOpenRequests ?? false);
-  const [hasOpenWaitlist, setHasOpenWaitlist] = useState(initial?.hasOpenWaitlist ?? false);
-  const [loading, setLoading] = useState(!initialData);
-
-  useEffect(() => {
-    // Same as RoboticsPrograms above — if the page already handed us server-
-    // fetched data, there's nothing left to fetch client-side.
-    if (initialData) return;
-
-    async function load() {
-      try {
-        const { offeringsByProgram } = await getProgramsWithOfferings({
-          category: ROBOTICS_CATEGORY,
-          activeOnly: true,
-        });
-        const availability = computeAvailability(offeringsByProgram);
-        setHasPublishedSchedule(availability.hasPublishedSchedule);
-        setHasOpenRequests(availability.hasOpenRequests);
-        setHasOpenWaitlist(availability.hasOpenWaitlist);
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
-  }, [initialData]);
-
-  return { hasPublishedSchedule, hasOpenRequests, hasOpenWaitlist, loading };
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { isOfferingSoldOut, isDemoOfferingPubliclyFull, formatOfferingScheduleDetail } from '../../lib/booking'
+import { isDemoOfferingPubliclyFull } from '../../lib/booking'
 import { isRequestOnlyBookingFlow } from '../../lib/booking-flow'
 import { Footer } from '../footer'
 import { getRoboticsPackage, isValidPackageId, getDemoPricing } from '../../lib/robotics-packages.js'
@@ -85,50 +85,11 @@ function CategoryBadge({ category }: { category: string }) {
   )
 }
 
-function ScheduleBadge({ offerings, hasSchedule }: { offerings: any[]; hasSchedule: boolean }) {
-  if (!hasSchedule) {
-    return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-400 bg-slate-50 px-2 py-1 rounded-full">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3 h-3 shrink-0">
-          <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
-        </svg>
-        Coming soon
-      </span>
-    )
-  }
-
-  return (
-    <div className="group/sched relative">
-      <button
-        type="button"
-        className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#0c6162] bg-[#0c6162]/10 px-2 py-1 rounded-full transition-colors hover:bg-[#0c6162]/20"
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3 h-3 shrink-0">
-          <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
-        </svg>
-        {offerings.length} schedule{offerings.length !== 1 ? 's' : ''}
-      </button>
-
-      <div className="pointer-events-none invisible absolute left-1/2 top-full z-30 mt-2 w-52 -translate-x-1/2 translate-y-1 rounded-xl border border-slate-200 bg-white p-3 opacity-0 shadow-xl transition-all duration-150 group-hover/sched:visible group-hover/sched:translate-y-0 group-hover/sched:opacity-100">
-        <div className="absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-l border-t border-slate-200 bg-white" />
-        <p className="mb-2 text-[9px] font-bold uppercase tracking-wider text-slate-400">Upcoming Schedule</p>
-        <ul className="space-y-2">
-          {offerings.slice(0, 3).map((offering: any) => (
-            <li key={offering.id} className="text-xs">
-              <p className="font-semibold text-slate-700">{formatOfferingScheduleDetail(offering)}</p>
-              {offering.location && <p className="text-slate-400 truncate">{offering.location}</p>}
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  )
-}
-
-function ProgramCard({ program, offerings, packageId }: { program: any; offerings: any[]; packageId?: string }) {
+// Class schedules aren't published on the site (they change often), so a
+// regular program card shows no schedule count or sold-out state — its
+// program page asks parents to contact us to arrange a schedule.
+function ProgramCard({ program, packageId }: { program: any; packageId?: string }) {
   const isDemoCard = Boolean(program.isDemoCard)
-  const hasSchedule = isDemoCard || offerings.length > 0
-  const allSoldOut = !isDemoCard && hasSchedule && offerings.every(isOfferingSoldOut)
   const displayTag = programTag(program)
   const accent = CATEGORY_ACCENTS[displayTag] ?? DEFAULT_ACCENT
   const ageGrade = [
@@ -152,9 +113,6 @@ function ProgramCard({ program, offerings, packageId }: { program: any; offering
           <div className="absolute left-1.5 top-2.5">
             <CategoryBadge category={displayTag} />
           </div>
-          {allSoldOut && (
-            <span className="absolute right-1.5 top-2.5 shrink-0 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full shadow-sm">Sold Out</span>
-          )}
         </div>
       ) : (
         <div className="h-1 w-full shrink-0 rounded-t-xl" style={{ backgroundColor: accent.bar }} />
@@ -163,9 +121,6 @@ function ProgramCard({ program, offerings, packageId }: { program: any; offering
         {!program.imageUrl && (
           <div className="mb-1.5 flex items-start justify-between gap-1.5">
             <CategoryBadge category={displayTag} />
-            {allSoldOut && (
-              <span className="shrink-0 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">Sold Out</span>
-            )}
           </div>
         )}
         <h3 className="text-sm font-bold leading-snug text-slate-900 line-clamp-2">{program.title}</h3>
@@ -176,30 +131,22 @@ function ProgramCard({ program, offerings, packageId }: { program: any; offering
           <p className="mt-1 text-[11px] font-medium text-slate-500">{ageGrade}</p>
         )}
 
-        <div className="mt-2">
-          {isDemoCard ? (
-            <div>
-              {program.demoFullyBooked ? (
-                <span className="inline-flex items-center gap-1 text-[10px] font-black text-red-600 bg-red-50 px-2 py-1 rounded-full">
-                  Fully booked
+        {isDemoCard && (
+          <div className="mt-2">
+            {program.demoFullyBooked ? (
+              <span className="inline-flex items-center gap-1 text-[10px] font-black text-red-600 bg-red-50 px-2 py-1 rounded-full">
+                Fully booked
+              </span>
+            ) : (
+              <>
+                <span className="inline-flex items-center gap-1 text-[10px] font-black text-sky-700 bg-sky-100 px-2 py-1 rounded-full">
+                  {program.demoPriceLabel}
                 </span>
-              ) : (
-                <>
-                  <span className="inline-flex items-center gap-1 text-[10px] font-black text-sky-700 bg-sky-100 px-2 py-1 rounded-full">
-                    {program.demoPriceLabel}
-                  </span>
-                  <p className="mt-1 text-[10px] leading-tight text-slate-500">Demo is FREE when you enroll.</p>
-                </>
-              )}
-            </div>
-          ) : (
-            /* Birthday Party is request-based, not weekly-scheduled — a "Coming
-               soon" badge would misleadingly imply a schedule is on the way. */
-            program.category !== 'Birthday Party' && (
-              <ScheduleBadge offerings={offerings} hasSchedule={hasSchedule} />
-            )
-          )}
-        </div>
+                <p className="mt-1 text-[10px] leading-tight text-slate-500">Demo is FREE when you enroll.</p>
+              </>
+            )}
+          </div>
+        )}
 
         <div className="mt-auto pt-3 flex items-center justify-end gap-2 border-t border-slate-100 mt-3">
           <Link
@@ -209,7 +156,7 @@ function ProgramCard({ program, offerings, packageId }: { program: any; offering
             className="inline-flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-white shadow-sm transition-all duration-200 active:scale-95 hover:shadow-[0_4px_12px_rgba(12,97,98,0.35)]"
             style={{ backgroundColor: isDemoCard ? '#0EA5E9' : '#0c6162' }}
           >
-            {isDemoCard ? (program.demoFullyBooked ? (program.demoWaitlistEnabled ? 'Join Waitlist' : 'View') : `Try for ${program.demoPriceDisplay}`) : hasSchedule ? (isRequestOnlyBookingFlow ? 'View' : 'Book') : 'View'}
+            {isDemoCard ? (program.demoFullyBooked ? (program.demoWaitlistEnabled ? 'Join Waitlist' : 'View') : `Try for ${program.demoPriceDisplay}`) : 'View'}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-3 w-3 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5">
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
@@ -270,7 +217,7 @@ export function BookingCatalog({
               Home
             </Link>
             <span className="mx-2 text-slate-300">/</span>
-            <span className="text-slate-700">Programs &amp; Schedules</span>
+            <span className="text-slate-700">Programs</span>
           </nav>
         </div>
 
@@ -291,7 +238,7 @@ export function BookingCatalog({
             <h1 className="text-3xl font-bold text-[#0A2D5A] sm:text-4xl">Programs &amp; Activities</h1>
             <p className="mt-3 max-w-2xl text-base text-slate-600">
               {isRequestOnlyBookingFlow
-                ? 'Choose a program and request a place for your child. We will review availability and contact you with next steps.'
+                ? 'Explore our programs, then contact us to arrange a class schedule for your child.'
                 : 'Choose a program and book your child\'s spot online in just a few minutes.'}
             </p>
           </div>
@@ -306,7 +253,7 @@ export function BookingCatalog({
                   {selectedPackage.name} — {selectedPackage.classCount} classes · ${(selectedPackage.regularSubtotalCents / 100).toFixed(0)} package price (plus applicable taxes)
                 </p>
                 <p className="mt-0.5 text-xs text-slate-500">
-                  Tuition is billed monthly, averaged across your learning path — you&apos;ll see the exact monthly amount after picking a schedule.
+                  Tuition is billed monthly, averaged across your learning path — contact us to arrange your child&apos;s schedule.
                 </p>
               </div>
               <button
@@ -352,7 +299,6 @@ export function BookingCatalog({
                 <ProgramCard
                   key={program.id}
                   program={program}
-                  offerings={offeringsByProgram[program.id] ?? []}
                   packageId={selectedPackageId}
                 />
               ))}

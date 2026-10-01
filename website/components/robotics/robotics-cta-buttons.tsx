@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRoboticsAvailability, type CatalogData } from "./robotics-programs";
-import { ROBOTICS_BOOKING_URL } from "../../lib/site-links";
+import { SCHEDULING_CONTACT_URL } from "../../lib/site-links";
 
 const VARIANTS = {
   light: {
@@ -21,23 +20,20 @@ const VARIANTS = {
 
 export function RoboticsCtaButtons({
   variant = "light",
-  mode = "availability",
-  initialData,
+  mode = "contact",
 }: {
   variant?: "light" | "dark";
   /** "discovery" sends the reader straight down the page — programs, then
-   * price — which is the order a parent actually decides in, and needs no
-   * availability data at all. "availability" (the default) links out to the
-   * live booking catalogue with schedule/waitlist-aware wording. */
-  mode?: "availability" | "discovery";
-  initialData?: CatalogData;
+   * price — which is the order a parent actually decides in. "contact" (the
+   * default) pairs the programs link with a contact CTA: class schedules
+   * aren't published on the site, so parents reach out to arrange one. */
+  mode?: "contact" | "discovery";
 }) {
-  const { hasPublishedSchedule, hasOpenRequests, hasOpenWaitlist, loading } = useRoboticsAvailability(initialData);
   const styles = VARIANTS[variant];
 
   // A parent landing from social asks "what is it? → is it for my child? →
   // how much?" — so the hero answers the first two and then points at the
-  // price, rather than sending them off to a schedule listing.
+  // price, rather than sending them off to a contact form straight away.
   if (mode === "discovery") {
     return (
       <div className="flex flex-wrap items-center gap-3">
@@ -51,28 +47,13 @@ export function RoboticsCtaButtons({
     );
   }
 
-  // While availability is still loading, default to the copy/link for the
-  // site's actual steady state (published, open-for-requests schedules)
-  // rather than a pessimistic "nothing published yet" placeholder — those
-  // two states are now the same in practice, so this avoids the buttons
-  // visibly changing text right after the page paints, which reads as
-  // broken/flickery on a slower connection while the fetch resolves.
-  const primaryLabel = !loading && !hasPublishedSchedule ? "Explore Programs" : "View Weekly Programs";
-  const secondaryHref = !loading && !hasPublishedSchedule ? "/contact#consultation-form" : ROBOTICS_BOOKING_URL;
-  const secondaryLabel = loading
-    ? "View Schedules"
-    : hasOpenRequests
-      ? "View Schedules"
-      : hasOpenWaitlist ? "View Waitlists"
-        : hasPublishedSchedule ? "View Schedules" : "Ask About Programs";
-
   return (
     <div className="flex flex-wrap items-center gap-3">
       <a href="#programs" className={styles.primary}>
-        {primaryLabel}
+        Explore Programs
       </a>
-      <Link href={secondaryHref} className={styles.secondary}>
-        {secondaryLabel}
+      <Link href={SCHEDULING_CONTACT_URL} className={styles.secondary}>
+        Contact Us to Schedule
       </Link>
     </div>
   );
