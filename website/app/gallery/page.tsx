@@ -211,11 +211,14 @@ export default function GalleryPage() {
         ))}
 
         {/* The wide build video sits below the real-moments reel: parents
-            arriving from a workshop email see real children building first. */}
+            arriving from a workshop email see real children building first.
+            The id is the deep link the post-workshop recap email uses
+            (/gallery#bricks-challenge-carousel). */}
         {spotlight && (
           <section
+            id={spotlight.id}
             aria-label={spotlight.title}
-            className="border-t border-[#E5EBE1] px-6 py-14 sm:px-10 lg:py-20"
+            className="scroll-mt-4 border-t border-[#E5EBE1] px-6 py-14 sm:px-10 lg:py-20"
           >
             <div className="mx-auto max-w-6xl">
               <p className="mb-6 text-center text-[0.65rem] font-bold uppercase tracking-[0.22em] text-[#0c6162]">
