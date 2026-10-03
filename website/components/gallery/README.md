@@ -13,6 +13,23 @@ CRF 27 (maxrate 1600k), AAC 112k, MP4 fast start, metadata stripped, ≈6 MB.
 Poster is the frame at 20 seconds. Both videos use `preload="none"`, so nothing
 downloads until the visitor presses play, and nothing autoplays.
 
+The `/gallery` event highlight (`highlight: {...}`) is "October 2 Workshop
+Highlights", shown first, right below the page heading, with its own copy and two
+CTAs (regular classes → `/robotics`, next-workshop waitlist → `/demo`). The Reel
+was made only from media with parent photo consent (owner confirmed 2026-10-03).
+Source: `Oct2_Workshop_Reel_v6_40.0s_Music.mp4` in the resources repo's
+`Social Media/03 - Photos & Videos/oct 2 social media/oct 2 reel/v6/` (1080 × 1920,
+40 s, 60 MB; kept outside `public/`). Music: `The Circuit Maker` (the
+`The Circuit Maker [xtTZ2qfftRo].mp3` file in the same folder), the track mixed into
+that render. Web copy: 720 × 1280 H.264 CRF 26 (maxrate 1400k), AAC 112k, MP4 fast
+start, metadata stripped, ≈7 MB. Poster is the v6 cover photo without its text
+(`reel-build/cards/cover-bg.jpg`, so the play overlay does not cover baked-in text)
+at 720 × 1280.
+`october-2-workshop-highlights-email.jpg` is a 720 × 1000 crop of that cover with a
+play button drawn on, for the Reel follow-up email, which links to
+`/gallery#october-2-workshop-highlights`. Only one entry should carry `highlight`;
+move it to the next event's Reel when there is one.
+
 `featured` picks the homepage/tutoring GalleryPreview (still the Sept 12 reel);
 `spotlight` picks the video that leads `/gallery`. Other approved videos follow
 below it as social proof.

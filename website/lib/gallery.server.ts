@@ -8,18 +8,24 @@ export function getPublicGalleryMedia() {
     .sort((a, b) => a.order - b.order);
 }
 
-/** The /gallery build spotlight (shown below the real-moments reels), plus
- * every other approved video in order. */
+/** The /gallery event highlight (shown first), the build spotlight (shown
+ * below the real-moments reels), plus every other approved video in order. */
 export function getGalleryVideos(): {
+  highlight: GalleryVideo | undefined;
   spotlight: GalleryVideo | undefined;
   more: GalleryVideo[];
 } {
   const videos = getPublicGalleryMedia().filter(
     (media): media is GalleryVideo => media.type === "video",
   );
+  const highlight = videos.find((media) => media.highlight);
   const spotlight =
     videos.find((media) => media.spotlight) ??
     videos.find((media) => media.featured) ??
     videos[0];
-  return { spotlight, more: videos.filter((media) => media !== spotlight) };
+  return {
+    highlight,
+    spotlight,
+    more: videos.filter((media) => media !== spotlight && media !== highlight),
+  };
 }

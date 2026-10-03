@@ -21,6 +21,8 @@ interface GalleryMediaBase {
   featured?: boolean;
   // The /gallery "Build spotlight" video, shown after the real-moments reels.
   spotlight?: boolean;
+  // The /gallery event highlight, shown first with its own copy and CTAs.
+  highlight?: { heading: string; subheading: string; takeaway: string };
   order: number;
   event?: { title: string; date: string; location: string };
 }
@@ -77,6 +79,32 @@ export const galleryMedia: GalleryMedia[] = [
     event: {
       title: "Young Engineers Demo",
       date: "2026-09-12",
+      location: "Kanata, Ottawa",
+    },
+  },
+  {
+    id: "october-2-workshop-highlights",
+    type: "video",
+    src: "/videos/gallery/october-2-workshop-highlights-v1.mp4",
+    poster: "/images/gallery/october-2-workshop-highlights-v1.jpg",
+    alt: "Children at Kriana's October 2 Young Engineers PA/PD Day STEM Workshop building and testing motorized Carousel models",
+    title: "October 2 Young Engineers PA/PD Day STEM Workshop",
+    caption:
+      "Kids built the Carousel while exploring electric motors, centrifugal force and hands-on engineering.",
+    width: 720,
+    height: 1280,
+    durationLabel: "40 seconds",
+    categories: ["robotics", "demo"],
+    publicApproved: true,
+    highlight: {
+      heading: "October 2 Workshop Highlights",
+      subheading: "See our Young Engineers in action.",
+      takeaway: "They didn’t just build — they learned why it works.",
+    },
+    order: 2,
+    event: {
+      title: "Young Engineers PA/PD Day STEM Workshop",
+      date: "2026-10-02",
       location: "Kanata, Ottawa",
     },
   },

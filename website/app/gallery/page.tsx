@@ -11,9 +11,11 @@ import { Footer } from "../../components/footer";
 import { GalleryVideo } from "../../components/gallery/gallery-video";
 import { getGalleryVideos } from "../../lib/gallery.server";
 import { ASSESSMENT_BOOKING_URL, ROBOTICS_PATH } from "../../lib/site-links";
+
+const WORKSHOP_WAITLIST_PATH = "/demo";
 import { breadcrumbSchema, siteUrl, toJsonLd } from "../../lib/seo";
 
-const { spotlight, more } = getGalleryVideos();
+const { highlight, spotlight, more } = getGalleryVideos();
 
 export const metadata: Metadata = {
   title: "Gallery | See Young Engineers in Action",
@@ -101,11 +103,96 @@ export default function GalleryPage() {
           </div>
         </section>
 
+        {/* Latest workshop highlight: social proof first, then the two next
+            steps. The id is the deep link the Reel follow-up email uses
+            (/gallery#october-2-workshop-highlights). */}
+        {highlight?.highlight && (
+          <section
+            id={highlight.id}
+            aria-labelledby="highlight-title"
+            className="scroll-mt-4 px-6 pb-14 pt-6 sm:px-10 lg:pb-20 lg:pt-10"
+          >
+            <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1.12fr_0.88fr] lg:gap-x-20 lg:gap-y-0">
+              <div className="lg:col-start-1 lg:row-start-1 lg:self-end">
+                <p className="inline-flex items-center gap-2 rounded-full border border-[#0c6162]/15 bg-[#EDF4EA] px-4 py-2 text-[0.65rem] font-bold uppercase tracking-[0.2em] text-[#0c6162]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#0c6162]" />{" "}
+                  Latest workshop
+                </p>
+                <h2
+                  id="highlight-title"
+                  className="mt-6 text-[2.2rem] font-semibold leading-[1.08] tracking-[-0.035em] sm:text-5xl"
+                >
+                  {highlight.highlight.heading}
+                </h2>
+                <p className="mt-4 text-lg leading-8 text-[#0c6162]">
+                  {highlight.highlight.subheading}
+                </p>
+              </div>
+              <figure className="relative mx-auto w-full max-w-[330px] sm:max-w-[350px] lg:col-start-2 lg:row-span-2 lg:row-start-1">
+                <div
+                  aria-hidden="true"
+                  className="absolute -inset-x-4 -inset-y-3 rotate-3 rounded-[2.25rem] bg-[#DCEBDD] sm:-inset-x-5"
+                />
+                <div className="relative rounded-[2rem] border border-white bg-white p-2 shadow-[0_24px_65px_-20px_rgba(10,45,90,0.28)]">
+                  <GalleryVideo
+                    media={highlight}
+                    playLabel="Watch the workshop highlight"
+                    priority
+                  />
+                </div>
+                {highlight.event && (
+                  <figcaption className="relative mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-medium text-[#0c6162]">
+                    <span className="inline-flex items-center gap-1.5">
+                      <CalendarDaysIcon className="h-4 w-4" />
+                      <time dateTime={highlight.event.date}>
+                        {new Intl.DateTimeFormat("en-CA", {
+                          month: "long",
+                          day: "numeric",
+                          year: "numeric",
+                          timeZone: "UTC",
+                        }).format(new Date(`${highlight.event.date}T12:00:00Z`))}
+                      </time>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <MapPinIcon className="h-4 w-4" />
+                      {highlight.event.location}
+                    </span>
+                  </figcaption>
+                )}
+              </figure>
+              <div className="max-w-md lg:col-start-1 lg:row-start-2 lg:mt-7 lg:self-start">
+                <p className="text-base leading-7 text-slate-600">
+                  {highlight.caption}
+                </p>
+                <p className="mt-3 text-base font-semibold leading-7">
+                  {highlight.highlight.takeaway}
+                </p>
+                <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                  <Link
+                    href={ROBOTICS_PATH}
+                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#0c6162] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#0a5253] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0c6162]"
+                  >
+                    Explore Regular Classes
+                    <ArrowRightIcon className="h-4 w-4" />
+                  </Link>
+                  <Link
+                    href={WORKSHOP_WAITLIST_PATH}
+                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-[#0c6162]/30 bg-white px-6 py-3 text-sm font-semibold text-[#0c6162] transition hover:bg-[#EDF4EA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0c6162]"
+                  >
+                    Join the Next Workshop Waitlist
+                    <ArrowRightIcon className="h-4 w-4" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
         {more.map((video, videoIndex) => (
         <section
           key={video.id}
           aria-labelledby={`more-title-${video.id}`}
-          className={`relative isolate overflow-hidden px-6 py-14 sm:px-10 lg:py-20 ${videoIndex === 0 ? "pt-6 lg:pt-10" : "border-t border-[#E5EBE1]"}`}
+          className={`relative isolate overflow-hidden px-6 py-14 sm:px-10 lg:py-20 ${videoIndex === 0 && !highlight ? "pt-6 lg:pt-10" : "border-t border-[#E5EBE1]"}`}
         >
           <div
             aria-hidden="true"
@@ -166,7 +253,10 @@ export default function GalleryPage() {
                     className="absolute -inset-x-4 -inset-y-3 -rotate-3 rounded-[2.25rem] bg-[#EEDDAF] sm:-inset-x-5"
                   />
                   <div className="relative rounded-[2rem] border border-white bg-white p-2 shadow-[0_24px_65px_-20px_rgba(10,45,90,0.28)]">
-                    <GalleryVideo media={video} priority={videoIndex === 0} />
+                    <GalleryVideo
+                      media={video}
+                      priority={videoIndex === 0 && !highlight}
+                    />
                   </div>
                   <figcaption className="relative mt-5 flex items-center justify-center gap-2 text-xs font-medium text-[#0c6162]">
                     <SparklesIcon className="h-4 w-4" />
