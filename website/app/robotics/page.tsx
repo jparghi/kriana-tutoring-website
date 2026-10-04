@@ -117,7 +117,7 @@ const faqs = [
   },
   {
     q: "What are the cancellation and refund policies?",
-    a: "Cancellation, refund and payment terms are provided when we offer your child a place. No payment is due when you first contact us.",
+    a: "Our Robotics Program & Payment Terms (krianatutoring.com/robotics/terms) cover payment, missed classes, withdrawals and refunds. No payment is due when you first contact us.",
   },
   {
     q: "Are birthday parties and school workshops available?",
