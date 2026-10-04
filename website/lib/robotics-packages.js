@@ -17,7 +17,7 @@
 //
 // There is no installment *rate*: a payment plan never changes the price.
 // Builder and Engineer may be paid in full or through an easy payment plan of
-// `paymentPlanInstallments` scheduled payments (4 and 6) at the same package
+// `paymentPlanInstallments` scheduled payments (2 and 4) at the same package
 // rate — one 20- or 36-class commitment paid in instalments, never separate
 // purchasable packages. Regular (10 classes) is paid upfront. Payments are
 // made by Interac e-Transfer after staff register the family;
@@ -148,7 +148,7 @@ const DEFAULT_PACKAGE_CATALOG = buildPackageCatalog({
     perClassCents: 2800, // $28/class pay-in-full
     regularSubtotalCents: 56000, // $560
     badge: 'Most Popular',
-    paymentPlanInstallments: 4,
+    paymentPlanInstallments: 2,
     paymentOptions: paymentOptions({ recurringMonthlyEnabled: true }),
     promotionEligible: false,
     promotionalPayInFullSubtotalCents: null,
@@ -158,7 +158,7 @@ const DEFAULT_PACKAGE_CATALOG = buildPackageCatalog({
     perClassCents: 2500, // $25/class pay-in-full
     regularSubtotalCents: 90000, // $900
     badge: 'Best Value',
-    paymentPlanInstallments: 6,
+    paymentPlanInstallments: 4,
     paymentOptions: paymentOptions({ recurringMonthlyEnabled: true }),
     promotionEligible: false,
     promotionalPayInFullSubtotalCents: null,
@@ -176,7 +176,7 @@ const SMARTIVO_PACKAGE_CATALOG = buildPackageCatalog({
     perClassCents: 2600, // $26/class pay-in-full
     regularSubtotalCents: 52000, // $520
     badge: 'Most Popular',
-    paymentPlanInstallments: 4,
+    paymentPlanInstallments: 2,
     paymentOptions: paymentOptions({ recurringMonthlyEnabled: true }),
     promotionEligible: false,
     promotionalPayInFullSubtotalCents: null,
@@ -186,7 +186,7 @@ const SMARTIVO_PACKAGE_CATALOG = buildPackageCatalog({
     perClassCents: 2400, // $24/class pay-in-full
     regularSubtotalCents: 86400, // $864
     badge: 'Best Value',
-    paymentPlanInstallments: 6,
+    paymentPlanInstallments: 4,
     paymentOptions: paymentOptions({ recurringMonthlyEnabled: true }),
     promotionEligible: false,
     promotionalPayInFullSubtotalCents: null,

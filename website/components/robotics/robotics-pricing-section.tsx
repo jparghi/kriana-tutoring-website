@@ -186,7 +186,7 @@ export function RoboticsPricingSection() {
           <h3 className="text-sm font-bold text-[#0A2D5A]">Payment &amp; what&apos;s included</h3>
           <p className="mt-1.5 text-sm leading-relaxed text-slate-600">
             Pricing is per child and applicable taxes are extra. Regular is paid upfront. Builder and Engineer can
-            be paid in full or through an easy payment plan — 4 or 6 scheduled payments at the same package rate,
+            be paid in full or through an easy payment plan — 2 or 4 scheduled payments at the same package rate,
             with no additional payment-plan fee from Kriana Tutoring. Payment is by Interac e-Transfer.
             All building materials are provided and kits stay at the learning centre. No payment is collected until your child&apos;s class schedule is confirmed.
           </p>

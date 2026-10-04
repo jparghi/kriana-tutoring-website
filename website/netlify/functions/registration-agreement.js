@@ -49,7 +49,7 @@ function tokenMatches(registration, token) {
 
 function installmentsFor(pkg) {
   if (!pkg) return null
-  return pkg.paymentPlanInstallments !== undefined ? pkg.paymentPlanInstallments : ({ builder: 4, engineer: 6 })[pkg.id] ?? null
+  return pkg.paymentPlanInstallments !== undefined ? pkg.paymentPlanInstallments : ({ builder: 2, engineer: 4 })[pkg.id] ?? null
 }
 
 /** What the page shows. e-Transfer instructions only once the agreement is accepted. */

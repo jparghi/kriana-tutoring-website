@@ -24,7 +24,7 @@ function registration(overrides = {}) {
     registrationNumber: 'YE-2026-0026', childName: 'Vihaan Sharma', parentEmail: 'p@example.com',
     registrationStatus: 'Pending Payment', paymentStatus: 'Pending',
     programSnapshot: { title: 'Bricks Challenge' },
-    packageSnapshot: { id: 'engineer', name: 'Engineer', classCount: 36, perClassCents: 2500, subtotalCents: 90000, paymentPlanInstallments: 6 },
+    packageSnapshot: { id: 'engineer', name: 'Engineer', classCount: 36, perClassCents: 2500, subtotalCents: 90000, paymentPlanInstallments: 4 },
     agreementRequired: true, agreementAccepted: false, agreementTokenHash: hash,
     ...overrides,
   }
@@ -40,7 +40,7 @@ test('accepting records who, when, which terms version — once', async () => {
   assert.ok(store.data.agreementAcceptedAt)
   assert.equal(store.data.registrationStatus, 'Pending Payment')
   assert.deepEqual(view.etransfer, {
-    sendTo: 'info@krianatutoring.com', payInFullCents: 101700, planPaymentCents: 16950, message: 'Bricks Challenge - YE-2026-0026',
+    sendTo: 'info@krianatutoring.com', payInFullCents: 101700, planPaymentCents: 25425, message: 'Bricks Challenge - YE-2026-0026',
   })
 
   await acceptAgreement(db, { registrationId: 'reg1', token: TOKEN, fullName: 'Someone Else' })

@@ -158,7 +158,7 @@ function PackageOverview({ programId }: { programId: string }) {
         <p className="text-sm font-bold text-slate-700">How payment works</p>
         <p className="mt-1.5 text-sm text-slate-500">
           The lower Builder and Engineer rates come from committing to the full learning path. You can pay that
-          package in full, or through an easy payment plan — 4 scheduled payments for Builder, 6 for Engineer — with
+          package in full, or through an easy payment plan — 2 scheduled payments for Builder, 4 for Engineer — with
           no additional payment-plan fee from Kriana Tutoring. Regular is paid upfront. Payment is by Interac
           e-Transfer.
         </p>
