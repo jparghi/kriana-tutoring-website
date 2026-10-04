@@ -15,8 +15,14 @@
 // complete package. Every future package must declare its own
 // `paymentOptions`; it is never inferred from class count or price.
 //
-// There is no installment-plan option. Regular/Builder/Engineer may each be
-// paid in full or billed monthly; Explorer (internal only) is paid in full.
+// There is no installment *rate*: a payment plan never changes the price.
+// Builder and Engineer may be paid in full or through an easy payment plan of
+// `paymentPlanInstallments` scheduled payments (4 and 6) at the same package
+// rate — one 20- or 36-class commitment paid in instalments, never separate
+// purchasable packages. Regular (10 classes) is paid upfront. Payments are
+// made by Interac e-Transfer after staff register the family;
+// `paymentPlanInstallments` is display data for the rate card and is not a
+// `paymentOptions` choice the request form submits.
 // Do not reintroduce a per-package installment rate without also restoring
 // the UI, the Netlify validation branch, and the acknowledgement-email
 // rendering that were removed alongside it.
@@ -93,6 +99,7 @@ function buildRegularPackage(perClassCents) {
   sortOrder: 1,
   minimumClassCommitment: 10,
   paymentOptions: paymentOptions({ payInFullEnabled: true, recurringMonthlyEnabled: true }),
+  paymentPlanInstallments: null,
   promotionEligible: false,
   promotionalPayInFullSubtotalCents: null,
   publicVisible: true,
@@ -141,6 +148,7 @@ const DEFAULT_PACKAGE_CATALOG = buildPackageCatalog({
     perClassCents: 2800, // $28/class pay-in-full
     regularSubtotalCents: 56000, // $560
     badge: 'Most Popular',
+    paymentPlanInstallments: 4,
     paymentOptions: paymentOptions({ recurringMonthlyEnabled: true }),
     promotionEligible: false,
     promotionalPayInFullSubtotalCents: null,
@@ -150,6 +158,7 @@ const DEFAULT_PACKAGE_CATALOG = buildPackageCatalog({
     perClassCents: 2500, // $25/class pay-in-full
     regularSubtotalCents: 90000, // $900
     badge: 'Best Value',
+    paymentPlanInstallments: 6,
     paymentOptions: paymentOptions({ recurringMonthlyEnabled: true }),
     promotionEligible: false,
     promotionalPayInFullSubtotalCents: null,
@@ -167,6 +176,7 @@ const SMARTIVO_PACKAGE_CATALOG = buildPackageCatalog({
     perClassCents: 2600, // $26/class pay-in-full
     regularSubtotalCents: 52000, // $520
     badge: 'Most Popular',
+    paymentPlanInstallments: 4,
     paymentOptions: paymentOptions({ recurringMonthlyEnabled: true }),
     promotionEligible: false,
     promotionalPayInFullSubtotalCents: null,
@@ -176,6 +186,7 @@ const SMARTIVO_PACKAGE_CATALOG = buildPackageCatalog({
     perClassCents: 2400, // $24/class pay-in-full
     regularSubtotalCents: 86400, // $864
     badge: 'Best Value',
+    paymentPlanInstallments: 6,
     paymentOptions: paymentOptions({ recurringMonthlyEnabled: true }),
     promotionEligible: false,
     promotionalPayInFullSubtotalCents: null,

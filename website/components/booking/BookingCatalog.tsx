@@ -253,7 +253,9 @@ export function BookingCatalog({
                   {selectedPackage.name} — {selectedPackage.classCount} classes · ${(selectedPackage.regularSubtotalCents / 100).toFixed(0)} package price (plus applicable taxes)
                 </p>
                 <p className="mt-0.5 text-xs text-slate-500">
-                  Tuition is billed monthly, averaged across your learning path — contact us to arrange your child&apos;s schedule.
+                  {selectedPackage.paymentPlanInstallments
+                    ? `Pay in full or in ${selectedPackage.paymentPlanInstallments} easy payments at the same package rate`
+                    : 'Paid upfront'} — contact us to arrange your child&apos;s schedule.
                 </p>
               </div>
               <button

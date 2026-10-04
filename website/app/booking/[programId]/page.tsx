@@ -69,26 +69,23 @@ function PackageOverview({ programId }: { programId: string }) {
       <div className="relative">
         <h2 className="text-xl font-black text-slate-800 sm:text-2xl">Learning Paths &amp; Pricing</h2>
         <p className="mt-1.5 max-w-2xl text-sm text-slate-500">
-          Every path is a complete class package — the longer the path, the lower the per-class rate. Tuition is
-          billed monthly, averaged across your learning path.
+          Every path is a complete class package — the longer the path, the lower the per-class rate. Builder and
+          Engineer can be paid in full or through an easy payment plan at the same package rate.
         </p>
       </div>
 
       <div className="relative mt-6 grid gap-5 sm:grid-cols-3">
         {(() => {
           const packages = getPubliclyVisiblePackages(programId)
-          // Regular is the standard (undiscounted) rate every other package's
-          // savings are quoted against.
-          const regularPkg = packages.find((p: any) => p.id === 'regular')
 
           return packages.map((pkg: any) => {
-            const isRegular = pkg.id === 'regular'
             // Engineer carries the "Best Value" badge and gets the
             // stronger/featured treatment — color, border and badge rather
             // than scaling, so mobile stacking is unaffected.
             const isFeatured = pkg.id === 'engineer'
-            const savingsPerClassCents = regularPkg && !isRegular ? regularPkg.perClassCents - pkg.perClassCents : 0
-            const totalSavingsCents = savingsPerClassCents * pkg.classCount
+            // A payment plan is only how the same package is paid for — the
+            // package rate applies either way, so no "save when paid in full".
+            const installments = pkg.paymentPlanInstallments
 
             return (
               <div
@@ -134,23 +131,19 @@ function PackageOverview({ programId }: { programId: string }) {
                   </ul>
                 )}
 
-                {/* Per-class rate and saving only. The package total is held
-                    back until the register page's review step, where a family
-                    is actually committing — see RoboticsPricingSection. */}
+                {/* Same figures as the /robotics rate card (RoboticsPricingSection). */}
                 <div className="mt-4 flex items-baseline gap-2">
                   <span className="text-2xl font-black text-slate-900">${(pkg.perClassCents / 100).toFixed(0)}</span>
                   <span className="text-xs font-semibold text-slate-500">/class + tax</span>
                 </div>
                 <p className="mt-0.5 text-xs font-bold text-slate-600">{pkg.classCount} classes</p>
-                {savingsPerClassCents > 0 ? (
-                  <p className="mt-0.5 text-xs font-semibold text-emerald-600">
-                    Save ${(savingsPerClassCents / 100).toFixed(0)}/class — ${(totalSavingsCents / 100).toFixed(0)} off the Regular rate
-                  </p>
-                ) : (
-                  <p className="mt-0.5 text-xs text-slate-400">Standard per-class rate</p>
-                )}
+                <p className="mt-1 text-sm font-bold text-slate-800">
+                  ${(pkg.regularSubtotalCents / 100).toFixed(0)} + tax total
+                </p>
                 <p className="mt-2 rounded-lg bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-600">
-                  Billed monthly, averaged across your learning path
+                  {installments
+                    ? `or ${installments} easy payments of $${(pkg.regularSubtotalCents / installments / 100).toFixed(0)} + tax`
+                    : 'Paid upfront'}
                 </p>
                 {isFeatured && (
                   <p className="mt-1 text-xs font-semibold text-[#0083CB]">Lowest per-class rate</p>
@@ -162,12 +155,12 @@ function PackageOverview({ programId }: { programId: string }) {
       </div>
 
       <div className="relative mt-8 rounded-2xl border border-slate-100 bg-slate-50/80 p-5">
-        <p className="text-sm font-bold text-slate-700">How monthly tuition works</p>
+        <p className="text-sm font-bold text-slate-700">How payment works</p>
         <p className="mt-1.5 text-sm text-slate-500">
-          Classes are generally scheduled weekly, but the number of class dates may vary from month to month due to
-          holidays, school breaks and the calendar. Tuition is averaged across your selected learning path, giving
-          families predictable monthly payments while ensuring students receive every class included in their
-          program.
+          The lower Builder and Engineer rates come from committing to the full learning path. You can pay that
+          package in full, or through an easy payment plan — 4 scheduled payments for Builder, 6 for Engineer — with
+          no additional payment-plan fee from Kriana Tutoring. Regular is paid upfront. Payment is by Interac
+          e-Transfer.
         </p>
       </div>
 

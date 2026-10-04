@@ -108,6 +108,9 @@ exports.handler = async function () {
 
   await Promise.all(
     pending.map(async (reg) => {
+      // Staff-created learning-path registrations wait on a manually recorded
+      // e-Transfer (portal: update-registration-payment) — never expire them.
+      if (reg.recordType === 'Manual Enrollment') return
       if (!reg.createdAt || new Date(reg.createdAt).toISOString() > cutoff) return
       await patchDoc('registrations', reg.id, {
         registrationStatus: 'Expired',

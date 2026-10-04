@@ -20,6 +20,7 @@ type Pkg = {
   perClassCents: number;
   regularSubtotalCents: number;
   badge: string | null;
+  paymentPlanInstallments: number | null;
 };
 
 // Presentation copy for each tier — deliberately not in
@@ -65,11 +66,10 @@ function TierHeading({ pkg }: { pkg: Pkg }) {
   );
 }
 
-/** One program's three tiers. Deliberately shows the per-class rate and the
- * saving, but NOT the package total: a four-figure number reads as a scary
- * lump sum in a browsing context, and tuition is billed monthly anyway. The
- * total is never hidden from someone actually committing — it's shown on the
- * register page's review step before anything is submitted. */
+/** One program's three tiers: per-class rate, package total and, for Builder
+ * and Engineer, the easy payment plan. The plan is only a way to pay for the
+ * same 20/36-class commitment at the same package rate — so there is no
+ * "save when paid in full" line: families get the package rate either way. */
 function ProgramRateCard({
   program,
   packages,
@@ -77,8 +77,6 @@ function ProgramRateCard({
   program: (typeof licensedRoboticsPrograms)[number];
   packages: Pkg[];
 }) {
-  const regular = packages.find((pkg) => pkg.id === "regular");
-
   return (
     <div className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-100 bg-slate-50/70 px-6 py-5">
@@ -93,8 +91,7 @@ function ProgramRateCard({
 
       <ul className="divide-y divide-slate-100">
         {packages.map((pkg) => {
-          const savingsPerClassCents = regular ? regular.perClassCents - pkg.perClassCents : 0;
-          const totalSavingsCents = savingsPerClassCents * pkg.classCount;
+          const installments = pkg.paymentPlanInstallments;
           const isFeatured = pkg.id === "engineer";
 
           return (
@@ -105,17 +102,22 @@ function ProgramRateCard({
               }`}
             >
               <TierHeading pkg={pkg} />
-              <div className="text-right">
+              <div className="ml-auto text-right">
                 <p className="text-2xl font-black leading-none text-[#0A2D5A]">
                   {dollars(pkg.perClassCents)}
                   <span className="ml-1 text-xs font-semibold text-slate-500">/class + tax</span>
                 </p>
-                {totalSavingsCents > 0 ? (
-                  <p className="mt-1 text-xs font-bold text-emerald-600">
-                    Save {dollars(totalSavingsCents)} when paid in full
+                <p className="mt-1 text-sm font-bold text-[#0A2D5A]">
+                  {dollars(pkg.regularSubtotalCents)} + tax total
+                  {!installments && <span className="font-semibold text-slate-400"> · paid upfront</span>}
+                </p>
+                {installments ? (
+                  <p className="mt-0.5 text-xs font-semibold text-[#0c6162]">
+                    or {installments} easy payments of {dollars(pkg.regularSubtotalCents / installments)} + tax
                   </p>
-                ) : (
-                  <p className="mt-1 text-xs text-slate-400">Standard rate</p>
+                ) : null}
+                {isFeatured && (
+                  <p className="mt-0.5 text-xs font-bold text-[#0083CB]">Lowest per-class rate</p>
                 )}
               </div>
             </li>
@@ -183,10 +185,10 @@ export function RoboticsPricingSection() {
         <div className="mt-8 rounded-[1.75rem] border border-slate-200 bg-slate-50 p-6 sm:p-7">
           <h3 className="text-sm font-bold text-[#0A2D5A]">Payment &amp; what&apos;s included</h3>
           <p className="mt-1.5 text-sm leading-relaxed text-slate-600">
-            Pricing is per child and applicable taxes are extra. Tuition is billed monthly: the package total is
-            averaged across the real months your child&apos;s schedule runs, so the monthly amount stays the same
-            even when a month has fewer class dates because of holidays or school breaks. All building materials
-            are provided and kits stay at the learning centre. No payment is collected until your child&apos;s class schedule is confirmed.
+            Pricing is per child and applicable taxes are extra. Regular is paid upfront. Builder and Engineer can
+            be paid in full or through an easy payment plan — 4 or 6 scheduled payments at the same package rate,
+            with no additional payment-plan fee from Kriana Tutoring. Payment is by Interac e-Transfer.
+            All building materials are provided and kits stay at the learning centre. No payment is collected until your child&apos;s class schedule is confirmed.
           </p>
         </div>
 
