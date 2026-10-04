@@ -10,11 +10,13 @@
 // only the SHA-256 of the emailed token as `agreementTokenHash`; the link is
 // the only credential. Acceptance is written once and never overwritten, and
 // never changes registrationStatus — an admin activates the registration after
-// recording the e-Transfer payment.
+// recording the e-Transfer payment. The first acceptance emails the parent a
+// copy and notifies staff (ADMIN_EMAIL).
 import crypto from 'node:crypto'
 import { FieldValue } from 'firebase-admin/firestore'
 import { getAdminDb } from './_lib/firebase-admin.js'
 import { RequestRejectedError, enforceRateLimit } from './submit-enrollment-request.js'
+import { sendAgreementEmails } from './_lib/agreement-email.js'
 import {
   AGREEMENT_COMMITMENT_STATEMENT,
   AGREEMENT_TERMS_STATEMENT,
@@ -89,13 +91,16 @@ function usable(snapshot, token) {
   return registration
 }
 
+/** null for an unusable link; otherwise { view, registration, firstAcceptance }. */
 export async function acceptAgreement(db, { registrationId, token, fullName, userAgent = '' }) {
   const ref = db.collection('registrations').doc(registrationId)
   return db.runTransaction(async tx => {
     const registration = usable(await tx.get(ref), token)
     if (!registration) return null
     // Already accepted (double-tap, or opened again): keep the first record.
-    if (registration.agreementAccepted === true) return agreementView(registration)
+    if (registration.agreementAccepted === true) {
+      return { view: agreementView(registration), registration, firstAcceptance: false }
+    }
     const acceptance = {
       agreementAccepted: true,
       agreementAcceptedAt: FieldValue.serverTimestamp(),
@@ -111,7 +116,8 @@ export async function acceptAgreement(db, { registrationId, token, fullName, use
       updatedAt: FieldValue.serverTimestamp(),
     }
     tx.update(ref, acceptance)
-    return agreementView({ ...registration, ...acceptance })
+    const accepted = { ...registration, ...acceptance }
+    return { view: agreementView(accepted), registration: accepted, firstAcceptance: true }
   })
 }
 
@@ -148,13 +154,21 @@ export const handler = async event => {
     if (!await enforceRateLimit(db, event)) {
       return json(429, { error: 'Too many requests. Please wait a few minutes and try again.' })
     }
-    const view = await acceptAgreement(db, {
+    const result = await acceptAgreement(db, {
       registrationId: body.r,
       token: body.t,
       fullName: validated.fullName,
       userAgent: event.headers?.['user-agent'],
     })
-    return view ? json(200, view) : json(404, { error: INVALID_LINK })
+    if (!result) return json(404, { error: INVALID_LINK })
+    if (result.firstAcceptance) {
+      try {
+        await sendAgreementEmails({ registration: result.registration, view: result.view })
+      } catch (emailError) {
+        console.error('Agreement emails failed:', emailError)
+      }
+    }
+    return json(200, result.view)
   } catch (error) {
     if (error instanceof RequestRejectedError) return json(error.statusCode, { error: error.message })
     console.error('registration-agreement failed:', error)

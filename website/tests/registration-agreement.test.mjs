@@ -32,7 +32,8 @@ function registration(overrides = {}) {
 
 test('accepting records who, when, which terms version — once', async () => {
   const { db, store } = fakeDb(registration())
-  const view = await acceptAgreement(db, { registrationId: 'reg1', token: TOKEN, fullName: 'Priya Sharma' })
+  const { view, firstAcceptance } = await acceptAgreement(db, { registrationId: 'reg1', token: TOKEN, fullName: 'Priya Sharma' })
+  assert.equal(firstAcceptance, true)
   assert.equal(view.accepted, true)
   assert.equal(store.data.agreementAccepted, true)
   assert.equal(store.data.agreementAcceptedBy, 'Priya Sharma')
@@ -43,7 +44,8 @@ test('accepting records who, when, which terms version — once', async () => {
     sendTo: 'info@krianatutoring.com', payInFullCents: 101700, planPaymentCents: 25425, message: 'Bricks Challenge - YE-2026-0026',
   })
 
-  await acceptAgreement(db, { registrationId: 'reg1', token: TOKEN, fullName: 'Someone Else' })
+  const again = await acceptAgreement(db, { registrationId: 'reg1', token: TOKEN, fullName: 'Someone Else' })
+  assert.equal(again.firstAcceptance, false)
   assert.equal(store.data.agreementAcceptedBy, 'Priya Sharma')
 })
 
@@ -71,4 +73,25 @@ test('submission needs a full name and both boxes', () => {
   assert.ok(validateAgreementSubmission({ fullName: 'Priya', commitmentAccepted: true, termsAccepted: true }).error)
   assert.ok(validateAgreementSubmission({ fullName: 'Priya Sharma', commitmentAccepted: true, termsAccepted: false }).error)
   assert.deepEqual(validateAgreementSubmission({ fullName: '  Priya   Sharma ', commitmentAccepted: true, termsAccepted: true }), { fullName: 'Priya Sharma' })
+})
+
+test('agreement emails: parent copy and a separate staff notice', async () => {
+  const { parentAgreementEmail, adminAgreementEmail } = await import('../netlify/functions/_lib/agreement-email.js')
+  const { db } = fakeDb(registration({ parentName: 'Priya Sharma' }))
+  const { view, registration: accepted } = await acceptAgreement(db, { registrationId: 'reg1', token: TOKEN, fullName: 'Priya Sharma' })
+  const acceptedAtLabel = 'October 7, 2026 at 3:12 p.m.'
+
+  const parent = parentAgreementEmail({ registration: accepted, view, acceptedAtLabel })
+  assert.equal(parent.subject, "Agreement Received — Vihaan's Bricks Challenge Engineer Learning Path")
+  assert.match(parent.html, /Hi Priya,/)
+  assert.match(parent.html, /Accepted by<\/td><td[^>]*>Priya Sharma/)
+  assert.match(parent.html, /October 7, 2026 at 3:12 p\.m\./)
+  assert.match(parent.html, /full program commitment/)
+  assert.match(parent.html, /\$254\.25/)
+
+  const admin = adminAgreementEmail({ registration: accepted, view, acceptedAtLabel })
+  assert.equal(admin.subject, 'Agreement accepted — Vihaan Sharma · YE-2026-0026')
+  assert.match(admin.html, /p@example\.com/)
+  assert.match(admin.html, /Payment is not recorded yet/)
+  assert.match(admin.html, /portal\.krianatutoring\.com\/tutor\/booking\/registrations/)
 })
