@@ -35,6 +35,12 @@ const footerLinks = [
   }
 ];
 
+const buildTimeLabel = new Date(process.env.NEXT_PUBLIC_BUILD_TIME ?? Date.now()).toLocaleString("en-CA", {
+  timeZone: "America/Toronto",
+  dateStyle: "medium",
+  timeStyle: "short",
+});
+
 export function Footer() {
   return (
     <footer className="relative overflow-hidden bg-slate-950 py-16">
@@ -138,6 +144,9 @@ export function Footer() {
         <div className="border-t border-white/15 pt-6 text-center text-xs font-bold uppercase tracking-[0.3em] text-white/75">
           © 2026 Kriana Tutoring – Personalized Learning for Every Child.
         </div>
+        <p className="pb-2 pt-3 text-center text-[10px] text-white/40">
+          Build {process.env.NEXT_PUBLIC_BUILD_COMMIT} · {buildTimeLabel}
+        </p>
       </div>
     </footer>
   );

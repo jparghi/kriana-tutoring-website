@@ -1,6 +1,23 @@
+const { execSync } = require("child_process");
+
+// Short commit + build time, shown in the footer so it's obvious which deploy
+// is live. Netlify sets COMMIT_REF; local builds fall back to git.
+function buildCommit() {
+  if (process.env.COMMIT_REF) return process.env.COMMIT_REF.slice(0, 7);
+  try {
+    return execSync("git rev-parse --short=7 HEAD", { stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+  } catch {
+    return "local";
+  }
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  env: {
+    NEXT_PUBLIC_BUILD_COMMIT: buildCommit(),
+    NEXT_PUBLIC_BUILD_TIME: new Date().toISOString()
+  },
   images: {
     unoptimized: true
   },
