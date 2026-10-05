@@ -106,7 +106,7 @@ function ProgramRateCard({
                   {dollars(pkg.perClassCents)}
                   <span className="ml-1 text-xs font-semibold text-slate-500">/class + tax</span>
                 </p>
-                <p className="mt-1 text-sm font-bold text-[#0A2D5A]">{dollars(pkg.regularSubtotalCents)} total</p>
+                <p className="mt-1 text-sm font-bold text-[#0A2D5A]">{dollars(pkg.regularSubtotalCents)} total + tax</p>
                 <p className="mt-0.5 text-xs font-semibold text-[#0c6162]">
                   Pay in full or {installments} monthly payments of {dollars(pkg.regularSubtotalCents / installments)} + tax
                 </p>

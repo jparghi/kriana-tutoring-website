@@ -137,7 +137,7 @@ function PackageOverview({ programId }: { programId: string }) {
                 </div>
                 <p className="mt-0.5 text-xs font-bold text-slate-600">{pkg.classCount} classes</p>
                 <p className="mt-1 text-sm font-bold text-slate-800">
-                  ${(pkg.regularSubtotalCents / 100).toFixed(0)} total
+                  ${(pkg.regularSubtotalCents / 100).toFixed(0)} total + tax
                 </p>
                 <p className="mt-2 rounded-lg bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-600">
                   Pay in full or {installments} monthly payments of ${(pkg.regularSubtotalCents / installments / 100).toFixed(0)} + tax
