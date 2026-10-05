@@ -30,6 +30,19 @@ const nextConfig = {
         source: "/birthday-parties",
         destination: "/birthday",
         permanent: true
+      },
+      // /demo became /events. Flyers, QR codes, ads and emails (including the
+      // portal's /demo/consent links) still use the old URLs; query strings
+      // such as utm_* and ref are carried through.
+      {
+        source: "/demo",
+        destination: "/events",
+        permanent: true
+      },
+      {
+        source: "/demo/:path*",
+        destination: "/events/:path*",
+        permanent: true
       }
     ];
   }

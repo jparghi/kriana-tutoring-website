@@ -44,7 +44,7 @@ function request(overrides = {}) {
     programId: 'prog-1',
     demoOfferingId: 'off-1',
     registration: { parentName: 'Sarah Mitchell', parentEmail: 'sarah@example.com', parentPhone: '6135551234', childName: 'Jacob', childAge: 8 },
-    marketingAttribution: { landingPath: '/demo', source: 'facebook', medium: 'paid', campaign: 'oct-demo', content: null, term: null, referrer: null },
+    marketingAttribution: { landingPath: '/events', source: 'facebook', medium: 'paid', campaign: 'oct-demo', content: null, term: null, referrer: null },
     ...overrides,
   }
 }
@@ -117,7 +117,7 @@ test('source normalization matches the portal copy for the common cases', () => 
   assert.equal(normalizeLeadSource({ source: 'ig' }), 'Instagram')
   assert.equal(normalizeLeadSource({ source: 'whatsapp' }), 'WhatsApp')
   assert.equal(normalizeLeadSource({ referrer: 'https://www.google.com' }), 'Google')
-  assert.equal(normalizeLeadSource({ landingPath: '/demo' }), 'Direct')
+  assert.equal(normalizeLeadSource({ landingPath: '/events' }), 'Direct')
   assert.equal(normalizeLeadSource(null), 'Unknown')
   assert.equal(buildLeadDoc({ registrationId: 'x', parentName: 'a', parentEmail: 'b', childName: 'c' }).leadSource, 'Unknown')
 })

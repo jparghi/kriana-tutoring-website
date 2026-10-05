@@ -166,7 +166,7 @@ export function DemoHero({
     <section className="px-5 pb-10 pt-6 sm:px-8" style={{ background: "linear-gradient(155deg, #FFF7E8 0%, #FFFFFF 50%, #F1F8F8 100%)" }}>
       <div className={image ? "mx-auto max-w-6xl md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,460px)] md:items-start md:gap-10" : "mx-auto max-w-3xl"}>
         <div>
-          <p className="text-xs font-bold text-slate-500">Young Engineers Workshops &amp; Demo Events</p>
+          <p className="text-xs font-bold text-slate-500">Upcoming Classes, Camps &amp; Workshops</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <p className="text-xs font-black uppercase tracking-wide text-[#0c6162]">{showEvent ? "Next event" : "Young Engineers Kanata"}</p>
             {showEvent && partial ? (
@@ -174,7 +174,7 @@ export function DemoHero({
             ) : showEvent && <StatusBadge status={status} />}
           </div>
           <h1 className="mt-3 text-[32px] font-black leading-[1.08] text-[#0A2D5A] sm:text-5xl">
-            {showEvent ? demo.title : <>Young Engineers <span className="text-[#F2A100]">Workshops &amp; Demo Events</span></>}
+            {showEvent ? demo.title : <>Upcoming Classes, <span className="text-[#F2A100]">Camps &amp; Workshops</span></>}
           </h1>
           {showEvent && demo.hook ? (
             <>
@@ -193,7 +193,7 @@ export function DemoHero({
             </>
           ) : (
             <>
-              <p className="mt-3 text-lg font-semibold text-slate-700">Hands-on STEM, Engineering &amp; Coding for Kids</p>
+              <p className="mt-3 text-lg font-semibold text-slate-700">Discover upcoming STEM, robotics, tutoring workshops, camps and special programs from Kriana Tutoring &amp; Young Engineers.</p>
               <p className="mt-1 text-base font-semibold text-slate-500">Build • Create • Code • Explore</p>
             </>
           )}
@@ -218,7 +218,7 @@ export function DemoHero({
             </ul>
           ) : (
             <p className="mt-5 max-w-md text-base leading-relaxed text-slate-600">
-              Our next Young Engineers demo hasn&apos;t been announced yet. Join the waitlist and you&apos;ll hear first.
+              Our next workshop, camp or event hasn&apos;t been announced yet. Join the waitlist and you&apos;ll hear first.
             </p>
           )}
 
@@ -236,7 +236,7 @@ export function DemoHero({
             </p>
           </div>
           {secondary && <div className="mt-6">{secondary}</div>}
-          <div className="mt-4"><ShareInviteButton url={shareUrl} title={demo?.title ?? "Young Engineers Workshops & Demo Events"} /></div>
+          <div className="mt-4"><ShareInviteButton url={shareUrl} title={demo?.title ?? "Upcoming Classes, Camps & Workshops"} /></div>
           {showEvent && demo.hook && (
             <p className="mt-5 text-sm font-bold italic text-[#0c6162]">&ldquo;They don&apos;t just build — they learn WHY it works.&rdquo;</p>
           )}

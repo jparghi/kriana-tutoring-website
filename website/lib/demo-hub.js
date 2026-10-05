@@ -1,4 +1,4 @@
-// Pure logic for the /demo Demo Hub: which demo is "current", what state it is
+// Pure logic for the /events Demo Hub: which demo is "current", what state it is
 // really in, and which demos are history. No firebase/next imports so both the
 // server-rendered page and node:test can use it.
 //

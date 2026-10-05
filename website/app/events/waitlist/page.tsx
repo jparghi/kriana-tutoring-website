@@ -8,14 +8,14 @@ import { DemoWaitlistForm } from "../DemoWaitlistForm"
 import { ContactButtons } from "../sections"
 
 // Live campaign/offering state decides whether the list is open — never
-// render at build time (see app/demo/page.tsx).
+// render at build time (see app/events/page.tsx).
 export const dynamic = "force-dynamic"
 
 export const metadata: Metadata = {
   title: { absolute: "Join Our Future Workshop List | Young Engineers Kanata & Stittsville" },
   description:
     "Hear first about upcoming Young Engineers demos, PD Day workshops and special STEM events in Kanata and Stittsville.",
-  alternates: { canonical: `${siteUrl}/demo/waitlist` },
+  alternates: { canonical: `${siteUrl}/events/waitlist` },
 }
 
 const COPY = {
@@ -25,7 +25,7 @@ const COPY = {
   footnote: "Free to join • No payment required. We’ll email you when our next event opens.",
 }
 
-// Same list as the evergreen /demo waitlist: joins queue against the
+// Same list as the evergreen /events waitlist: joins queue against the
 // env-configured campaign offering, and submit-demo-waitlist.js enforces its
 // waitlistEnabled switch again at submission time.
 export default async function FutureWorkshopListPage() {
@@ -46,7 +46,7 @@ export default async function FutureWorkshopListPage() {
       <main className="min-h-screen overflow-x-hidden bg-white text-slate-900">
         <section className="px-5 pb-14 pt-6 sm:px-8" style={{ background: "linear-gradient(155deg, #FFF7E8 0%, #FFFFFF 50%, #F1F8F8 100%)" }}>
           <div className="mx-auto max-w-xl">
-            <Link href="/demo" className="text-sm font-bold text-[#0c6162] hover:underline">← Back to the workshop</Link>
+            <Link href="/events" className="text-sm font-bold text-[#0c6162] hover:underline">← Back to the workshop</Link>
             <p className="mt-5 text-xs font-black uppercase tracking-wide text-[#0c6162]">Young Engineers Kanata</p>
             <h1 className="mt-2 text-[32px] font-black leading-[1.08] text-[#0A2D5A] sm:text-5xl">
               Join Our <span className="text-[#F2A100]">Future Workshop List</span>

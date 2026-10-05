@@ -7,7 +7,7 @@
 //                 via publicRegistrationPaused). The family wants a seat at
 //                 THIS demo if one frees up.
 //   'next_demo' — the demo's registration window has closed (usually because
-//                 the event already happened). /demo stays live year-round as
+//                 the event already happened). /events stays live year-round as
 //                 the "next Young Engineers demo" waitlist, and entries queue
 //                 against the most recent demo offering until a new one is
 //                 created and DEMO_CAMPAIGN_OFFERING_ID is repointed.

@@ -33,32 +33,27 @@ const SHARE_IMAGE_PATH = "/images/gallery/young-engineers-demo-sept-2026-v1.jpg"
 // Firestore read to once per request.
 const getCampaign = cache(() => resolveDemoCampaignOffering())
 
-// /demo is a permanent hub, so metadata follows whichever event is next (by
-// date, from the data file — no Firestore read) and falls back to an evergreen
-// description once nothing is upcoming.
-export async function generateMetadata(): Promise<Metadata> {
-  const next = resolveDemoHub(demos, null).active
-  const title = next
-    ? `${next.title} | Kanata & Stittsville`
-    : "Young Engineers Workshops & Demo Events | Kanata & Stittsville"
-  const description =
-    next?.seoDescription ??
-    "Join a Young Engineers hands-on STEM workshop or demo in Kanata/Stittsville. Kids ages 6–12 build, test and explore real engineering concepts through fun interactive activities."
-  return {
-    // absolute: the root layout's "%s · Kriana Tutoring" template would
-    // otherwise append the brand a second time.
-    title: { absolute: title },
+// /events is the permanent hub for every upcoming workshop, PD Day program,
+// camp and demo (old /events links redirect here — see next.config.js), so its
+// metadata describes the hub rather than whichever event is next.
+const title = "Upcoming Workshops, Camps & Events | Kriana Tutoring"
+const description =
+  "Explore upcoming workshops, STEM and robotics programs, PD Day activities, camps and special events from Kriana Tutoring and Young Engineers in Kanata."
+
+export const metadata: Metadata = {
+  // absolute: the root layout's "%s · Kriana Tutoring" template would
+  // otherwise append the brand a second time.
+  title: { absolute: title },
+  description,
+  alternates: { canonical: `${siteUrl}/events` },
+  openGraph: {
+    title,
     description,
-    alternates: { canonical: `${siteUrl}/demo` },
-    openGraph: {
-      title,
-      description,
-      url: `${siteUrl}/demo`,
-      type: "website",
-      images: [{ url: `${siteUrl}${SHARE_IMAGE_PATH}`, width: 720, height: 1280, alt: "A child building a Young Engineers model at a Kanata event" }],
-    },
-    twitter: { card: "summary_large_image", title, description, images: [`${siteUrl}${SHARE_IMAGE_PATH}`] },
-  }
+    url: `${siteUrl}/events`,
+    type: "website",
+    images: [{ url: `${siteUrl}${SHARE_IMAGE_PATH}`, width: 720, height: 1280, alt: "A child building a Young Engineers model at a Kanata event" }],
+  },
+  twitter: { card: "summary_large_image", title, description, images: [`${siteUrl}${SHARE_IMAGE_PATH}`] },
 }
 
 // One Event per session so each time slot is its own valid, dated event.
@@ -80,7 +75,7 @@ function eventSchemas(demo: DemoEvent, status: DemoStatus, canRegister: boolean)
     image: [`${siteUrl}${SHARE_IMAGE_PATH}`],
     description: demo.seoDescription ?? demo.summary ?? `Hands-on STEM, engineering and coding ${eventTerms(demo.eventType).noun} for children ages ${demo.ageRange}.`,
     ...(availability
-      ? { offers: { "@type": "Offer", price: demo.price.toFixed(2), priceCurrency: "CAD", availability: `https://schema.org/${availability}`, url: `${siteUrl}/demo` } }
+      ? { offers: { "@type": "Offer", price: demo.price.toFixed(2), priceCurrency: "CAD", availability: `https://schema.org/${availability}`, url: `${siteUrl}/events` } }
       : {}),
     organizer: { "@type": "Organization", name: "Kriana Tutoring", url: siteUrl },
   }))
@@ -173,7 +168,7 @@ export default async function DemoPage({
     ? `Reserve ${/^[aeiou]/i.test(openShort) ? "an" : "a"} ${openShort} Spot — ${priceDisplay}`
     : terms.reserveLabel(priceDisplay)
   const futureList = (content: string) => partialCopy && (
-    <FutureWorkshopList openShort={partialCopy.openShort} href={`/demo/waitlist${attributionQuery ? `?${attributionQuery}` : ""}`} offeringId={campaignOfferingId} content={content} />
+    <FutureWorkshopList openShort={partialCopy.openShort} href={`/events/waitlist${attributionQuery ? `?${attributionQuery}` : ""}`} offeringId={campaignOfferingId} content={content} />
   )
 
   // Anything the parent can act on for a session: booking, or its waitlist.
@@ -242,7 +237,7 @@ export default async function DemoPage({
           actions={picker("hero-session", "hero")}
           note={hasPickerSessions ? undefined : fallback.note}
           hideSessionRow={hasPickerSessions}
-          shareUrl={`${siteUrl}/demo`}
+          shareUrl={`${siteUrl}/events`}
           heroCtaId={HERO_CTA_ID}
           partial={partialCopy}
           secondary={futureList("hero_future_list")}

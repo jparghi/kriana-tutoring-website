@@ -4,7 +4,7 @@
 // for the event details, the consent wording and payload validation.
 //
 // Two kinds of consent context share one form and one collection:
-//   - an event (MEDIA_CONSENT_EVENTS) — /demo/consent, with date, venue and
+//   - an event (MEDIA_CONSENT_EVENTS) — /events/consent, with date, venue and
 //     sessions. For a future event add an entry and point
 //     CURRENT_MEDIA_CONSENT_EVENT_ID at it.
 //   - GENERAL_MEDIA_CONSENT — the evergreen /consent page for any Young

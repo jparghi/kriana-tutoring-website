@@ -6,7 +6,7 @@ import { CURRENT_MEDIA_CONSENT_EVENT_ID, MEDIA_CONSENT_EVENTS } from "../../../l
 export const metadata: Metadata = {
   title: { absolute: "Workshop Photo & Media Consent | Young Engineers Kanata" },
   description: "Parent / Guardian Photo & Media Consent Form for the Young Engineers PD Day STEM Workshop operated by Kriana Tutoring.",
-  alternates: { canonical: `${siteUrl}/demo/consent` },
+  alternates: { canonical: `${siteUrl}/events/consent` },
   // Linked from workshop emails, not something to surface in search.
   robots: { index: false, follow: true },
 }
@@ -27,7 +27,7 @@ export default function WorkshopMediaConsentPage({ searchParams }: { searchParam
         { label: "Operated by", value: event.operatedBy, wide: true },
       ]}
       initialSessionId={initialSessionId}
-      backHref="/demo"
+      backHref="/events"
       backLabel="Back to the workshop"
     />
   )

@@ -6,9 +6,9 @@ import { servicePages } from "./tutoring/data";
 const baseUrl = "https://www.krianatutoring.com";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  // /demo is a permanent landing page (shared from Facebook/Instagram and
+  // /events is a permanent landing page (shared from Facebook/Instagram and
   // print), not a per-event URL, so it belongs in the sitemap year-round.
-  const staticRoutes = ["", "/about", "/birthday", "/blog", "/contact", "/demo", "/gallery", "/practice-tests", "/register", "/resources/parent-guides", "/robotics", "/tutoring", "/worksheets"];
+  const staticRoutes = ["", "/about", "/birthday", "/blog", "/contact", "/events", "/gallery", "/practice-tests", "/register", "/resources/parent-guides", "/robotics", "/tutoring", "/worksheets"];
 
   const staticEntries = staticRoutes.map((route) => ({
     url: `${baseUrl}${route}`,

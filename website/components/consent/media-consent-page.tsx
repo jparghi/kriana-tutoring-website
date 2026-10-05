@@ -7,7 +7,7 @@ import { MediaConsentForm } from "./media-consent-form"
 type Detail = { label: string; value: React.ReactNode; wide?: boolean }
 
 // Shared layout for the Parent / Guardian Photo & Media Consent pages:
-// /consent (general, any Young Engineers activity) and /demo/consent (one
+// /consent (general, any Young Engineers activity) and /events/consent (one
 // event). Same wording, form and storage; only the details card differs.
 export function MediaConsentPage({
   context,

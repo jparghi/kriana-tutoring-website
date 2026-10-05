@@ -15,7 +15,7 @@ downloads until the visitor presses play, and nothing autoplays.
 
 The `/gallery` event highlight (`highlight: {...}`) is "October 2 Workshop
 Highlights", shown first, right below the page heading, with its own copy and two
-CTAs (regular classes → `/robotics`, next-workshop waitlist → `/demo`). The Reel
+CTAs (regular classes → `/robotics`, next-workshop waitlist → `/events`). The Reel
 was made only from media with parent photo consent (owner confirmed 2026-10-03).
 Source: `Oct2_Workshop_Reel_v6_40.0s_Music.mp4` in the resources repo's
 `Social Media/03 - Photos & Videos/oct 2 social media/oct 2 reel/v6/` (1080 × 1920,

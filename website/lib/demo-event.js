@@ -1,8 +1,8 @@
-// Display fields for a single-occurrence demo offering (the /demo campaign),
+// Display fields for a single-occurrence demo offering (the /events campaign),
 // derived from the offering doc's eventTitle / eventStartAt / eventEndAt /
 // timezone / location — so a future demo only needs a new offering, never a
 // code change to the page copy. Plain .js (no firebase imports) so both the
-// server-rendered /demo page and node:test can use it.
+// server-rendered /events page and node:test can use it.
 
 const DEFAULT_TIMEZONE = 'America/Toronto'
 

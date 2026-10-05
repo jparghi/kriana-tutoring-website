@@ -470,7 +470,7 @@ export function formatOfferingScheduleDetail(offering: any) {
 
 /**
  * Fixed-event date/time formatting for a single-occurrence demo campaign
- * offering (e.g. the /demo funnel) — as opposed to formatOfferingScheduleDetail,
+ * offering (e.g. the /events funnel) — as opposed to formatOfferingScheduleDetail,
  * which describes a recurring weekly cohort. Reads eventStartAt/eventEndAt/
  * timezone directly (set by an admin when creating the campaign's offering
  * doc); returns '' if the offering doesn't carry fixed event fields, so

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-// Lets someone re-share the /demo link itself (the whole point of this page
+// Lets someone re-share the /events link itself (the whole point of this page
 // doubling as a flyer) — Web Share API on mobile (opens the native
 // WhatsApp/Messenger/etc. share sheet), falling back to copy-to-clipboard
 // on desktop browsers that don't support it.

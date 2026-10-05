@@ -222,7 +222,7 @@ function ProgramDetailContent() {
   )
 
   // A demo offering (offeringType === 'demo') is a distinct product sold from
-  // the /demo and /booking listing pages — never use it for this header.
+  // the /events and /booking listing pages — never use it for this header.
   const nextOffering = offerings.find(o => o.offeringType !== 'demo')
   const listedTuition = Number(
     nextOffering?.tuitionCents

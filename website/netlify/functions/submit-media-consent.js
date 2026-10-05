@@ -1,5 +1,5 @@
 // Parent / Guardian Photo & Media Consent — public submission endpoint for
-// /demo/consent (the digital replacement for the paper Young Engineers form).
+// /events/consent (the digital replacement for the paper Young Engineers form).
 //
 // Storage: one `mediaConsents` doc per submission, never overwritten. A
 // "subject" is one child at one event under one parent email (subjectKey).
@@ -8,7 +8,7 @@
 // supersededById — so staff verify by filtering isLatest == true, and the full
 // history stays as the audit trail.
 //
-// Event consents (/demo/consent) and the general consent (/consent,
+// Event consents (/events/consent) and the general consent (/consent,
 // eventId 'general') share this collection; each is its own subject.
 //
 // YES and NO are stored identically; consent is never a condition of

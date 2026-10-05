@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 }
 
 // Evergreen consent for any Young Engineers activity — not tied to one event.
-// Event-specific consent (with date, venue and session) lives at /demo/consent.
+// Event-specific consent (with date, venue and session) lives at /events/consent.
 export default function GeneralMediaConsentPage() {
   const context = GENERAL_MEDIA_CONSENT
   return (

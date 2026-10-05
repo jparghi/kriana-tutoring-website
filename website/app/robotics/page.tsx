@@ -251,7 +251,7 @@ export default async function RoboticsPage() {
 
         {/* $10 demo — the lowest-commitment way in, placed right after the
             price so a 20- or 36-class package never reads as the only option.
-            /demo tells the reader whether a date is on sale or whether to
+            /events tells the reader whether a date is on sale or whether to
             join the waitlist, so this band never claims one or the other. */}
         <section id="demo" className="scroll-mt-20 bg-[#0A2D5A] px-6 py-16 text-white sm:px-10">
           <div className="mx-auto max-w-3xl text-center">
@@ -263,7 +263,7 @@ export default async function RoboticsPage() {
             </p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
               <Link
-                href="/demo"
+                href="/events"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-[#F2A100] px-8 py-3.5 text-sm font-black uppercase tracking-[0.18em] text-[#0A2D5A] shadow-[0_8px_28px_rgba(242,161,0,0.35)] transition-all duration-300 hover:scale-[1.03]"
               >
                 Book a $10 Demo
@@ -531,7 +531,7 @@ export default async function RoboticsPage() {
                 Contact Us to Schedule
               </Link>
               <Link
-                href="/demo"
+                href="/events"
                 className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-8 py-3.5 text-sm font-semibold uppercase tracking-[0.18em] text-slate-700 shadow-sm transition-all duration-300 hover:border-brand-sky hover:text-brand-sky"
               >
                 Book a $10 Demo

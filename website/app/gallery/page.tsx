@@ -12,7 +12,7 @@ import { GalleryVideo } from "../../components/gallery/gallery-video";
 import { getGalleryVideos } from "../../lib/gallery.server";
 import { ASSESSMENT_BOOKING_URL, ROBOTICS_PATH } from "../../lib/site-links";
 
-const WORKSHOP_WAITLIST_PATH = "/demo";
+const WORKSHOP_WAITLIST_PATH = "/events";
 import { breadcrumbSchema, siteUrl, toJsonLd } from "../../lib/seo";
 
 const { highlight, spotlight, more } = getGalleryVideos();

@@ -31,7 +31,7 @@ function formatAmount(cents, currency) {
 }
 
 // Fixed-event date/time formatting for a single-occurrence demo campaign
-// offering, e.g. the /demo funnel. Duplicated (not imported) from
+// offering, e.g. the /events funnel. Duplicated (not imported) from
 // lib/booking.ts's formatEventDateTime, matching this file's own stated
 // pattern of copying rather than importing across the submission-flow
 // boundary. Returns '' if the offering doesn't carry fixed event fields.
@@ -161,7 +161,7 @@ export async function sendDemoAcknowledgement({ registration, program, offering,
  * sendDemoAcknowledgement above.
  */
 // Labels for the optional "which program are you interested in?" answer
-// collected on /demo (submit-demo-waitlist.js normalizes the values).
+// collected on /events (submit-demo-waitlist.js normalizes the values).
 const PROGRAM_INTEREST_LABELS = {
   'smartivo': 'Smartivo',
   'bricks-challenge': 'Bricks Challenge',

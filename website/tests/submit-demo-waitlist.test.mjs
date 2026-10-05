@@ -37,7 +37,7 @@ function baseRequest(overrides = {}) {
       childAge: 8,
       consentAccepted: true,
     },
-    marketingAttribution: sanitizeAttribution({ landingPath: '/demo', source: 'flyer' }),
+    marketingAttribution: sanitizeAttribution({ landingPath: '/events', source: 'flyer' }),
     ...overrides,
   }
 }
@@ -190,7 +190,7 @@ test('waitlist rejected when the offering waitlist switch is off or missing', ()
 
 // The September 12 regression: once enrollmentCloseAt passed, the offering
 // state became 'closed' and every waitlist join was refused, which is what
-// made /demo's waitlist vanish after the event. A closed window now means
+// made /events's waitlist vanish after the event. A closed window now means
 // the family is waiting for the NEXT demo, not a seat at this one.
 test('waitlist accepted after the registration window closes, tagged next_demo', () => {
   const result = validateDemoWaitlistRequest(

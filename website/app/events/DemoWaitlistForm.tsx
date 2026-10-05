@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { ALLOWED_ATTRIBUTION_PARAMS, trackEvent } from '../../lib/analytics'
 
-// Inline "next demo" waitlist form for the evergreen /demo page.
+// Inline "next demo" waitlist form for the evergreen /events page.
 //
 // It is NOT a second lead pipeline: it posts the same payload, to the same
 // endpoint (submit-demo-waitlist.js), as the waitlist mode of the register
@@ -35,7 +35,7 @@ function Field({ label, required, children }: { label: string; required?: boolea
   )
 }
 
-// Default wording is for the evergreen "next demo" waitlist; /demo/waitlist
+// Default wording is for the evergreen "next demo" waitlist; /events/waitlist
 // passes workshop-list wording for the same list.
 const DEFAULT_COPY = {
   success: 'We’ll notify you as soon as registration for our next Young Engineers Kanata Demo opens.',
@@ -98,7 +98,7 @@ export function DemoWaitlistForm({
     try { referrer = document.referrer ? new URL(document.referrer).origin : null } catch { referrer = null }
 
     return {
-      landingPath: '/demo',
+      landingPath: '/events',
       source: params.utm_source ?? params.ref ?? null,
       medium: params.utm_medium ?? null,
       campaign: params.utm_campaign ?? null,

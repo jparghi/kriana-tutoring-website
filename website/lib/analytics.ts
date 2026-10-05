@@ -1,4 +1,4 @@
-// Allowlisted marketing-attribution query params for the /demo funnel — the
+// Allowlisted marketing-attribution query params for the /events funnel — the
 // only params ever read off a URL, forwarded between pages, or sent to the
 // server. `ref` is used for flyer/QR links; it's folded into `source`
 // client-side (see buildDemoAttribution in the register page) before
@@ -6,7 +6,7 @@
 // `ref` slot.
 export const ALLOWED_ATTRIBUTION_PARAMS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'ref'] as const
 
-// Internal funnel-event dispatcher for the /demo marketing funnel. No GA4,
+// Internal funnel-event dispatcher for the /events marketing funnel. No GA4,
 // Meta Pixel, or GTM script is loaded by this site today — trackEvent()
 // pushes to window.dataLayer only if something else already defines it
 // (currently nothing does, so this is a no-op in production until an
@@ -23,11 +23,11 @@ export type FunnelEvent =
   | 'demo_waitlist_click'
   | 'demo_waitlist_started'
   | 'demo_waitlist_submitted'
-  // Evergreen /demo page (sold-out recap + next-demo waitlist).
+  // Evergreen /events page (sold-out recap + next-demo waitlist).
   | 'demo_waitlist_cta_clicked'
   | 'demo_video_played'
   | 'demo_classes_cta_clicked'
-  // /demo/consent photo & media consent form.
+  // /events/consent photo & media consent form.
   | 'media_consent_submitted'
   | 'media_consent_gallery_clicked'
 

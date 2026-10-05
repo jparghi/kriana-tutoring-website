@@ -53,7 +53,7 @@ function baseRequest(overrides = {}) {
     clientRequestId: 'client-request-id-12345',
     registration: baseRegistration(),
     marketingAttribution: sanitizeAttribution({
-      landingPath: '/demo',
+      landingPath: '/events',
       source: 'facebook',
       medium: 'paid_social',
       campaign: 'demo_sep_2026',
@@ -256,7 +256,7 @@ test('validatePayload rejects an invalid clientRequestId', () => {
 
 test('sanitizeAttribution keeps a valid, complete attribution object', () => {
   const result = sanitizeAttribution({
-    landingPath: '/demo',
+    landingPath: '/events',
     source: 'facebook',
     medium: 'paid_social',
     campaign: 'demo_sep_2026',
@@ -264,7 +264,7 @@ test('sanitizeAttribution keeps a valid, complete attribution object', () => {
     term: null,
     referrer: 'https://www.facebook.com/some/path?query=1',
   })
-  assert.equal(result.landingPath, '/demo')
+  assert.equal(result.landingPath, '/events')
   assert.equal(result.source, 'facebook')
   assert.equal(result.medium, 'paid_social')
   assert.equal(result.campaign, 'demo_sep_2026')
@@ -293,9 +293,10 @@ test('sanitizeAttribution treats a malformed referrer as null, never throws', ()
   assert.equal(result.referrer, null)
 })
 
-test('sanitizeAttribution only sets landingPath to "/demo" when the raw value is exactly that', () => {
+test('sanitizeAttribution only sets landingPath to "/events" for the hub path (or its legacy /demo path)', () => {
   assert.equal(sanitizeAttribution({ landingPath: '/booking/xyz' }).landingPath, null)
-  assert.equal(sanitizeAttribution({ landingPath: '/demo' }).landingPath, '/demo')
+  assert.equal(sanitizeAttribution({ landingPath: '/events' }).landingPath, '/events')
+  assert.equal(sanitizeAttribution({ landingPath: '/demo' }).landingPath, '/events')
 })
 
 test('validatePayload with a garbage marketingAttribution still returns a valid, non-error result', () => {

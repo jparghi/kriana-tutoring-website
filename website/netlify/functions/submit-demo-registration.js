@@ -50,7 +50,7 @@ function normalizeText(value, maxLength) {
   return value.trim().replace(/\s+/g, ' ').slice(0, maxLength)
 }
 
-// ─── Marketing attribution (for the /demo campaign funnel) ────────────────
+// ─── Marketing attribution (for the /events campaign funnel) ────────────────
 //
 // Never trust the shape of the client object — it always comes back with
 // every field present (possibly null), never throws, and a missing/invalid
@@ -66,7 +66,9 @@ export function sanitizeAttribution(raw) {
     return { landingPath: null, source: null, medium: null, campaign: null, content: null, term: null, referrer: null }
   }
 
-  const out = { landingPath: raw.landingPath === '/demo' ? '/demo' : null }
+  // '/demo' is the hub's old path (now redirected to /events); a browser still
+  // holding the pre-rename bundle may send it, so it maps to the new one.
+  const out = { landingPath: raw.landingPath === '/events' || raw.landingPath === '/demo' ? '/events' : null }
   for (const key of ALLOWED_ATTRIBUTION_KEYS) {
     const value = raw[key]
     out[key] = typeof value === 'string' && value.trim() ? normalizeText(value, ATTRIBUTION_FIELD_MAX) : null

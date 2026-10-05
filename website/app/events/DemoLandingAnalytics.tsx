@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { trackEvent } from '../../lib/analytics'
 
 // Fires demo_landing_view once on mount. Server Components can't touch
-// window, so this tiny client component is mounted once from app/demo/page.tsx
+// window, so this tiny client component is mounted once from app/events/page.tsx
 // and receives only non-sensitive campaign identifiers as props.
 export function DemoLandingAnalytics({
   offeringId, source, medium, campaign, content,

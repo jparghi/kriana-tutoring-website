@@ -95,7 +95,7 @@ export const demos: DemoEvent[] = [
       durationLabel: "26 seconds",
     },
     galleryImages: [],
-    registrationUrl: "https://krianatutoring.com/demo",
+    registrationUrl: "https://krianatutoring.com/events",
   },
   {
     id: "2026-10-02-stittsville",
@@ -136,7 +136,7 @@ export const demos: DemoEvent[] = [
       width: 1400,
       height: 1002,
     },
-    registrationUrl: "https://krianatutoring.com/demo",
+    registrationUrl: "https://krianatutoring.com/events",
     programId: "young-engineers-demo-stittsville-oct-2026",
   },
 ];

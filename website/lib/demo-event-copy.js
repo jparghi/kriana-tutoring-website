@@ -1,5 +1,5 @@
 // Customer-facing wording for an event, chosen by its eventType so the same
-// /demo hub, register form and emails can serve demos and workshops without
+// /events hub, register form and emails can serve demos and workshops without
 // hardcoding either word. Plain .js, no imports — shared by the server-rendered
 // page, the client register page and the Netlify email functions.
 //

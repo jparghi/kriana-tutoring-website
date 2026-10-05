@@ -49,7 +49,7 @@ const INTEREST_LINKS = {
   robotics: [
     ['Young Engineers robotics', '/robotics'],
     ['See our gallery', '/gallery'],
-    ['Upcoming demo', '/demo'],
+    ['Upcoming events', '/events'],
   ],
   both: [
     ['Academic tutoring programs', '/tutoring'],

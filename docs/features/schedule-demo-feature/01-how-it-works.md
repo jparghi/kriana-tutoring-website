@@ -106,10 +106,10 @@ a regular enrollment or regular waitlist target.
 
 | File | Role |
 |---|---|
-| `app/demo/page.tsx` | `/demo` page: the $10 booking state, plus the permanent evergreen page (sold-out recap → real demo video → next-demo waitlist → regular classes → FAQ) used for every other state. Lifecycle-aware metadata, `SoldOut`/`InStock` Event JSON-LD, VideoObject JSON-LD. |
-| `app/demo/DemoWaitlistForm.tsx` | Inline next-demo waitlist form + success state. Posts to `submit-demo-waitlist.js` — same endpoint, same `waitlist` doc as the register page's waitlist mode. |
-| `app/demo/DemoHighlightVideo.tsx` | Real Sept 2026 footage: poster + tap-to-play, `preload="none"`, `playsInline`, fires `demo_video_played`. |
-| `app/demo/DemoRegisterCta.tsx` | CTA link used for both "Reserve…" and "Join the Waitlist" (label + analytics event props). |
+| `app/events/page.tsx` | `/demo` page: the $10 booking state, plus the permanent evergreen page (sold-out recap → real demo video → next-demo waitlist → regular classes → FAQ) used for every other state. Lifecycle-aware metadata, `SoldOut`/`InStock` Event JSON-LD, VideoObject JSON-LD. |
+| `app/events/DemoWaitlistForm.tsx` | Inline next-demo waitlist form + success state. Posts to `submit-demo-waitlist.js` — same endpoint, same `waitlist` doc as the register page's waitlist mode. |
+| `app/events/DemoHighlightVideo.tsx` | Real Sept 2026 footage: poster + tap-to-play, `preload="none"`, `playsInline`, fires `demo_video_played`. |
+| `app/events/DemoRegisterCta.tsx` | CTA link used for both "Reserve…" and "Join the Waitlist" (label + analytics event props). |
 | `lib/demo-campaign.server.js` | `resolveDemoCampaignOffering()` → `open` / `full` / `closed` (both with `waitlistOpen`) / `unavailable` / `unconfigured`, plus the `pageState` the page renders (`registration_open` / `sold_out` / `completed` / `waitlist`), overridable with `DEMO_PAGE_STATE`. |
 | `lib/demo-event.js` | `describeDemoEvent(offering)` → date, time range, venue, address, area, ISO dates. Makes the page campaign-agnostic. |
 | `netlify/functions/submit-demo-registration.js` | `assertLiveDemoOffering`, `demoPublicBookingState`, `validateDemoCatalogueRequest`, booking transaction. |

@@ -1,5 +1,5 @@
-// Server-only campaign config for the dedicated /demo marketing funnel
-// (see app/demo/page.tsx). Resolves the ONE program+offering /demo points
+// Server-only campaign config for the dedicated /events marketing funnel
+// (see app/events/page.tsx). Resolves the ONE program+offering /events points
 // at from env vars — never via .find()/first-match against Firestore — and
 // fails closed (an 'unconfigured'/'unavailable' status, never a throw that
 // crashes the page) when the campaign isn't set up or the offering isn't
@@ -12,7 +12,7 @@ import { getAdminDb } from '../netlify/functions/_lib/firebase-admin.js'
 import { assertLiveDemoOffering, demoPublicBookingState } from '../netlify/functions/submit-demo-registration.js'
 import { RequestRejectedError } from '../netlify/functions/submit-enrollment-request.js'
 
-// The four lifecycle states /demo can present, independent of what the
+// The four lifecycle states /events can present, independent of what the
 // offering doc happens to say. Staff normally never set these by hand —
 // they're derived from the live offering (see derivePageState) — but
 // DEMO_PAGE_STATE can pin one when the data and the story differ, e.g.
@@ -49,7 +49,7 @@ export function getDemoCampaignConfig() {
 // Reuses assertLiveDemoOffering + demoPublicBookingState — the same
 // authoritative checks submit-demo-registration.js and
 // submit-demo-waitlist.js run at submission time — as the single source of
-// truth, so /demo can never drift from what those endpoints will accept.
+// truth, so /events can never drift from what those endpoints will accept.
 //
 // Returns one of:
 //   { status: 'open',   programId, offeringId, program, offering }
@@ -62,7 +62,7 @@ export function getDemoCampaignConfig() {
 // including on 'closed', where the waitlist is for the NEXT demo rather
 // than for a seat at this one.
 //
-// Every result also carries `pageState`, the lifecycle state /demo renders
+// Every result also carries `pageState`, the lifecycle state /events renders
 // (see DEMO_PAGE_STATES). It never unlocks anything: booking is gated on
 // status === 'open' and the waitlist on waitlistOpen, both server-enforced
 // again at submission time.

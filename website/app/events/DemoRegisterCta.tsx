@@ -6,8 +6,8 @@ import { trackEvent, type FunnelEvent } from '../../lib/analytics'
 
 // Thin client wrapper around the CTA <Link> — only the click handler needs
 // to run in the browser; everything else about this button is static markup
-// rendered server-side by app/demo/page.tsx. Used for every tracked CTA on
-// /demo: the demo booking link, the "Join the Waitlist" link, the evergreen
+// rendered server-side by app/events/page.tsx. Used for every tracked CTA on
+// /events: the demo booking link, the "Join the Waitlist" link, the evergreen
 // page's in-page waitlist anchor, and the regular-classes link.
 //
 // `content` is an optional non-sensitive placement label ('hero', 'footer',

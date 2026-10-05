@@ -50,7 +50,7 @@ list are in [Steps](#steps) below.
 - [ ] **Netlify (website):** set `DEMO_CAMPAIGN_PROGRAM_ID` /
       `DEMO_CAMPAIGN_OFFERING_ID`, then **redeploy**.
 - [ ] **Campaign content (only if changed):** video, poster, share image,
-      "$10", "ages 6–12", bullets in `app/demo/page.tsx` and
+      "$10", "ages 6–12", bullets in `app/events/page.tsx` and
       `public/videos/demo/`, `public/images/demo/`. Deploy.
 
 ### Before launch
@@ -142,9 +142,9 @@ After a future demo, swap the two files and nothing else:
      website/public/images/demo/demo-sept-2026-highlight-poster.jpg
    ```
 3. If you rename the files, update `HIGHLIGHT_VIDEO_PATH` /
-   `HIGHLIGHT_POSTER_PATH` in `app/demo/page.tsx` (they also feed the
+   `HIGHLIGHT_POSTER_PATH` in `app/events/page.tsx` (they also feed the
    VideoObject schema) and the `src`/`poster` in
-   `app/demo/DemoHighlightVideo.tsx`.
+   `app/events/DemoHighlightVideo.tsx`.
 
 The page loads the video with `preload="none"` behind the poster, so file
 size costs nothing until a parent taps play — but keep it under ~6 MB.
@@ -157,10 +157,10 @@ change.
 | Part | Size | Changes for a new demo? |
 |---|---|---|
 | Booking + waitlist endpoints, emails, confirmation pages, register form, capacity rules, portal Waitlist tab | ~2,000 lines | None. All driven by the offering document. |
-| `/demo` layout, evergreen + sold-out + booking states, date/time/venue/title, metadata, JSON-LD | `app/demo/page.tsx` + `lib/demo-event.js` | None. Read from the offering. |
-| Next-demo waitlist form and success state | `app/demo/DemoWaitlistForm.tsx` | None. Posts to the same endpoint as the register page's waitlist mode. |
-| Campaign content in `app/demo/page.tsx`: ad video `/videos/demo/young-engineers-demo-ad-v3.mp4`, poster `/images/demo/demo-video-poster.jpg`, share image `/images/demo/demo-share.png`, "$10", "ages 6–12", "Young Engineers" heading, bullet list, "Good to know" list | ~18 lines | Only if the new demo differs |
-| Evergreen recap copy in `app/demo/page.tsx` (the "September 12" sentences, experience grid, FAQs) + the highlight video/poster | ~20 lines + 2 files | After each demo, to point at the newest event |
+| `/demo` layout, evergreen + sold-out + booking states, date/time/venue/title, metadata, JSON-LD | `app/events/page.tsx` + `lib/demo-event.js` | None. Read from the offering. |
+| Next-demo waitlist form and success state | `app/events/DemoWaitlistForm.tsx` | None. Posts to the same endpoint as the register page's waitlist mode. |
+| Campaign content in `app/events/page.tsx`: ad video `/videos/demo/young-engineers-demo-ad-v3.mp4`, poster `/images/demo/demo-video-poster.jpg`, share image `/images/demo/demo-share.png`, "$10", "ages 6–12", "Young Engineers" heading, bullet list, "Good to know" list | ~18 lines | Only if the new demo differs |
+| Evergreen recap copy in `app/events/page.tsx` (the "September 12" sentences, experience grid, FAQs) + the highlight video/poster | ~20 lines + 2 files | After each demo, to point at the newest event |
 | `lib/demo-eligibility.js` allowlist | 1 line | Only if a new program ID is used |
 
 Estimated reuse: **98–100%**.
@@ -232,7 +232,7 @@ deploy.
 ### 4. (Optional) Update campaign content
 
 If the video, images, price, ages, or bullets differ, edit the lines listed
-in the reuse table in `app/demo/page.tsx` and the files in
+in the reuse table in `app/events/page.tsx` and the files in
 `website/public/videos/demo/` and `website/public/images/demo/`.
 
 ### 5. Verify

@@ -88,7 +88,7 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Reads the same allowlisted params /demo appended to this page's CTA
+  // Reads the same allowlisted params /events appended to this page's CTA
   // link, plus the browser referrer's origin (never a full URL — no path or
   // query string). Missing/invalid attribution never blocks registration:
   // if nothing is present, every field below is simply null and the server
@@ -104,7 +104,7 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
 
     const hasAnyParam = Object.keys(params).length > 0
     return {
-      landingPath: hasAnyParam ? '/demo' : null,
+      landingPath: hasAnyParam ? '/events' : null,
       source: params.utm_source ?? params.ref ?? null,
       medium: params.utm_medium ?? null,
       campaign: params.utm_campaign ?? null,
