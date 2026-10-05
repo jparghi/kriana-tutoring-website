@@ -242,12 +242,12 @@ export default async function DemoPage({
           partial={partialCopy}
           secondary={futureList("hero_future_list")}
         />
+        <PastDemoGallery past={past} />
         {latestPast && <PreviousDemoProof demo={latestPast} offeringId={campaignOfferingId} next={active} />}
         <WhatChildrenDo />
         <WhatChildrenLearn />
         <ProgramsSection offeringId={campaignOfferingId} />
         <DemoJourney demos={demos} activeId={active?.id ?? null} activeStatus={status} cta={journeyCta} offeringId={campaignOfferingId} />
-        <PastDemoGallery past={past} />
         <ParentReviews reviews={demoReviews} />
         <ReserveSection demo={active} status={status} actions={picker("reserve-session", "reserve_section")} sectionId={RESERVE_SECTION_ID}>
           {showWaitlistForm ? (

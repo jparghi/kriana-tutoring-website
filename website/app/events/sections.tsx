@@ -544,7 +544,7 @@ export function ParentReviews({ reviews }: { reviews: DemoReview[] }) {
   if (!reviews.length) return null
   const shown = reviews.slice(0, 3)
   return (
-    <section className="px-5 py-12 sm:px-8" aria-labelledby="reviews-heading">
+    <section className="bg-slate-50 px-5 py-12 sm:px-8" aria-labelledby="reviews-heading">
       <div className="mx-auto max-w-4xl">
         <SectionHeading id="reviews-heading" title="What Parents Are Saying" />
         <ul className={`mx-auto mt-8 grid gap-4 ${shown.length === 1 ? "max-w-xl" : shown.length === 2 ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
