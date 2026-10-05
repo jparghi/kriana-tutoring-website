@@ -9,6 +9,7 @@ import { usePathname } from "next/navigation";
 const navItems = [
   { label: "Tutoring", href: "/tutoring" },
   { label: "Robotics & Coding", href: "/robotics" },
+  { label: "Events", href: "/events" },
   {
     label: "Resources",
     children: [
