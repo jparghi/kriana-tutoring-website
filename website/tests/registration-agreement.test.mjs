@@ -41,7 +41,7 @@ test('accepting records who, when, which terms version — once', async () => {
   assert.ok(store.data.agreementAcceptedAt)
   assert.equal(store.data.registrationStatus, 'Pending Payment')
   assert.deepEqual(view.etransfer, {
-    sendTo: 'info@krianatutoring.com', payInFullCents: 101700, planPaymentCents: 25425, message: 'Bricks Challenge - YE-2026-0026',
+    sendTo: 'info@krianatutoring.com', payInFullCents: 101700, planPaymentCents: 25425, message: 'Vihaan — YE-2026-0026',
   })
 
   const again = await acceptAgreement(db, { registrationId: 'reg1', token: TOKEN, fullName: 'Someone Else' })

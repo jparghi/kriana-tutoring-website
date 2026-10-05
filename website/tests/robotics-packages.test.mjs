@@ -45,13 +45,13 @@ test('exact default-catalogue values match the spec', () => {
     [
       ['regular', 10, 3200, 32000, null, null],
       ['explorer', 10, 3000, 30000, null, null],
-      ['builder', 20, 2800, 56000, null, 'Most Popular'],
-      ['engineer', 36, 2500, 90000, null, 'Best Value'],
+      ['builder', 20, 3000, 60000, null, 'Most Popular'],
+      ['engineer', 36, 2700, 97200, null, 'Best Value'],
     ]
   )
 })
 
-test('Smartivo catalogue matches the 60-minute rate card ($30 Regular / $26 Builder / $24 Engineer)', () => {
+test('Smartivo catalogue matches the 60-minute rate card ($28 Builder / $25 Engineer; legacy Regular $30)', () => {
   const smartivoRegular = getRoboticsPackage(SMARTIVO_PROGRAM_ID, 'regular')
   assert.equal(smartivoRegular.perClassCents, 3000)
   assert.equal(smartivoRegular.classCount, 10)
@@ -62,8 +62,8 @@ test('Smartivo catalogue matches the 60-minute rate card ($30 Regular / $26 Buil
       return [p.id, p.classCount, p.perClassCents, p.regularSubtotalCents, p.promotionalPayInFullSubtotalCents, p.badge]
     }),
     [
-      ['builder', 20, 2600, 52000, null, 'Most Popular'],
-      ['engineer', 36, 2400, 86400, null, 'Best Value'],
+      ['builder', 20, 2800, 56000, null, 'Most Popular'],
+      ['engineer', 36, 2500, 90000, null, 'Best Value'],
     ]
   )
 })
@@ -84,19 +84,42 @@ test('Builder and Engineer are billed monthly only — no installment plan exist
   }
 })
 
-test('Regular is a public 10-class learning path, payable in full or monthly, never promotion-eligible', () => {
+test('Regular is a legacy 10-class package: still resolvable, never public, never newly selectable', () => {
   const regular = getRoboticsPackage(undefined, 'regular')
   assert.deepEqual(regular.paymentOptions, { payInFullEnabled: true, recurringMonthlyEnabled: true })
   assert.equal(regular.planType, 'fixed_learning_path')
   assert.equal(regular.classCount, 10)
   assert.equal(regular.minimumClassCommitment, 10)
   assert.equal(regular.promotionEligible, false)
-  assert.equal(regular.publicVisible, true)
+  assert.equal(regular.publicVisible, false)
+  assert.equal(regular.availableForNewRegistration, false)
+  assert.equal(isValidPackageId(undefined, 'regular'), false)
+  assert.equal(isValidPackageId(SMARTIVO_PROGRAM_ID, 'regular'), false)
 })
 
-// Regular is the undiscounted rate every other package's savings are quoted
-// against, so it must always be the most expensive per class.
-test('Regular carries the rate card standard per-class rate in both catalogues', () => {
+test('only Builder (2 payments) and Engineer (4 payments) are offered to new registrations', () => {
+  const expected = {
+    [SMARTIVO_PROGRAM_ID]: [['builder', 20, 2800, 56000, 2, 28000], ['engineer', 36, 2500, 90000, 4, 22500]],
+    'bricks-challenge': [['builder', 20, 3000, 60000, 2, 30000], ['engineer', 36, 2700, 97200, 4, 24300]],
+    'algo-play': [['builder', 20, 3000, 60000, 2, 30000], ['engineer', 36, 2700, 97200, 4, 24300]],
+  }
+  for (const [programId, rows] of Object.entries(expected)) {
+    assert.deepEqual(
+      getPubliclyVisiblePackages(programId).map(p => [
+        p.id, p.classCount, p.perClassCents, p.regularSubtotalCents, p.paymentPlanInstallments,
+        p.regularSubtotalCents / p.paymentPlanInstallments,
+      ]),
+      rows,
+      programId,
+    )
+    for (const id of ['regular', 'explorer']) assert.equal(isValidPackageId(programId, id), false, `${programId} ${id}`)
+    for (const id of ['builder', 'engineer']) assert.equal(isValidPackageId(programId, id), true, `${programId} ${id}`)
+  }
+})
+
+// Legacy Regular keeps the rate it was sold at, so a historical package id
+// still resolves to the same numbers.
+test('legacy Regular keeps its frozen per-class rate in both catalogues', () => {
   for (const [programId, expected] of [[undefined, 3200], [SMARTIVO_PROGRAM_ID, 3000]]) {
     const regular = getRoboticsPackage(programId, 'regular')
     assert.equal(regular.perClassCents, expected)
@@ -122,9 +145,9 @@ test('Explorer stays pay-in-full only, private, and promotion-ineligible unless 
   assert.equal(pricing.payableSubtotalCents, explorer.regularSubtotalCents)
 })
 
-test('Explorer is enabled system-wide but excluded from the public package grid', () => {
-  assert.equal(isValidPackageId(undefined, 'explorer'), true)
-  assert.ok(getRoboticsPackage(undefined, 'explorer'), 'Explorer must still resolve by id for direct/shared links, registration, and checkout')
+test('Explorer is a legacy 10-class package: resolvable for old registrations, never newly selectable', () => {
+  assert.equal(isValidPackageId(undefined, 'explorer'), false)
+  assert.ok(getRoboticsPackage(undefined, 'explorer'), 'Explorer must still resolve by id for existing registrations')
   assert.equal(
     getPubliclyVisiblePackages(undefined).some(p => p.id === 'explorer'),
     false,
@@ -132,13 +155,13 @@ test('Explorer is enabled system-wide but excluded from the public package grid'
   )
   assert.deepEqual(
     getPubliclyVisiblePackages(undefined).map(p => p.id),
-    ['regular', 'builder', 'engineer'],
+    ['builder', 'engineer'],
   )
 })
 
-test('isValidPackageId only accepts known ids', () => {
-  assert.equal(isValidPackageId(undefined, 'regular'), true)
-  assert.equal(isValidPackageId(undefined, 'explorer'), true)
+test('isValidPackageId only accepts packages offered to new registrations', () => {
+  assert.equal(isValidPackageId(undefined, 'regular'), false)
+  assert.equal(isValidPackageId(undefined, 'explorer'), false)
   assert.equal(isValidPackageId(undefined, 'builder'), true)
   assert.equal(isValidPackageId(undefined, 'engineer'), true)
   assert.equal(isValidPackageId(undefined, 'bogus'), false)
@@ -197,10 +220,10 @@ test('no package is promotion-eligible, so no pricing can ever report a promotio
 // --- resolvePackagePricing: the core business rules ---
 // 1. No promotion exists, so pay-in-full is always the package's regular price.
 // 2. Recurring monthly is priced at the package's own per-class rate
-//    (Regular $32/Builder $28/Engineer $25) across the whole learning path.
+//    (Builder $30/Engineer $27; legacy Regular $32) across the whole path.
 
-test('Pay in full is the regular price for every public package — no promotion is applied', () => {
-  for (const [id, expectedTotal] of [['regular', 32000], ['builder', 56000], ['engineer', 90000]]) {
+test('Pay in full is the regular price for every package — no promotion is applied', () => {
+  for (const [id, expectedTotal] of [['regular', 32000], ['builder', 60000], ['engineer', 97200]]) {
     const pricing = resolvePackagePricing(getRoboticsPackage(undefined, id), 'pay_in_full')
     assert.equal(pricing.payableSubtotalCents, expectedTotal, `${id} pay-in-full total`)
     assert.equal(pricing.regularSubtotalCents, expectedTotal)
@@ -209,8 +232,8 @@ test('Pay in full is the regular price for every public package — no promotion
   }
 })
 
-test('recurring_monthly totals $320/$560/$900 — the package own per-class rate across the whole path', () => {
-  for (const [id, expectedTotal] of [['regular', 32000], ['builder', 56000], ['engineer', 90000]]) {
+test('recurring_monthly totals $320/$600/$972 — the package own per-class rate across the whole path', () => {
+  for (const [id, expectedTotal] of [['regular', 32000], ['builder', 60000], ['engineer', 97200]]) {
     const pricing = resolvePackagePricing(getRoboticsPackage(undefined, id), 'recurring_monthly')
     assert.equal(pricing.payableSubtotalCents, expectedTotal, `${id} recurring total`)
     assert.equal(pricing.regularSubtotalCents, expectedTotal)
@@ -307,8 +330,8 @@ test('buildPackageSnapshot produces an immutable, v6 snapshot with explicit regu
     id: 'builder',
     name: 'Builder',
     classCount: 20,
-    perClassCents: 2800,
-    regularSubtotalCents: 56000,
+    perClassCents: 3000,
+    regularSubtotalCents: 60000,
     promotionalPayInFullSubtotalCents: null,
     currency: 'CAD',
     paymentOptions: { payInFullEnabled: true, recurringMonthlyEnabled: true },
@@ -386,11 +409,11 @@ test('buildPaymentPreferenceSnapshot: pay-in-full normalizes to installmentCount
   assert.equal(snapshot.method, 'pay_in_full')
   assert.equal(snapshot.installmentCount, 1)
   assert.equal(snapshot.currency, 'CAD')
-  assert.equal(snapshot.regularSubtotalCents, 56000)
-  assert.equal(snapshot.payableSubtotalCents, 56000)
+  assert.equal(snapshot.regularSubtotalCents, 60000)
+  assert.equal(snapshot.payableSubtotalCents, 60000)
   assert.equal(snapshot.promotionApplied, false)
   assert.equal(snapshot.promotionDiscountCents, 0)
-  assert.deepEqual(snapshot.installmentAmountsCents, [56000])
+  assert.deepEqual(snapshot.installmentAmountsCents, [60000])
 })
 
 test('buildPaymentPreferenceSnapshot never builds an installments snapshot, for any package or count', () => {
@@ -438,19 +461,19 @@ test('buildPaymentPreferenceSnapshot ignores any client-supplied financial field
     promotionDiscountCents: 999999,
     installmentAmountsCents: [1, 1, 1],
   })
-  assert.equal(snapshot.payableSubtotalCents, PACKAGE_PROMO.active ? 53200 : 56000)
-  assert.equal(snapshot.regularSubtotalCents, 56000)
+  assert.equal(snapshot.payableSubtotalCents, 60000)
+  assert.equal(snapshot.regularSubtotalCents, 60000)
 
   const monthlySnapshot = buildPaymentPreferenceSnapshot(undefined, 'builder', {
     method: 'recurring_monthly',
     payableSubtotalCents: 1,
     monthlyAmountsCents: [1, 1],
   }, { billingMonthCount: 5 })
-  assert.equal(monthlySnapshot.payableSubtotalCents, 56000)
-  assert.deepEqual(monthlySnapshot.monthlyAmountsCents, [11200, 11200, 11200, 11200, 11200])
+  assert.equal(monthlySnapshot.payableSubtotalCents, 60000)
+  assert.deepEqual(monthlySnapshot.monthlyAmountsCents, [12000, 12000, 12000, 12000, 12000])
 })
 
-test('buildPaymentPreferenceSnapshot: recurring_monthly for Builder/Engineer averages the $560/$900 total across a server-supplied billingMonthCount', () => {
+test('buildPaymentPreferenceSnapshot: recurring_monthly for Builder/Engineer averages the $600/$972 total across a server-supplied billingMonthCount', () => {
   const builderSnapshot = buildPaymentPreferenceSnapshot(
     undefined, 'builder', { method: 'recurring_monthly' }, { billingMonthCount: 6 }
   )
@@ -458,17 +481,17 @@ test('buildPaymentPreferenceSnapshot: recurring_monthly for Builder/Engineer ave
   assert.equal(builderSnapshot.method, 'recurring_monthly')
   assert.equal(builderSnapshot.billingMonthCount, 6)
   assert.equal(builderSnapshot.variesByMonth, false)
-  assert.equal(builderSnapshot.payableSubtotalCents, 56000)
+  assert.equal(builderSnapshot.payableSubtotalCents, 60000)
   assert.equal(builderSnapshot.promotionApplied, false)
-  assert.deepEqual(builderSnapshot.monthlyAmountsCents, [9333, 9333, 9333, 9333, 9333, 9335])
-  assert.equal(builderSnapshot.monthlyAmountsCents.reduce((a, b) => a + b, 0), 56000)
+  assert.deepEqual(builderSnapshot.monthlyAmountsCents, [10000, 10000, 10000, 10000, 10000, 10000])
+  assert.equal(builderSnapshot.monthlyAmountsCents.reduce((a, b) => a + b, 0), 60000)
 
   const engineerSnapshot = buildPaymentPreferenceSnapshot(
     undefined, 'engineer', { method: 'recurring_monthly' }, { billingMonthCount: 9 }
   )
-  assert.equal(engineerSnapshot.payableSubtotalCents, 90000)
+  assert.equal(engineerSnapshot.payableSubtotalCents, 97200)
   assert.equal(engineerSnapshot.monthlyAmountsCents.length, 9)
-  assert.equal(engineerSnapshot.monthlyAmountsCents.reduce((a, b) => a + b, 0), 90000)
+  assert.equal(engineerSnapshot.monthlyAmountsCents.reduce((a, b) => a + b, 0), 97200)
 })
 
 test('buildPaymentPreferenceSnapshot: recurring_monthly for Builder/Engineer requires a valid billingMonthCount in context', () => {
@@ -520,6 +543,6 @@ test('the Smartivo licensed slug resolves the same 60-minute rate card as its Fi
   // 75-minute rate card.
   for (const slug of ['bricks-challenge', 'algo-play', undefined]) {
     assert.equal(getRoboticsPackage(slug, 'regular').perClassCents, 3200)
-    assert.equal(getRoboticsPackage(slug, 'engineer').perClassCents, 2500)
+    assert.equal(getRoboticsPackage(slug, 'engineer').perClassCents, 2700)
   }
 })

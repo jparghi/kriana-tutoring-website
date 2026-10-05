@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 const PRICED_PROGRAM_IDS = ["smartivo", "bricks-challenge", "algo-play"]
 const ETRANSFER_EMAIL = process.env.NEXT_PUBLIC_ETRANSFER_EMAIL || "info@krianatutoring.com"
 
-type Pkg = { id: string; name: string; classCount: number; perClassCents: number; regularSubtotalCents: number; paymentPlanInstallments: number | null }
+type Pkg = { id: string; name: string; classCount: number; perClassCents: number; regularSubtotalCents: number; paymentPlanInstallments: number }
 
 function dollars(cents: number) {
   return `$${(cents / 100).toLocaleString("en-CA", { maximumFractionDigits: 2 })}`
@@ -47,7 +47,6 @@ export default function RoboticsTermsPage() {
   const tiers = programs[0].packages
   const builder = tiers.find((p) => p.id === "builder")!
   const engineer = tiers.find((p) => p.id === "engineer")!
-  const regular = tiers.find((p) => p.id === "regular")!
 
   return (
     <>
@@ -72,19 +71,22 @@ export default function RoboticsTermsPage() {
             <div className="mt-5 rounded-2xl border border-[#CFE3E3] bg-[#F1F8F8] px-5 py-4 text-[15px] leading-relaxed text-slate-700">
               <p className="font-bold text-[#0A2D5A]">In short</p>
               <ul className="mt-1.5 list-disc space-y-1 pl-5">
-                <li>Builder ({builder.classCount} classes) and Engineer ({engineer.classCount} classes) are full learning-path commitments. Their lower per-class rate comes from that commitment.</li>
-                <li>The easy payment plan is only a payment schedule for that one package — it is not a month-to-month program.</li>
-                <li>Your registration is confirmed once the agreement is accepted (Builder and Engineer) and your first payment is received.</li>
-                <li>If you withdraw early, classes already held are charged at the Regular rate and the rest of what you paid is refunded.</li>
+                <li>Builder is a {builder.classCount}-class commitment and Engineer a {engineer.classCount}-class commitment. Their per-class rate comes from that commitment.</li>
+                <li>
+                  Pay in full, or in monthly installments — {builder.paymentPlanInstallments} for Builder, {engineer.paymentPlanInstallments} for
+                  Engineer. Installments are only a payment schedule for the program total, not a month-to-month program.
+                </li>
+                <li>Your registration is confirmed once the agreement is accepted and your first payment is received.</li>
+                <li>If a learning path is cancelled early, classes already attended may be recalculated at the applicable current program rate.</li>
               </ul>
             </div>
 
             <div className="mt-8 space-y-7">
               <Section n={1} title="Learning paths">
                 <p>
-                  Each learning path is one class package: Regular ({regular.classCount} classes), Builder ({builder.classCount} classes) or
-                  Engineer ({engineer.classCount} classes). Builder and Engineer are offered at a lower per-class rate because your family commits
-                  to the complete learning path.
+                  Each learning path is one class package: Builder ({builder.classCount}-class commitment) or Engineer
+                  ({engineer.classCount}-class commitment). Each is offered at its per-class rate because your family commits to the
+                  complete learning path.
                 </p>
                 <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
                   <table className="w-full min-w-[520px] text-left text-sm">
@@ -106,10 +108,8 @@ export default function RoboticsTermsPage() {
                             <td key={p.id} className="px-4 py-2.5 text-slate-700">
                               {dollars(p.perClassCents)}/class
                               <span className="block text-xs text-slate-500">
-                                {dollars(p.regularSubtotalCents)} + tax
-                                {p.paymentPlanInstallments
-                                  ? ` · or ${p.paymentPlanInstallments} × ${dollars(p.regularSubtotalCents / p.paymentPlanInstallments)} + tax`
-                                  : " · paid upfront"}
+                                {dollars(p.regularSubtotalCents)} + tax · or {p.paymentPlanInstallments} monthly ×{" "}
+                                {dollars(p.regularSubtotalCents / p.paymentPlanInstallments)} + tax
                               </span>
                             </td>
                           ))}
@@ -123,40 +123,44 @@ export default function RoboticsTermsPage() {
 
               <Section n={2} title="Registration and confirmation">
                 <p>
-                  After you register, we email your registration details and payment instructions. For Builder and Engineer, a parent or guardian
-                  also accepts the learning-path agreement online. Your child&apos;s registration is confirmed once the agreement has been accepted
-                  (where required) and your first payment has been received. Class dates and schedule details are sent separately.
+                  After you register, we email your registration details and payment instructions, and a parent or guardian accepts the
+                  learning-path agreement online. Your child&apos;s registration is confirmed once the agreement has been accepted and your first
+                  payment has been received. Class dates and schedule details are sent separately.
                 </p>
               </Section>
 
               <Section n={3} title="Payment">
                 <p>
-                  Payment is by Interac e-Transfer to <strong>{ETRANSFER_EMAIL}</strong>. Please include the message shown in your registration
-                  email (the program and your registration reference) so we can match your payment.
+                  Payment is by Interac e-Transfer to <strong>{ETRANSFER_EMAIL}</strong>. Please include your child&apos;s name and your
+                  registration reference in the e-Transfer message (for example, &ldquo;Vihaan — YE-2026-0026&rdquo;) so we can match your
+                  payment.
                 </p>
                 <ul className="list-disc space-y-1.5 pl-5">
                   <li>
-                    <strong>Regular</strong> is paid in full before the first class.
+                    <strong>Builder</strong> ({builder.classCount}-class commitment): pay in full, or in {builder.paymentPlanInstallments} monthly
+                    installments.
                   </li>
                   <li>
-                    <strong>Builder and Engineer</strong> can be paid in full, or through the easy payment plan: {builder.paymentPlanInstallments}{" "}
-                    equal payments for Builder or {engineer.paymentPlanInstallments} for Engineer, at the same package rate, with no additional
-                    payment-plan fee from Kriana Tutoring. The first payment is due before the first class; we will send you the due dates for the
-                    remaining payments.
+                    <strong>Engineer</strong> ({engineer.classCount}-class commitment): pay in full, or in {engineer.paymentPlanInstallments}{" "}
+                    monthly installments.
                   </li>
                   <li>
-                    If a scheduled payment is more than 7 days late, we may pause your child&apos;s attendance until the account is up to date.
-                    Classes missed during a pause are not made up.
+                    Installments are equal payments at the same package rate, with no additional fee from Kriana Tutoring. The first installment is
+                    due before your registration is confirmed, and the remaining installments are due monthly — we will send you the dates.
+                  </li>
+                  <li>
+                    If an installment becomes overdue, future classes may be paused until the account is brought up to date. Classes missed during
+                    a pause are not made up.
                   </li>
                 </ul>
                 <p>We never ask for credit card or banking details by email or on our website.</p>
               </Section>
 
-              <Section n={4} title="The payment plan is not month-to-month">
+              <Section n={4} title="Installments are not month-to-month">
                 <p>
-                  The easy payment plan spreads the cost of one Builder or Engineer package over a few scheduled payments. It does not make the
-                  program month-to-month, and stopping payments does not end the commitment — to leave the program, please withdraw as described
-                  in section 7.
+                  The installment plan is provided as a convenient way to pay the full program fee and does not convert the program into a
+                  month-to-month service. Stopping payments does not end the commitment — to leave the program, please withdraw as described in
+                  section 7.
                 </p>
               </Section>
 
@@ -184,15 +188,10 @@ export default function RoboticsTermsPage() {
                     <strong>Before the first class:</strong> everything you have paid is refunded.
                   </li>
                   <li>
-                    <strong>After classes have started:</strong> because the Builder and Engineer rates depend on completing the learning path,
-                    the classes already held are recalculated at the Regular rate for that program ({programs
-                      .map(({ title, packages }) => `${title} ${dollars(packages.find((p) => p.id === "regular")!.perClassCents)}`)
-                      .join(", ")}{" "}
-                    per class, plus HST). We refund anything you have paid above that amount. If you are on the payment plan and have paid less
-                    than that amount, the difference is due.
-                  </li>
-                  <li>
-                    <strong>Regular:</strong> classes already held are charged at the Regular rate and the remaining classes are refunded.
+                    <strong>After classes have started:</strong> if a discounted Builder or Engineer Learning Path is cancelled before
+                    completion, classes already attended may be recalculated using the applicable current program rate or another reasonable rate
+                    defined by Kriana Tutoring / Young Engineers. Any resulting balance may become payable. We refund anything you have paid above
+                    the recalculated amount.
                   </li>
                 </ul>
                 <p>Refunds are sent by Interac e-Transfer within 14 days of your withdrawal.</p>

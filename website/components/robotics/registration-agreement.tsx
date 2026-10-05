@@ -199,14 +199,14 @@ function AcceptedPanel({ view }: { view: View }) {
             </div>
             {etransfer.planPaymentCents && (
               <div className="flex flex-wrap gap-x-2">
-                <dt className="text-slate-500">Payment plan</dt>
+                <dt className="text-slate-500">{view.installments} monthly payments</dt>
                 <dd className="font-semibold text-slate-800">
-                  {money(etransfer.planPaymentCents)} incl. HST — first of {view.installments} payments
+                  {money(etransfer.planPaymentCents)} incl. HST each — send the first now
                 </dd>
               </div>
             )}
             <div className="flex flex-wrap gap-x-2">
-              <dt className="text-slate-500">Message / Note</dt>
+              <dt className="text-slate-500">e-Transfer message</dt>
               <dd className="font-semibold text-slate-800">{etransfer.message}</dd>
             </div>
           </dl>

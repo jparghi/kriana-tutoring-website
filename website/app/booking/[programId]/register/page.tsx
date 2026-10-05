@@ -533,9 +533,12 @@ function RegisterForm() {
   // that isn't a free waitlist join — waitlist requests never show or collect
   // a payment preference.
   const hasPaymentStep = Boolean(selectedPackage) && !useWaitlist
-  // Regular, Builder and Engineer are billed monthly only — there is no
-  // payment choice for a family to make. Explorer (legacy/internal, never
-  // publicly listed) is the only package that still uses pay-in-full.
+  // DORMANT for robotics: PUBLIC_SCHEDULE_REQUESTS_ENABLED is false, so
+  // families register through staff (portal Manual Registration), which uses
+  // the current Builder 2 / Engineer 4 monthly-payment model by e-Transfer.
+  // This older self-serve path averages the package across the offering's
+  // billing months; rework it before re-enabling. Only Builder and Engineer
+  // pass isValidPackageId, so the legacy 10-class packages can't reach here.
   const isMonthlyOnlyPackage = Boolean(selectedPackage?.paymentOptions?.recurringMonthlyEnabled)
   const effectiveMethod = isMonthlyOnlyPackage ? 'recurring_monthly' : paymentPreference.method
   const payInFullPricing = selectedPackage && !isMonthlyOnlyPackage ? resolvePackagePricing(selectedPackage, 'pay_in_full') : null

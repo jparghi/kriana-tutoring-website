@@ -55,7 +55,6 @@ const PACKAGE_LOGOS: Record<string, string> = {
 // lib/robotics-packages.js since it's presentation copy, not pricing/business
 // data.
 const PACKAGE_DESCRIPTORS: Record<string, string[]> = {
-  regular: ['Shortest commitment', 'Standard per-class rate', 'Best for trying a program'],
   builder: ['Structured progression', 'Best starting point for most families'],
   engineer: ['Longer learning journey', 'Greater continuity and progression'],
 }
@@ -69,12 +68,12 @@ function PackageOverview({ programId }: { programId: string }) {
       <div className="relative">
         <h2 className="text-xl font-black text-slate-800 sm:text-2xl">Learning Paths &amp; Pricing</h2>
         <p className="mt-1.5 max-w-2xl text-sm text-slate-500">
-          Every path is a complete class package — the longer the path, the lower the per-class rate. Builder and
-          Engineer can be paid in full or through an easy payment plan at the same package rate.
+          Each path is a complete class package — the longer the path, the lower the per-class rate. Pay in full or
+          in monthly payments at the same package rate.
         </p>
       </div>
 
-      <div className="relative mt-6 grid gap-5 sm:grid-cols-3">
+      <div className="relative mx-auto mt-6 grid max-w-3xl gap-5 sm:grid-cols-2">
         {(() => {
           const packages = getPubliclyVisiblePackages(programId)
 
@@ -138,16 +137,12 @@ function PackageOverview({ programId }: { programId: string }) {
                 </div>
                 <p className="mt-0.5 text-xs font-bold text-slate-600">{pkg.classCount} classes</p>
                 <p className="mt-1 text-sm font-bold text-slate-800">
-                  ${(pkg.regularSubtotalCents / 100).toFixed(0)} + tax total
+                  ${(pkg.regularSubtotalCents / 100).toFixed(0)} total
                 </p>
                 <p className="mt-2 rounded-lg bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-600">
-                  {installments
-                    ? `or ${installments} easy payments of $${(pkg.regularSubtotalCents / installments / 100).toFixed(0)} + tax`
-                    : 'Paid upfront'}
+                  Pay in full or {installments} monthly payments of ${(pkg.regularSubtotalCents / installments / 100).toFixed(0)} + tax
                 </p>
-                {isFeatured && (
-                  <p className="mt-1 text-xs font-semibold text-[#0083CB]">Lowest per-class rate</p>
-                )}
+                <p className="mt-1 text-xs font-semibold text-slate-500">{pkg.classCount}-class learning commitment</p>
               </div>
             )
           })
@@ -157,10 +152,9 @@ function PackageOverview({ programId }: { programId: string }) {
       <div className="relative mt-8 rounded-2xl border border-slate-100 bg-slate-50/80 p-5">
         <p className="text-sm font-bold text-slate-700">How payment works</p>
         <p className="mt-1.5 text-sm text-slate-500">
-          The lower Builder and Engineer rates come from committing to the full learning path. You can pay that
-          package in full, or through an easy payment plan — 2 scheduled payments for Builder, 4 for Engineer — with
-          no additional payment-plan fee from Kriana Tutoring. Regular is paid upfront. Payment is by Interac
-          e-Transfer.
+          Builder is a 20-class learning commitment and Engineer a 36-class one. Pay the program total in full, or
+          in monthly payments — 2 for Builder, 4 for Engineer — at the same package rate. Monthly payments are only a
+          payment schedule; they don&apos;t make the program month-to-month. Payment is by Interac e-Transfer.
         </p>
       </div>
 

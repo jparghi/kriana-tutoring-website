@@ -189,7 +189,7 @@ test('validatePayload requires a payment preference for a robotics enrollment re
 
 test('validatePayload accepts pay_in_full, ignoring any leftover client-supplied count', () => {
   const result = validatePayload(baseRequest({
-    packageId: 'explorer',
+    packageId: 'builder',
     paymentPreference: { method: 'pay_in_full', installmentCount: 4 },
   }))
   assert.equal(result.error, undefined)
@@ -200,7 +200,7 @@ test('validatePayload accepts pay_in_full, ignoring any leftover client-supplied
 // recognized method for any package, and a stale client sending it must be
 // rejected rather than silently priced as something else.
 test('validatePayload rejects the removed installments method for every package', () => {
-  for (const packageId of ['builder', 'engineer', 'explorer', 'regular']) {
+  for (const packageId of ['builder', 'engineer']) {
     const result = validatePayload(baseRequest({
       packageId,
       paymentPreference: { method: 'installments', installmentCount: 3 },
@@ -252,8 +252,8 @@ test('validatePayload rejects a payment preference when no package is selected',
 
 // --- recurring_monthly (Regular's rolling billing + Builder/Engineer's averaged tuition) ---
 
-test('validatePayload accepts recurring_monthly for Builder, Engineer, and Regular, dropping any client-supplied count', () => {
-  for (const packageId of ['builder', 'engineer', 'regular']) {
+test('validatePayload accepts recurring_monthly for Builder and Engineer, dropping any client-supplied count', () => {
+  for (const packageId of ['builder', 'engineer']) {
     const result = validatePayload(baseRequest({
       packageId,
       paymentPreference: { method: 'recurring_monthly', billingMonthCount: 999, classesInMonth: 999 },
@@ -263,32 +263,33 @@ test('validatePayload accepts recurring_monthly for Builder, Engineer, and Regul
   }
 })
 
-test('validatePayload rejects recurring_monthly for Explorer (pay-in-full only, no monthly option)', () => {
-  const result = validatePayload(baseRequest({
-    packageId: 'explorer',
-    paymentPreference: { method: 'recurring_monthly' },
-  }))
-  assert.equal(result.error, 'Monthly billing is not available for the selected package.')
+// The 10-class packages are legacy: existing registrations keep them, but a
+// new request for one is refused.
+test('validatePayload refuses the legacy 10-class Regular and Explorer packages', () => {
+  for (const packageId of ['regular', 'explorer']) {
+    for (const method of ['pay_in_full', 'recurring_monthly']) {
+      const result = validatePayload(baseRequest({ packageId, paymentPreference: { method } }))
+      assert.equal(result.error, 'Selected class package is not recognized.', `${packageId} ${method}`)
+    }
+  }
 })
 
-test('validateCatalogueRequest holds Regular to its 10-class count like any other learning path', () => {
-  // Regular is no longer exempt: it is a fixed 10-class package, so an
-  // offering with fewer remaining classes must be rejected.
+test('validateCatalogueRequest holds Builder to its 20-class count', () => {
   assert.throws(
     () => validateCatalogueRequest(
-      baseRequest({ packageId: 'regular' }),
+      baseRequest({ packageId: 'builder' }),
       doc(roboticsProgram()),
-      doc(openOffering({ classCount: 9 })),
+      doc(openOffering({ classCount: 19 })),
     ),
     /does not have enough classes remaining/,
   )
 
   const { session } = validateCatalogueRequest(
-    baseRequest({ packageId: 'regular' }),
+    baseRequest({ packageId: 'builder' }),
     doc(roboticsProgram()),
-    doc(openOffering({ classCount: 10 })),
+    doc(openOffering({ classCount: 20 })),
   )
-  assert.equal(session.classCount, 10)
+  assert.equal(session.classCount, 20)
 })
 
 test('buildRecurringMonthlyContext for Builder/Engineer returns a real billingMonthCount from the offering schedule', () => {

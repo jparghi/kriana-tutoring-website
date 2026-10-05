@@ -73,8 +73,8 @@ function etransferHtml(view) {
       <table style="width:100%;border-collapse:collapse">
         ${row('Send to', escapeHtml(e.sendTo))}
         ${row(e.planPaymentCents ? 'Pay in full' : 'Amount', `${money(e.payInFullCents)} <span style="font-weight:400;color:#64748b">incl. HST</span>`)}
-        ${e.planPaymentCents ? row('Payment plan', `${money(e.planPaymentCents)} <span style="font-weight:400;color:#64748b">incl. HST — first of ${view.installments} payments</span>`) : ''}
-        ${row('Message / Note', escapeHtml(e.message))}
+        ${e.planPaymentCents ? row(`${view.installments} monthly payments`, `${money(e.planPaymentCents)} <span style="font-weight:400;color:#64748b">incl. HST each — send the first now</span>`) : ''}
+        ${row('e-Transfer message', escapeHtml(e.message))}
       </table>
       <p style="margin:10px 0 0;color:#64748b;font-size:12px">Your registration is confirmed once your first payment is received.</p>
     </div>`

@@ -16,11 +16,12 @@
 // `paymentOptions`; it is never inferred from class count or price.
 //
 // There is no installment *rate*: a payment plan never changes the price.
-// Builder and Engineer may be paid in full or through an easy payment plan of
-// `paymentPlanInstallments` scheduled payments (2 and 4) at the same package
-// rate — one 20- or 36-class commitment paid in instalments, never separate
-// purchasable packages. Regular (10 classes) is paid upfront. Payments are
-// made by Interac e-Transfer after staff register the family;
+// Builder and Engineer — the only packages offered to new registrations —
+// may be paid in full or in `paymentPlanInstallments` monthly payments
+// (Builder 2, Engineer 4) at the same package rate: one 20- or 36-class
+// commitment paid in instalments, never separate purchasable packages or a
+// month-to-month program. Payments are made by Interac e-Transfer after
+// staff register the family;
 // `paymentPlanInstallments` is display data for the rate card and is not a
 // `paymentOptions` choice the request form submits.
 // Do not reintroduce a per-package installment rate without also restoring
@@ -45,9 +46,18 @@ function paymentOptions({ payInFullEnabled = true, recurringMonthlyEnabled = fal
 //
 // Class packages are program-scoped: each Robotics program can have its own
 // Builder/Engineer pricing (see PACKAGE_CATALOGS_BY_PROGRAM_ID below).
-// Explorer is the one exception — it's an internal fallback/save-the-sale
-// package (never shown publicly, not a "drop-in") shared identically across
-// every program, so it's built once and reused in every catalogue.
+//
+// LEGACY 10-CLASS PACKAGES (decision 2026-10-04): only Builder (20) and
+// Engineer (36) are offered to new registrations. Regular and Explorer — the
+// two 10-class packages — stay in every catalogue, flagged
+// `availableForNewRegistration: false` and `publicVisible: false`, purely so
+// historical registrations that reference them by id still resolve. Never
+// delete them: getRoboticsPackage must keep returning them. New requests are
+// refused by isValidPackageId. Their numbers are frozen at what families were
+// last quoted; registrations read their own stored packageSnapshot anyway.
+//
+// Explorer was an internal fallback/save-the-sale package shared identically
+// across every program, so it's built once and reused in every catalogue.
 const EXPLORER_PACKAGE = Object.freeze({
   id: 'explorer',
   name: 'Explorer',
@@ -63,19 +73,15 @@ const EXPLORER_PACKAGE = Object.freeze({
   // No promotion is running; see the PACKAGE_PROMO note above.
   promotionEligible: false,
   promotionalPayInFullSubtotalCents: null,
-  // Internal fallback / save-the-sale package — intentionally not shown
-  // in the public package grids (PackageChooser, RoboticsPricingSection).
-  // Still fully enabled everywhere else: valid packageId for direct/Shared
-  // links, registration, checkout, and existing Explorer registrations
-  // are completely unaffected. Flip this back to true to re-list it
-  // publicly; nothing else needs to change.
   publicVisible: false,
+  // Legacy 10-class package: resolvable for existing registrations only.
+  availableForNewRegistration: false,
 })
 
-// The shortest-commitment public option: a fixed 10-class package at the
-// program's standard (undiscounted) per-class rate. This is the rate every
-// other package's savings are quoted against, so `perClassCents` here is the
-// program's rate card "Regular" column.
+// LEGACY — no longer offered to new registrations (2026-10-04). Regular was
+// the 10-class package at the program's standard per-class rate ($30
+// Smartivo / $32 Bricks Challenge & Algo Play); those rates are frozen here
+// so an old registration's package id still resolves to what it was sold at.
 //
 // Regular used to be a `rolling_monthly` plan with no class count, billed for
 // whatever classes happened to land in a calendar month. It is now a normal
@@ -102,7 +108,8 @@ function buildRegularPackage(perClassCents) {
   paymentPlanInstallments: null,
   promotionEligible: false,
   promotionalPayInFullSubtotalCents: null,
-  publicVisible: true,
+  publicVisible: false,
+  availableForNewRegistration: false,
   })
 }
 
@@ -123,6 +130,7 @@ function buildPackageCatalog({ regularPerClassCents, builder, engineer }) {
       currency: 'CAD',
       sortOrder: 3,
       minimumClassCommitment: 20,
+      availableForNewRegistration: true,
       ...builder,
     }),
     Object.freeze({
@@ -133,20 +141,21 @@ function buildPackageCatalog({ regularPerClassCents, builder, engineer }) {
       currency: 'CAD',
       sortOrder: 4,
       minimumClassCommitment: 36,
+      availableForNewRegistration: true,
       ...engineer,
     }),
   ])
 }
 
-// The 75-minute-class rate card ($32 Regular / $28 Builder / $25 Engineer).
-// This is what every Robotics program uses unless it has its own entry in
-// PACKAGE_CATALOGS_BY_PROGRAM_ID below (currently just Smartivo) — i.e.
-// Bricks Challenge, Algo Play, and any future Robotics program.
+// The 75-minute-class rate card ($30 Builder / $27 Engineer; Regular $32 is
+// legacy). This is what every Robotics program uses unless it has its own
+// entry in PACKAGE_CATALOGS_BY_PROGRAM_ID below (currently just Smartivo) —
+// i.e. Bricks Challenge, Algo Play, and any future Robotics program.
 const DEFAULT_PACKAGE_CATALOG = buildPackageCatalog({
-  regularPerClassCents: 3200, // $32/class
+  regularPerClassCents: 3200, // legacy Regular, $32/class
   builder: {
-    perClassCents: 2800, // $28/class pay-in-full
-    regularSubtotalCents: 56000, // $560
+    perClassCents: 3000, // $30/class
+    regularSubtotalCents: 60000, // $600 — or 2 × $300
     badge: 'Most Popular',
     paymentPlanInstallments: 2,
     paymentOptions: paymentOptions({ recurringMonthlyEnabled: true }),
@@ -155,8 +164,8 @@ const DEFAULT_PACKAGE_CATALOG = buildPackageCatalog({
     publicVisible: true,
   },
   engineer: {
-    perClassCents: 2500, // $25/class pay-in-full
-    regularSubtotalCents: 90000, // $900
+    perClassCents: 2700, // $27/class
+    regularSubtotalCents: 97200, // $972 — or 4 × $243
     badge: 'Best Value',
     paymentPlanInstallments: 4,
     paymentOptions: paymentOptions({ recurringMonthlyEnabled: true }),
@@ -166,15 +175,15 @@ const DEFAULT_PACKAGE_CATALOG = buildPackageCatalog({
   },
 })
 
-// Smartivo-specific pricing — the 60-minute-class rate card ($30 Regular /
-// $26 Builder / $24 Engineer). Smartivo classes run 60 minutes vs the
+// Smartivo-specific pricing — the 60-minute-class rate card ($28 Builder /
+// $25 Engineer; Regular $30 is legacy). Smartivo classes run 60 minutes vs the
 // 75-minute Bricks Challenge / Algo Play classes priced in
 // DEFAULT_PACKAGE_CATALOG above, which is why it keeps its own catalogue.
 const SMARTIVO_PACKAGE_CATALOG = buildPackageCatalog({
-  regularPerClassCents: 3000, // $30/class
+  regularPerClassCents: 3000, // legacy Regular, $30/class
   builder: {
-    perClassCents: 2600, // $26/class pay-in-full
-    regularSubtotalCents: 52000, // $520
+    perClassCents: 2800, // $28/class
+    regularSubtotalCents: 56000, // $560 — or 2 × $280
     badge: 'Most Popular',
     paymentPlanInstallments: 2,
     paymentOptions: paymentOptions({ recurringMonthlyEnabled: true }),
@@ -183,8 +192,8 @@ const SMARTIVO_PACKAGE_CATALOG = buildPackageCatalog({
     publicVisible: true,
   },
   engineer: {
-    perClassCents: 2400, // $24/class pay-in-full
-    regularSubtotalCents: 86400, // $864
+    perClassCents: 2500, // $25/class
+    regularSubtotalCents: 90000, // $900 — or 4 × $225
     badge: 'Best Value',
     paymentPlanInstallments: 4,
     paymentOptions: paymentOptions({ recurringMonthlyEnabled: true }),
@@ -221,12 +230,10 @@ function getPackageCatalog(programId) {
   return PACKAGE_CATALOGS_BY_PROGRAM_ID[programId] ?? DEFAULT_PACKAGE_CATALOG
 }
 
-/** Packages shown in public-facing package grids for `programId`. Explorer
- * stays fully enabled (resolvable by ID, bookable, invoiceable) — it's just
- * excluded from the default public listing so staff can still offer it
- * directly. */
+/** Packages shown in public-facing package grids for `programId`: Builder
+ * and Engineer. The legacy 10-class packages are never listed. */
 export function getPubliclyVisiblePackages(programId) {
-  return getPackageCatalog(programId).filter(pkg => pkg.publicVisible)
+  return getPackageCatalog(programId).filter(pkg => pkg.publicVisible && pkg.availableForNewRegistration)
 }
 
 // Fails fast (at import time) if any package's arithmetic is inconsistent,
@@ -243,6 +250,13 @@ for (const catalog of ALL_PACKAGE_CATALOGS) {
     if (expected !== pkg.regularSubtotalCents) {
       throw new Error(
         `Robotics package "${pkg.id}" is inconsistent: ${pkg.classCount} × ${pkg.perClassCents} = ${expected}, but regularSubtotalCents is ${pkg.regularSubtotalCents}.`
+      )
+    }
+    // Each instalment must be a whole number of cents, so the rate card's
+    // "N payments of $X" is exact.
+    if (pkg.paymentPlanInstallments && pkg.regularSubtotalCents % pkg.paymentPlanInstallments !== 0) {
+      throw new Error(
+        `Robotics package "${pkg.id}" total ${pkg.regularSubtotalCents} does not split evenly into ${pkg.paymentPlanInstallments} payments.`
       )
     }
     if (pkg.promotionEligible) {
@@ -311,14 +325,19 @@ export const PACKAGE_PROMO = Object.freeze({
   endsAt: null,
 })
 
+/** True when `packageId` may be chosen for a NEW registration or request
+ * (Builder or Engineer). The legacy 10-class packages return false here but
+ * still resolve through getRoboticsPackage for existing registrations. */
 export function isValidPackageId(programId, packageId) {
-  return typeof packageId === 'string' && getRoboticsPackage(programId, packageId) !== null
+  return typeof packageId === 'string' && getRoboticsPackage(programId, packageId)?.availableForNewRegistration === true
 }
 
 /** Canonical lookup — the only place package pricing should be resolved from
  * a programId + packageId. Resolves against that program's own catalogue
  * (see PACKAGE_CATALOGS_BY_PROGRAM_ID), falling back to
- * DEFAULT_PACKAGE_CATALOG for any program without its own pricing. */
+ * DEFAULT_PACKAGE_CATALOG for any program without its own pricing. Includes
+ * the legacy 10-class packages, so never use this alone to decide whether a
+ * package can be newly chosen — use isValidPackageId. */
 export function getRoboticsPackage(programId, packageId) {
   if (typeof packageId !== 'string') return null
   return getPackageCatalog(programId).find(pkg => pkg.id === packageId) ?? null

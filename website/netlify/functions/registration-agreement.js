@@ -69,13 +69,16 @@ export function agreementView(registration) {
     installments,
     accepted,
     acceptedBy: accepted ? registration.agreementAcceptedBy || '' : '',
+    // Portal stored values for Paid in Full and Partial Payment (first
+    // installment received) — see the portal's lib/registrationPayment.js.
     paymentRecorded: ['Paid', 'Payment Plan Active'].includes(registration.paymentStatus),
     etransfer: accepted
       ? {
         sendTo: ETRANSFER_EMAIL,
         payInFullCents: withHst(subtotalCents),
         planPaymentCents: installments ? withHst(Math.round(subtotalCents / installments)) : null,
-        message: [registration.programSnapshot?.title, registration.registrationNumber].filter(Boolean).join(' - '),
+        // Child's first name and reference, e.g. "Vihaan — YE-2026-0026".
+        message: [String(registration.childName || '').trim().split(/\s+/)[0], registration.registrationNumber].filter(Boolean).join(' — '),
       }
       : null,
   }

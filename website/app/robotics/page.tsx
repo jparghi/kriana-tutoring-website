@@ -81,7 +81,7 @@ const additionalOfferings = [
 const faqs = [
   {
     q: "How much do classes cost?",
-    a: "Rates depend on the program and how many classes you enrol for. Smartivo (60 minutes) is $30/class for the 10-class Regular package, $26/class for the 20-class Builder package and $24/class for the 36-class Engineer package. Bricks Challenge and Algo Play (75 minutes) are $32, $28 and $25/class for the same three packages. Pricing is per child and applicable taxes are extra — see the pricing section above for each program's totals.",
+    a: "Rates depend on the program and the learning path. Smartivo (60 minutes) is $28/class for the 20-class Builder path ($560) and $25/class for the 36-class Engineer path ($900). Bricks Challenge and Algo Play (75 minutes) are $30/class for Builder ($600) and $27/class for Engineer ($972). Pay in full, or in monthly payments — 2 for Builder, 4 for Engineer — at the same rate. Pricing is per child and applicable taxes are extra.",
   },
   {
     q: "Do I have to pay for the whole package up front?",

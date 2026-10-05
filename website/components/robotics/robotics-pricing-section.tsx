@@ -20,13 +20,12 @@ type Pkg = {
   perClassCents: number;
   regularSubtotalCents: number;
   badge: string | null;
-  paymentPlanInstallments: number | null;
+  paymentPlanInstallments: number;
 };
 
 // Presentation copy for each tier — deliberately not in
 // lib/robotics-packages.js, which holds pricing/business data only.
 const TIER_BLURBS: Record<string, string> = {
-  regular: "Shortest commitment · best for trying a program",
   builder: "A structured learning path at a lower per-class rate",
   engineer: "The longest journey at the lowest per-class rate",
 };
@@ -66,10 +65,10 @@ function TierHeading({ pkg }: { pkg: Pkg }) {
   );
 }
 
-/** One program's three tiers: per-class rate, package total and, for Builder
- * and Engineer, the easy payment plan. The plan is only a way to pay for the
- * same 20/36-class commitment at the same package rate — so there is no
- * "save when paid in full" line: families get the package rate either way. */
+/** One program's two learning paths: per-class rate, package total and the
+ * monthly payment option. Monthly payments are only a way to pay for the same
+ * 20/36-class commitment at the same package rate — so there is no "save when
+ * paid in full" line: families get the package rate either way. */
 function ProgramRateCard({
   program,
   packages,
@@ -107,18 +106,11 @@ function ProgramRateCard({
                   {dollars(pkg.perClassCents)}
                   <span className="ml-1 text-xs font-semibold text-slate-500">/class + tax</span>
                 </p>
-                <p className="mt-1 text-sm font-bold text-[#0A2D5A]">
-                  {dollars(pkg.regularSubtotalCents)} + tax total
-                  {!installments && <span className="font-semibold text-slate-400"> · paid upfront</span>}
+                <p className="mt-1 text-sm font-bold text-[#0A2D5A]">{dollars(pkg.regularSubtotalCents)} total</p>
+                <p className="mt-0.5 text-xs font-semibold text-[#0c6162]">
+                  Pay in full or {installments} monthly payments of {dollars(pkg.regularSubtotalCents / installments)} + tax
                 </p>
-                {installments ? (
-                  <p className="mt-0.5 text-xs font-semibold text-[#0c6162]">
-                    or {installments} easy payments of {dollars(pkg.regularSubtotalCents / installments)} + tax
-                  </p>
-                ) : null}
-                {isFeatured && (
-                  <p className="mt-0.5 text-xs font-bold text-[#0083CB]">Lowest per-class rate</p>
-                )}
+                <p className="mt-0.5 text-xs font-semibold text-slate-500">{pkg.classCount}-class learning commitment</p>
               </div>
             </li>
           );
@@ -140,7 +132,7 @@ function ProgramRateCard({
 
 export function RoboticsPricingSection() {
   const programs = pricedPrograms();
-  // Every program offers the same three tiers, so the explainer strip can be
+  // Every program offers the same two learning paths, so the explainer strip can be
   // driven off the first one's catalogue.
   const tiers = programs[0].packages;
 
@@ -159,7 +151,7 @@ export function RoboticsPricingSection() {
         </div>
 
         {/* Step 2 of the parent's decision: how long do you want to enrol? */}
-        <ol className="mx-auto mt-10 grid max-w-4xl gap-4 sm:grid-cols-3">
+        <ol className="mx-auto mt-10 grid max-w-3xl gap-4 sm:grid-cols-2">
           {tiers.map((pkg) => {
             const isFeatured = pkg.id === "engineer";
             return (
@@ -185,9 +177,10 @@ export function RoboticsPricingSection() {
         <div className="mt-8 rounded-[1.75rem] border border-slate-200 bg-slate-50 p-6 sm:p-7">
           <h3 className="text-sm font-bold text-[#0A2D5A]">Payment &amp; what&apos;s included</h3>
           <p className="mt-1.5 text-sm leading-relaxed text-slate-600">
-            Pricing is per child and applicable taxes are extra. Regular is paid upfront. Builder and Engineer can
-            be paid in full or through an easy payment plan — 2 or 4 scheduled payments at the same package rate,
-            with no additional payment-plan fee from Kriana Tutoring. Payment is by Interac e-Transfer.
+            Pricing is per child and applicable taxes are extra. Builder is a 20-class learning commitment and
+            Engineer a 36-class one. Either can be paid in full, or in monthly payments — 2 for Builder, 4 for
+            Engineer — at the same package rate. Monthly payments are only a way to pay the program total; they
+            don&apos;t make the program month-to-month. Payment is by Interac e-Transfer.
             All building materials are provided and kits stay at the learning centre. No payment is collected until your child&apos;s class schedule is confirmed.
           </p>
         </div>

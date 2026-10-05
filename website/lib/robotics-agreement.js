@@ -5,7 +5,9 @@
 // stored text snapshot is exactly what the parent saw.
 
 // Bump when the terms page changes; each acceptance stores the version.
-export const ROBOTICS_TERMS_VERSION = '2026-10-04'
+// 2026-10-04.2: Builder/Engineer only (10-class Regular retired), new rates,
+// 2/4 monthly installments, current-rate early-cancellation wording.
+export const ROBOTICS_TERMS_VERSION = '2026-10-04.2'
 
 // The Robotics Program & Payment Terms page linked beside the checkbox.
 export const ROBOTICS_TERMS_URL = '/robotics/terms'
