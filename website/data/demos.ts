@@ -40,13 +40,19 @@ export interface DemoEvent {
   hook?: string[]; // headline lines under the title, e.g. ["No school?", "Make it a day to…"]
   summary?: string; // supporting line under the hook
   priceLabel?: string; // "Introductory Workshop"
+  reserveHeadline?: string; // heading over the second registration CTA
+  heroVideo?: { src: string }; // autoplays muted in the hero; heroImage is its poster
   seoDescription?: string;
   date: string; // YYYY-MM-DD (Ottawa local date)
   location: string; // short area name: "Kanata"
   address: string; // full street address, or "" when not public
   status: DemoStatus;
   soldOut?: boolean; // completed demos that filled up
-  price: number; // CAD
+  price: number; // CAD, regular price before tax
+  // Display only — the charged amount comes from the session offering's
+  // earlyBirdTuitionCents/earlyBirdEndsAt/taxRate (see getDemoPricing).
+  earlyBird?: { price: number; endsIso: string }; // endsIso is exclusive: the first moment it no longer applies
+  plusTax?: boolean; // show "+ tax" (HST is added at registration)
   ageRange: string;
   sessions: DemoSession[];
   program: string;
@@ -138,5 +144,44 @@ export const demos: DemoEvent[] = [
     },
     registrationUrl: "https://krianatutoring.com/events",
     programId: "young-engineers-demo-stittsville-oct-2026",
+  },
+  {
+    id: "2026-10-25-stittsville-halloween",
+    title: "Young Engineers Halloween STEM Workshop",
+    eventType: "HOLIDAY_WORKSHOP",
+    hook: ["This Halloween,", "let your child build something SPOOKTACULAR! 🎃👻"],
+    summary: "2 hours of hands-on STEM fun for kids ages 6–12: building exciting moving machines while exploring engineering through play.",
+    priceLabel: "Halloween Workshop",
+    reserveHeadline: "Give Your Child a Spooktacular Halloween",
+    seoDescription:
+      "Join our Young Engineers Halloween STEM Workshop in Stittsville on Sunday, October 25. Kids ages 6–12 build exciting moving machines in 2 hours of hands-on engineering fun.",
+    date: "2026-10-25",
+    location: "Stittsville",
+    address: "205 Metric Circle, Stittsville, ON K2V 0L3",
+    status: "REGISTRATION_OPEN",
+    price: 30,
+    earlyBird: { price: 25, endsIso: "2026-10-16T00:00:00-04:00" },
+    plusTax: true,
+    ageRange: "6–12",
+    sessions: [
+      {
+        label: "10:30 AM–12:30 PM",
+        name: "Halloween Workshop",
+        offeringId: "young-engineers-halloween-stittsville-oct-2026-offering",
+        startIso: "2026-10-25T10:30:00-04:00",
+        endIso: "2026-10-25T12:30:00-04:00",
+      },
+    ],
+    program: "Halloween Adventure",
+    learningTopics: ["Moving machines", "Gears", "Motors", "Mechanisms", "Building and testing"],
+    heroImage: {
+      src: "/images/demo/young-engineers-halloween-workshop-oct-2026.jpg",
+      alt: "Young Engineers Halloween Adventure: a brick-built monster machine, October 25, 10:30 AM to 12:30 PM at 205 Metric Circle, Stittsville",
+      width: 1080,
+      height: 1080,
+    },
+    heroVideo: { src: "/videos/demo/young-engineers-halloween-workshop-oct-2026.mp4" },
+    registrationUrl: "https://krianatutoring.com/events",
+    programId: "young-engineers-halloween-stittsville-oct-2026",
   },
 ];

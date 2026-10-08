@@ -83,3 +83,15 @@ test('date labels are timezone-safe', () => {
   assert.equal(formatDemoDate('2026-10-02', 'full'), 'Friday, October 2, 2026')
   assert.equal(formatDemoDate('2026-09-12'), 'September 12')
 })
+
+test('demoPriceText shows the early bird until its cutoff, then the regular price', async () => {
+  const { demoPriceText } = await import('../lib/demo-hub.js')
+  const demo = { price: 30, plusTax: true, earlyBird: { price: 25, endsIso: '2026-10-16T00:00:00-04:00' } }
+  assert.deepEqual(demoPriceText(demo, Date.parse('2026-10-08T12:00:00-04:00')), {
+    price: 25, current: '$25 + tax', detail: 'Early bird $25 + tax until Oct 15 · Regular $30 + tax',
+  })
+  assert.deepEqual(demoPriceText(demo, Date.parse('2026-10-16T00:00:00-04:00')), {
+    price: 30, current: '$30 + tax', detail: '$30 + tax',
+  })
+  assert.equal(demoPriceText({ price: 10 }).detail, '$10')
+})

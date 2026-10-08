@@ -110,3 +110,22 @@ export function demoMonth(date) {
   const [year, month, day] = date.split('-').map(Number)
   return new Date(Date.UTC(year, month - 1, day, 12)).toLocaleDateString('en-US', { timeZone: 'UTC', month: 'long' })
 }
+
+/**
+ * Display wording for a demo's price from its config (the charged amount
+ * always comes from the offering — see getDemoPricing).
+ *   price:   25 — the before-tax dollar amount that applies right now
+ *   current: "$25 + tax" — what applies right now
+ *   detail:  "Early bird $25 + tax until Oct 15 · Regular $30 + tax", or just
+ *            `current` when there's no early bird running
+ */
+export function demoPriceText(demo, now = Date.now()) {
+  const tax = demo.plusTax ? ' + tax' : ''
+  const regular = `$${demo.price}${tax}`
+  const endsMs = demo.earlyBird ? Date.parse(demo.earlyBird.endsIso) : NaN
+  if (!demo.earlyBird || !(now < endsMs)) return { price: demo.price, current: regular, detail: regular }
+  const early = `$${demo.earlyBird.price}${tax}`
+  // endsIso is exclusive, so the last early-bird day is the day before it.
+  const until = new Date(Date.parse(`${demo.earlyBird.endsIso.slice(0, 10)}T12:00:00Z`) - 86400000).toISOString().slice(0, 10)
+  return { price: demo.earlyBird.price, current: early, detail: `Early bird ${early} until ${formatDemoDate(until, 'short')} · Regular ${regular}` }
+}

@@ -216,16 +216,51 @@ test('validatePayload never accepts or reads packageId or price from the body', 
 })
 
 test('getDemoPricing falls back to 1000 cents CAD when the offering has no tuitionCents', () => {
-  assert.deepEqual(getDemoPricing(), { priceCents: 1000, currency: 'CAD' })
-  assert.deepEqual(getDemoPricing({}), { priceCents: 1000, currency: 'CAD' })
-  assert.deepEqual(getDemoPricing({ tuitionCents: 0 }), { priceCents: 1000, currency: 'CAD' })
+  for (const offering of [undefined, {}, { tuitionCents: 0 }]) {
+    const pricing = getDemoPricing(offering)
+    assert.equal(pricing.priceCents, 1000)
+    assert.equal(pricing.currency, 'CAD')
+    assert.equal(pricing.taxCents, 0)
+    assert.equal(pricing.earlyBird, false)
+  }
 })
 
 test('getDemoPricing resolves from the offering when it carries its own price', () => {
-  assert.deepEqual(
-    getDemoPricing({ tuitionCents: 1500, currency: 'USD' }),
-    { priceCents: 1500, currency: 'USD' },
-  )
+  const pricing = getDemoPricing({ tuitionCents: 1500, currency: 'USD' })
+  assert.equal(pricing.priceCents, 1500)
+  assert.equal(pricing.subtotalCents, 1500)
+  assert.equal(pricing.currency, 'USD')
+})
+
+// Halloween 2026: $25 early bird until the end of Oct 15, then $30, + 13% HST.
+const HALLOWEEN_PRICING = {
+  tuitionCents: 3000,
+  earlyBirdTuitionCents: 2500,
+  earlyBirdEndsAt: '2026-10-16T04:00:00Z',
+  taxRate: 0.13,
+}
+
+test('getDemoPricing applies the early-bird price before earlyBirdEndsAt, with HST', () => {
+  const pricing = getDemoPricing(HALLOWEEN_PRICING, Date.parse('2026-10-15T23:59:00-04:00'))
+  assert.equal(pricing.earlyBird, true)
+  assert.equal(pricing.subtotalCents, 2500)
+  assert.equal(pricing.taxCents, 325)
+  assert.equal(pricing.priceCents, 2825)
+  assert.equal(pricing.regularSubtotalCents, 3000)
+  assert.equal(pricing.earlyBirdEndsAt, '2026-10-16T04:00:00.000Z')
+})
+
+test('getDemoPricing switches to the regular price at earlyBirdEndsAt', () => {
+  const pricing = getDemoPricing(HALLOWEEN_PRICING, Date.parse('2026-10-16T00:00:00-04:00'))
+  assert.equal(pricing.earlyBird, false)
+  assert.equal(pricing.subtotalCents, 3000)
+  assert.equal(pricing.priceCents, 3390)
+  assert.equal(pricing.earlyBirdEndsAt, null)
+})
+
+test('getDemoPricing reads a Firestore Timestamp-like earlyBirdEndsAt', () => {
+  const endsAt = { toMillis: () => Date.parse('2026-10-16T04:00:00Z') }
+  assert.equal(getDemoPricing({ ...HALLOWEEN_PRICING, earlyBirdEndsAt: endsAt }, Date.parse('2026-10-10T12:00:00Z')).subtotalCents, 2500)
 })
 
 const REQUIRED_STRING_FIELDS = ['parentName', 'parentEmail', 'parentPhone', 'childName']
@@ -438,6 +473,55 @@ test('saveDemoRegistration resolves priceCents from the offering, not a fixed $1
 
   const creditCreate = db.lastWrites.creates.find(c => c.ref.collectionName === 'demoCredits')
   assert.equal(creditCreate.data.amountCents, 1500)
+})
+
+test('saveDemoRegistration charges the early-bird price + HST and creates no credit for a paid, no-credit event', async () => {
+  const { db } = makeFakeDb({
+    [`programs/${TEST_PROGRAM_ID}`]: demoProgram(),
+    'programOfferings/demo-off-1': demoOffering({
+      ...HALLOWEEN_PRICING,
+      earlyBirdEndsAt: new Date(Date.now() + 86400000).toISOString(),
+      demoCreditEnabled: false,
+    }),
+  })
+  const result = await saveDemoRegistration(db, baseRequest())
+  assert.equal(result.priceCents, 2825)
+  assert.equal(result.taxCents, 325)
+  const registrationCreate = db.lastWrites.creates.find(c => c.ref.collectionName === 'demoRegistrations')
+  assert.equal(registrationCreate.data.priceCents, 2825)
+  assert.equal(registrationCreate.data.priceSubtotalCents, 2500)
+  assert.equal(registrationCreate.data.earlyBirdApplied, true)
+  assert.equal(registrationCreate.data.demoCreditEnabled, false)
+  assert.equal(db.lastWrites.creates.find(c => c.ref.collectionName === 'demoCredits'), undefined)
+})
+
+test('saveDemoRegistration with an eligibilityScope ignores the child\'s earlier one-time demo lock', async () => {
+  const registration = baseRegistration()
+  const unscoped = computeChildEligibilityKeyHash(registration)
+  const { db } = makeFakeDb({
+    [`programs/${TEST_PROGRAM_ID}`]: demoProgram(),
+    'programOfferings/demo-off-1': demoOffering({ eligibilityScope: 'halloween-2026' }),
+    [`demoEligibilityLocks/${unscoped}`]: { demoRegistrationId: 'earlier-demo', createdAt: null },
+  })
+  const result = await saveDemoRegistration(db, baseRequest({ registration }))
+  assert.equal(result.duplicate, false)
+  const lockCreate = db.lastWrites.creates.find(c => c.ref.collectionName === 'demoEligibilityLocks')
+  assert.equal(lockCreate.ref.id, computeChildEligibilityKeyHash(registration, 'halloween-2026'))
+  assert.notEqual(lockCreate.ref.id, unscoped)
+})
+
+test('saveDemoRegistration with an eligibilityScope still blocks a second booking for the same event', async () => {
+  const registration = baseRegistration()
+  const scoped = computeChildEligibilityKeyHash(registration, 'halloween-2026')
+  const { db } = makeFakeDb({
+    [`programs/${TEST_PROGRAM_ID}`]: demoProgram(),
+    'programOfferings/demo-off-1': demoOffering({ eligibilityScope: 'halloween-2026' }),
+    [`demoEligibilityLocks/${scoped}`]: { demoRegistrationId: 'existing-reg', createdAt: null },
+  })
+  await assert.rejects(
+    () => saveDemoRegistration(db, baseRequest({ registration })),
+    err => err instanceof RequestRejectedError && err.statusCode === 409 && /already registered for this event/.test(err.message),
+  )
 })
 
 test('saveDemoRegistration succeeds with no marketingAttribution at all — missing attribution never blocks registration', async () => {

@@ -23,7 +23,12 @@ function digitsOnly(value) {
 // endpoints). Fails closed: a missing/short salt throws rather than
 // silently skipping the one-time-offer uniqueness check, mirroring
 // ENROLLMENT_RATE_LIMIT_SALT validation in enforceRateLimit.
-export function computeChildEligibilityKeyHash(registration) {
+//
+// `scope` (an offering's eligibilityScope, e.g. a paid Halloween workshop)
+// gives that event its own lock: the child can book it once, regardless of
+// earlier $10 demos, and it never uses up their one-time $10 demo offer.
+// Unscoped hashes are unchanged, so existing locks and credits still match.
+export function computeChildEligibilityKeyHash(registration, scope = null) {
   const salt = process.env.DEMO_ELIGIBILITY_KEY_SALT
   if (!salt || salt.length < 32) {
     throw new Error('DEMO_ELIGIBILITY_KEY_SALT must be configured with at least 32 characters')
@@ -32,6 +37,6 @@ export function computeChildEligibilityKeyHash(registration) {
   const normalizedParentEmail = normalizeForHash(registration.parentEmail)
   const normalizedParentPhoneDigitsOnly = digitsOnly(registration.parentPhone)
   return crypto.createHmac('sha256', salt)
-    .update(`${normalizedChildName}|${normalizedParentEmail}|${normalizedParentPhoneDigitsOnly}`)
+    .update(`${normalizedChildName}|${normalizedParentEmail}|${normalizedParentPhoneDigitsOnly}${scope ? `|${scope}` : ''}`)
     .digest('hex')
 }

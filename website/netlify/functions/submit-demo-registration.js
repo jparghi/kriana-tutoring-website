@@ -289,16 +289,20 @@ export async function saveDemoRegistration(db, request) {
     // Resolved from the just-validated, freshly-read offering doc — never
     // from anything the browser sends, and never a stale value cached
     // before this transaction re-read the offering.
-    const { priceCents, currency } = getDemoPricing(offering)
+    const pricing = getDemoPricing(offering)
+    const { priceCents, currency } = pricing
 
     // (c) Eligibility hash + one-time-offer lock check.
-    const childEligibilityKeyHash = computeChildEligibilityKeyHash(registration)
+    const eligibilityScope = typeof offering.eligibilityScope === 'string' && offering.eligibilityScope ? offering.eligibilityScope : null
+    const childEligibilityKeyHash = computeChildEligibilityKeyHash(registration, eligibilityScope)
     const lockRef = db.collection('demoEligibilityLocks').doc(childEligibilityKeyHash)
     const lockDoc = await tx.get(lockRef)
     if (lockDoc.exists) {
       throw new RequestRejectedError(
         409,
-        'This child has already used their one-time $10 demo offer. Please contact us if you believe this is a mistake.',
+        eligibilityScope
+          ? 'This child is already registered for this event. Please contact us if you believe this is a mistake.'
+          : 'This child has already used their one-time $10 demo offer. Please contact us if you believe this is a mistake.',
       )
     }
 
@@ -358,6 +362,11 @@ export async function saveDemoRegistration(db, request) {
       paymentStatus: 'pending',
       priceCents,
       currency,
+      // Breakdown of priceCents (tax included) as charged at booking time.
+      priceSubtotalCents: pricing.subtotalCents,
+      priceTaxCents: pricing.taxCents,
+      earlyBirdApplied: pricing.earlyBird,
+      demoCreditEnabled: offering.demoCreditEnabled !== false,
       parentName: registration.parentName,
       parentEmail: registration.parentEmail,
       parentPhone: registration.parentPhone,
@@ -397,8 +406,11 @@ export async function saveDemoRegistration(db, request) {
     // transitions it further — attendance-driven activation happens in the
     // platform repo's staff actions, and automatic application happens in
     // submit-enrollment-request.js's saveEnrollmentRequest (see that file).
+    // A paid event with demoCreditEnabled: false (e.g. Halloween 2026) is
+    // not credited toward enrollment, so it gets no credit doc at all — the
+    // portal's attended/no-show/cancel actions already skip a missing one.
     const creditRef = db.collection('demoCredits').doc(registrationRef.id)
-    tx.create(creditRef, {
+    if (offering.demoCreditEnabled !== false) tx.create(creditRef, {
       demoRegistrationId: registrationRef.id,
       childEligibilityKeyHash,
       amountCents: priceCents,
@@ -423,7 +435,7 @@ export async function saveDemoRegistration(db, request) {
       createdAt: FieldValue.serverTimestamp(),
     })
 
-    return { id: registrationRef.id, reference: registrationNumber, duplicate: false, program, offering, priceCents, currency }
+    return { id: registrationRef.id, reference: registrationNumber, duplicate: false, program, offering, priceCents, currency, taxCents: pricing.taxCents }
   })
 }
 
@@ -473,7 +485,7 @@ export const handler = async event => {
 
     if (!saved.duplicate) {
       const emailed = await sendDemoAcknowledgement({
-        registration: { ...validated.registration, priceCents: saved.priceCents, currency: saved.currency },
+        registration: { ...validated.registration, priceCents: saved.priceCents, currency: saved.currency, taxCents: saved.taxCents },
         program: saved.program,
         offering: saved.offering,
         reference: saved.reference,
@@ -487,7 +499,7 @@ export const handler = async event => {
       }
     }
 
-    return json(201, { registrationNumber: saved.reference, demoRegistrationId: saved.id })
+    return json(201, { registrationNumber: saved.reference, demoRegistrationId: saved.id, amountCents: saved.priceCents, currency: saved.currency })
   } catch (error) {
     if (error instanceof RequestRejectedError) {
       return json(error.statusCode, { error: error.message })

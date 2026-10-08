@@ -216,6 +216,15 @@ simplest.
 | `waitlistEnabled` | `true` (**recommended**) | automatic waitlist when full |
 | `publicRegistrationPaused` | leave unset | set later only to close early |
 | `createdAt`, `updatedAt` | timestamps | |
+| `tuitionCents` | e.g. `3000` | price before tax (default $10) |
+| `earlyBirdTuitionCents`, `earlyBirdEndsAt` | e.g. `2500`, timestamp | optional early-bird price until that instant, then `tuitionCents` |
+| `taxRate` | e.g. `0.13` | optional HST added at registration; the e-transfer amount includes it and /events shows "+ tax" |
+| `demoCreditEnabled` | `false` for paid events | omit (= true) to credit the fee toward enrollment after attendance |
+| `eligibilityScope` | e.g. the program id | optional: the event gets its own one-booking-per-child lock instead of using the child's one-time $10 demo offer |
+
+For a paid event (first used for Halloween 2026), see
+`website/scripts/seed-halloween-oct-2026-offering.mjs` and mirror the
+early-bird / tax display in `data/demos.ts` (`earlyBird`, `plusTax`).
 
 ### 3. Point the website at it
 

@@ -4,7 +4,7 @@ import { demos, type DemoEvent, type DemoStatus } from "../../data/demos"
 import { demoReviews } from "../../data/demo-reviews"
 import { resolveDemoCampaignOffering, resolveDemoSessionOfferings } from "../../lib/demo-campaign.server"
 import { eventTerms } from "../../lib/demo-event-copy"
-import { formatDemoDate, partialSellout, resolveDemoHub, sessionShortName } from "../../lib/demo-hub"
+import { demoPriceText, formatDemoDate, partialSellout, resolveDemoHub, sessionShortName } from "../../lib/demo-hub"
 import { getDemoPricing } from "../../lib/robotics-packages.js"
 import { siteUrl, toJsonLd } from "../../lib/seo"
 import { Footer } from "../../components/footer"
@@ -75,10 +75,18 @@ function eventSchemas(demo: DemoEvent, status: DemoStatus, canRegister: boolean)
     image: [`${siteUrl}${SHARE_IMAGE_PATH}`],
     description: demo.seoDescription ?? demo.summary ?? `Hands-on STEM, engineering and coding ${eventTerms(demo.eventType).noun} for children ages ${demo.ageRange}.`,
     ...(availability
-      ? { offers: { "@type": "Offer", price: demo.price.toFixed(2), priceCurrency: "CAD", availability: `https://schema.org/${availability}`, url: `${siteUrl}/events` } }
+      ? { offers: { "@type": "Offer", price: demoPriceText(demo).price.toFixed(2), priceCurrency: "CAD", availability: `https://schema.org/${availability}`, url: `${siteUrl}/events` } }
       : {}),
     organizer: { "@type": "Organization", name: "Kriana Tutoring", url: siteUrl },
   }))
+}
+
+// "2-hour" / "90-minute", from the first session's length.
+function sessionDurationLabel(demo: DemoEvent) {
+  const session = demo.sessions[0]
+  const minutes = session ? (Date.parse(session.endIso) - Date.parse(session.startIso)) / 60000 : NaN
+  if (!Number.isFinite(minutes) || minutes <= 0) return undefined
+  return minutes % 60 === 0 ? `${minutes / 60}-hour` : `${minutes}-minute`
 }
 
 // Describes real footage rather than an event — the right schema when there
@@ -147,10 +155,11 @@ export default async function DemoPage({
   // Price comes from the first bookable session's offering (what the register
   // endpoint will charge), else the configured price for display only.
   const priceOffering = sessions.find(s => s.state === "open" && s.offeringId && liveSessions[s.offeringId]?.offering)
-  const priceCents = priceOffering?.offeringId
-    ? getDemoPricing(liveSessions[priceOffering.offeringId].offering).priceCents
-    : Math.round((active?.price ?? 10) * 100)
-  const priceDisplay = `$${priceCents % 100 === 0 ? priceCents / 100 : (priceCents / 100).toFixed(2)}`
+  // Shown before tax ("$25 + tax"); HST is added on the register form.
+  const livePricing = priceOffering?.offeringId ? getDemoPricing(liveSessions[priceOffering.offeringId].offering) : null
+  const priceCents = livePricing ? livePricing.subtotalCents : Math.round((active ? demoPriceText(active).price : 10) * 100)
+  const plusTax = livePricing ? livePricing.taxCents > 0 : Boolean(active?.plusTax)
+  const priceDisplay = `$${priceCents % 100 === 0 ? priceCents / 100 : (priceCents / 100).toFixed(2)}${plusTax ? " + tax" : ""}`
 
   // Morning sold out, afternoon still bookable: lead with that and steer to
   // the open session. Driven by live offering state only — the same state
@@ -266,7 +275,7 @@ export default async function DemoPage({
             <ContactButtons />
           )}
         </ReserveSection>
-        <DemoFaq ageRange={active?.ageRange ?? latestPast?.ageRange ?? "6–12"} eventType={active?.eventType} />
+        <DemoFaq ageRange={active?.ageRange ?? latestPast?.ageRange ?? "6–12"} eventType={active?.eventType} durationLabel={active ? sessionDurationLabel(active) : undefined} />
       </main>
 
       {hasPickerSessions && canRegister && (

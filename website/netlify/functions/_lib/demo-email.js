@@ -82,6 +82,9 @@ export async function sendDemoAcknowledgement({ registration, program, offering,
   // fixed amount, so this must match what was charged, not assumed.
   const priceLabel = formatAmount(registration.priceCents, registration.currency)
   const priceDisplay = priceLabel.split(' ')[0]
+  const chargeLabel = Number(registration.taxCents) > 0 ? `${priceLabel} (incl. HST)` : priceLabel
+  // Paid events with demoCreditEnabled: false aren't credited toward enrollment.
+  const creditEnabled = offering?.demoCreditEnabled !== false
   const eventTitle = escapeHtml(offering?.eventTitle || '')
   const eventWhen = escapeHtml(formatEventDateTime(offering))
   const eventLocation = escapeHtml(offering?.location || '')
@@ -110,16 +113,16 @@ export async function sendDemoAcknowledgement({ registration, program, offering,
           ${eventTitle ? `<p style="margin:0 0 8px"><strong>Event:</strong> ${eventTitle}</p>` : ''}
           ${eventWhen ? `<p style="margin:0 0 8px"><strong>When:</strong> ${eventWhen}</p>` : ''}
           ${eventLocation ? `<p style="margin:0 0 8px"><strong>Location:</strong> ${eventLocation}</p>` : ''}
-          <p style="margin:0 0 8px"><strong>Charge:</strong> ${priceLabel}</p>
+          <p style="margin:0 0 8px"><strong>Charge:</strong> ${chargeLabel}</p>
           <p style="margin:0"><strong>Reference:</strong> ${safeReference}</p>
         </div>
-        <p style="font-weight:700">${terms.creditHeadline(priceDisplay)}</p>
-        <p>The ${priceDisplay} is credited toward regular enrollment after your child attends.</p>
+        ${creditEnabled ? `<p style="font-weight:700">${terms.creditHeadline(priceDisplay)}</p>
+        <p>The ${priceDisplay} is credited toward regular enrollment after your child attends.</p>` : ''}
         <div style="background:#e6f4f4;border:1px solid rgba(12,97,98,0.2);padding:16px;border-radius:10px;margin:18px 0">
           <p style="margin:0 0 10px;font-weight:700;color:#0c6162">Send Your ${priceDisplay} E-Transfer</p>
           <p style="margin:0 0 8px">Your child&apos;s ${terms.spot} is temporarily reserved. Please send an Interac e-Transfer within <strong>${ETRANSFER_HOLD_HOURS} hours</strong> to confirm it:</p>
           <p style="margin:0 0 4px"><strong>Send to:</strong> ${etransferEmail}</p>
-          <p style="margin:0 0 4px"><strong>Amount:</strong> ${priceLabel}</p>
+          <p style="margin:0 0 4px"><strong>Amount:</strong> ${chargeLabel}</p>
           <p style="margin:0"><strong>Message / Note:</strong> ${etransferMessageText}</p>
         </div>
         <p>No further action is needed after sending — our team will verify your e-transfer and confirm your seat by email. Your child&apos;s spot is temporarily held until then.</p>
@@ -134,7 +137,7 @@ export async function sendDemoAcknowledgement({ registration, program, offering,
     ${eventTitle ? `<p><strong>Event:</strong> ${eventTitle}</p>` : ''}
     ${eventWhen ? `<p><strong>When:</strong> ${eventWhen}</p>` : ''}
     <p><strong>Program:</strong> ${programTitle}</p>
-    <p><strong>Charge:</strong> ${priceLabel}</p>
+    <p><strong>Charge:</strong> ${chargeLabel}</p>
     <p><strong>Child:</strong> ${childName} (age ${escapeHtml(registration.childAge)})</p>
     <p><strong>Parent:</strong> ${parentName} · ${escapeHtml(registration.parentEmail)} · ${escapeHtml(registration.parentPhone)}</p>
     <p><strong>Expected e-transfer message/note:</strong> ${etransferMessageText}</p>

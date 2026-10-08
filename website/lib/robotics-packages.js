@@ -287,17 +287,60 @@ export const DEMO_PACKAGE = Object.freeze({
 })
 
 /** Canonical, server-safe source of a demo offering's price: the price staff
- * set on that offering in the portal (offering.tuitionCents), falling back
- * to DEMO_PACKAGE.priceCents for an offering that doesn't set one. Mirrors
+ * set on that offering (offering.tuitionCents), falling back to
+ * DEMO_PACKAGE.priceCents for an offering that doesn't set one. Mirrors
  * the "resolve pricing from a code-configured source, never the client"
  * pattern used by resolvePackagePricing above — the offering itself is
  * already server-read/validated by the caller, never trusted from the
- * request body. */
-export function getDemoPricing(offering) {
-  const tuitionCents = Number(offering?.tuitionCents)
-  const priceCents = Number.isInteger(tuitionCents) && tuitionCents > 0 ? tuitionCents : DEMO_PACKAGE.priceCents
+ * request body.
+ *
+ * Optional offering fields (paid workshops such as Halloween 2026):
+ *   earlyBirdTuitionCents + earlyBirdEndsAt — the lower price applies until
+ *     earlyBirdEndsAt (inclusive of that instant's past), then tuitionCents.
+ *   taxRate (e.g. 0.13) — HST added on top; priceCents then includes it.
+ *
+ * `priceCents` is always the amount the family actually pays (tax
+ * included), which is what the register endpoint stores and the e-transfer
+ * page and emails ask for. `subtotalCents` is the before-tax price for
+ * "$25 + tax" style display. Pass `now` from the caller that charges. */
+export function getDemoPricing(offering, now = Date.now()) {
+  const regularCents = positiveCents(offering?.tuitionCents) ?? DEMO_PACKAGE.priceCents
+  const earlyCents = positiveCents(offering?.earlyBirdTuitionCents)
+  const earlyEndsMs = toMillis(offering?.earlyBirdEndsAt)
+  const earlyBird = earlyCents !== null && earlyEndsMs !== null && now < earlyEndsMs
+  const subtotalCents = earlyBird ? earlyCents : regularCents
+  const taxRate = Number(offering?.taxRate)
+  const validTax = Number.isFinite(taxRate) && taxRate > 0 && taxRate < 1
+  const taxCents = validTax ? Math.round(subtotalCents * taxRate) : 0
   const currency = typeof offering?.currency === 'string' && offering.currency ? offering.currency : DEMO_PACKAGE.currency
-  return { priceCents, currency }
+  return {
+    priceCents: subtotalCents + taxCents,
+    currency,
+    subtotalCents,
+    taxCents,
+    taxRate: validTax ? taxRate : 0,
+    regularSubtotalCents: regularCents,
+    earlyBird,
+    // Only reported while it still applies, so callers can show "until …".
+    earlyBirdEndsAt: earlyBird ? new Date(earlyEndsMs).toISOString() : null,
+  }
+}
+
+function positiveCents(value) {
+  const cents = Number(value)
+  return Number.isInteger(cents) && cents > 0 ? cents : null
+}
+
+// Firestore Timestamp (server), its JSON forms, an ISO string (public
+// catalogue) or epoch ms.
+function toMillis(value) {
+  if (value == null || value === '') return null
+  if (typeof value.toMillis === 'function') return value.toMillis()
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null
+  const seconds = value.seconds ?? value._seconds
+  if (typeof seconds === 'number') return seconds * 1000
+  const ms = Date.parse(String(value))
+  return Number.isFinite(ms) ? ms : null
 }
 
 // Sitewide class-package promotion. Not Firestore-driven (unlike per-program

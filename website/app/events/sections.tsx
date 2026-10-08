@@ -13,10 +13,11 @@ import {
 import type { DemoEvent, DemoMedia, DemoStatus } from "../../data/demos"
 import type { DemoReview } from "../../data/demo-reviews"
 import { eventTerms } from "../../lib/demo-event-copy"
-import { demoMonth, formatDemoDate } from "../../lib/demo-hub"
+import { demoMonth, demoPriceText, formatDemoDate } from "../../lib/demo-hub"
 import { licensedRoboticsPrograms } from "../../lib/robotics-content"
 import { GALLERY_PATH, ROBOTICS_PATH } from "../../lib/site-links"
 import { DemoHighlightVideo } from "./DemoHighlightVideo"
+import { HeroVideo } from "./HeroVideo"
 import { DemoRegisterCta } from "./DemoRegisterCta"
 import { ShareInviteButton } from "./ShareInviteButton"
 import type { FunnelEvent } from "../../lib/analytics"
@@ -201,7 +202,7 @@ export function DemoHero({
           {showEvent ? (
             <ul className="mt-6 space-y-3">
               <DetailRow icon="calendar">{formatDemoDate(demo.date, "full")}</DetailRow>
-              {demo.priceLabel && <DetailRow icon="tag">{demo.priceLabel} — ${demo.price}</DetailRow>}
+              {demo.priceLabel && <DetailRow icon="tag">{demo.priceLabel} — {demoPriceText(demo).detail}</DetailRow>}
               <DetailRow icon="pin">
                 {demo.address.split(",")[0]}
                 <span className="block text-sm font-semibold text-slate-500">{demo.address.split(",").slice(1).join(",").trim()}</span>
@@ -244,7 +245,11 @@ export function DemoHero({
         </div>
         {image && (
           <div className="mt-8 overflow-hidden rounded-3xl bg-slate-100 shadow-sm md:sticky md:top-6 md:mt-24">
-            <Image src={image.src} alt={image.alt} width={image.width} height={image.height} priority sizes="(min-width: 768px) 460px, 100vw" className="block h-auto w-full" />
+            {demo?.heroVideo ? (
+              <HeroVideo src={demo.heroVideo.src} poster={image.src} width={image.width} height={image.height} label={image.alt} />
+            ) : (
+              <Image src={image.src} alt={image.alt} width={image.width} height={image.height} priority sizes="(min-width: 768px) 460px, 100vw" className="block h-auto w-full" />
+            )}
           </div>
         )}
       </div>
@@ -454,7 +459,7 @@ export function DemoJourney({
                     <StatusBadge status={status} soldOut={demo.soldOut} />
                   </div>
                   <p className="mt-2 text-base font-black text-slate-800">{demo.title}</p>
-                  <p className="mt-0.5 text-sm font-semibold text-slate-500">{demo.location}{demo.program ? ` · ${demo.program}` : ""}{status !== "COMPLETED" ? ` · $${demo.price}` : ""}</p>
+                  <p className="mt-0.5 text-sm font-semibold text-slate-500">{demo.location}{demo.program ? ` · ${demo.program}` : ""}{status !== "COMPLETED" ? ` · ${demoPriceText(demo).detail}` : ""}</p>
                   {status === "COMPLETED" ? (
                     <>
                       {demo.build && <p className="mt-3 text-sm text-slate-700"><span className="font-bold">Build:</span> {demo.build}</p>}
@@ -576,7 +581,7 @@ export function ReserveSection({
     <section id={sectionId} className="scroll-mt-4 px-5 py-14 sm:px-8" style={{ background: "linear-gradient(155deg, #FFF7E8 0%, #FFFFFF 55%, #F1F8F8 100%)" }}>
       <div className="mx-auto max-w-xl text-center">
         <h2 className="text-2xl font-black text-[#0A2D5A] sm:text-3xl">
-          {demo ? (eventTerms(demo.eventType).kind === "workshop" ? "Give Your Child a Great PA/PD Day" : "Ready to Let Your Child Experience It?") : "Want Your Child at the Next One?"}
+          {demo ? (demo.reserveHeadline ?? (eventTerms(demo.eventType).kind === "workshop" ? "Give Your Child a Great PA/PD Day" : "Ready to Let Your Child Experience It?")) : "Want Your Child at the Next One?"}
         </h2>
         {demo ? (
           <p className="mx-auto mt-3 font-black text-[#0A2D5A]">{demo.title}<span className="block text-sm font-semibold text-slate-600">{formatDemoDate(demo.date, "long")}, {demo.date.slice(0, 4)} · {demo.location}</span></p>
@@ -600,14 +605,14 @@ export function ReserveSection({
 
 // ─── FAQ ─────────────────────────────────────────────────────────────────
 
-export function DemoFaq({ ageRange, eventType }: { ageRange: string; eventType?: string }) {
+export function DemoFaq({ ageRange, eventType, durationLabel = "90-minute" }: { ageRange: string; eventType?: string; durationLabel?: string }) {
   const terms = eventTerms(eventType)
   const workshop = terms.kind === "workshop"
   const faqs = [
     {
       q: `What happens at a Young Engineers ${terms.faqTitle}?`,
       a: workshop
-        ? "Your child takes part in a 90-minute hands-on session with our instructors: building a working engineering model, testing it, and finding out why it works. Everything is provided."
+        ? `Your child takes part in a ${durationLabel} hands-on session with our instructors: building a working engineering model, testing it, and finding out why it works. Everything is provided.`
         : "Children build a hands-on model with our instructors and see the engineering idea behind it in action. Parents are welcome to watch.",
     },
     { q: `What ages is the ${terms.faqTitle} for?`, a: `This ${terms.faqTitle} is designed for children ages ${ageRange}. Tell us your child's age and we'll point you to the right program.` },

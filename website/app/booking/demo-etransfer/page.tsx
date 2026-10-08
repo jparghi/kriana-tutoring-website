@@ -16,14 +16,21 @@ const FALLBACK_DEMO_AMOUNT_LABEL = '$10.00 CAD'
 const CONTACT_PHONE_DISPLAY = '613-400-6921'
 const CONTACT_PHONE_HREF = 'tel:+16134006921'
 
-function googleCalendarUrl({ eventTitle, eventLocation }: { eventTitle: string; eventLocation: string }) {
-  // Fixed to the September 12, 2026 campaign date/time — this page only
-  // ever renders for the demo e-transfer flow, and the offering's exact
-  // start/end aren't passed through as machine-readable values today (only
-  // the pre-formatted eventDate/eventTime display strings are). Uses the
-  // Google Calendar template link (no new dependency), which works from a
-  // tap in any mobile browser, including Facebook/Instagram in-app browsers.
-  const dates = '20260912T103000/20260912T113000'
+// Google Calendar's UTC form: 20261025T143000Z.
+function calendarStamp(iso: string) {
+  const date = new Date(iso)
+  return Number.isNaN(date.getTime()) ? '' : date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
+}
+
+function googleCalendarUrl({ eventTitle, eventLocation, eventStartAt, eventEndAt }: { eventTitle: string; eventLocation: string; eventStartAt: string; eventEndAt: string }) {
+  // Exact start/end are carried from the offering by the register form.
+  // Links generated before that fall back to the September 12, 2026 demo
+  // they were made for. Uses the Google Calendar template link (no new
+  // dependency), which works from a tap in any mobile browser, including
+  // Facebook/Instagram in-app browsers.
+  const start = calendarStamp(eventStartAt)
+  const end = calendarStamp(eventEndAt) || start
+  const dates = start ? `${start}/${end}` : '20260912T103000/20260912T113000'
   const params = new URLSearchParams({
     action: 'TEMPLATE',
     text: eventTitle || 'Young Engineers Demo Class',
@@ -98,6 +105,10 @@ function DemoETransferContent() {
   const eventDate = searchParams.get('eventDate') ?? ''
   const eventTime = searchParams.get('eventTime') ?? ''
   const eventLocation = searchParams.get('eventLocation') ?? ''
+  const eventStartAt = searchParams.get('eventStartAt') ?? ''
+  const eventEndAt = searchParams.get('eventEndAt') ?? ''
+  // '0' for paid events that aren't credited toward enrollment.
+  const creditEnabled = searchParams.get('credit') !== '0'
   const amountCentsParam = Number(searchParams.get('amountCents'))
   const currency = searchParams.get('currency') || 'CAD'
   const amountLabel = Number.isSafeInteger(amountCentsParam) && amountCentsParam > 0
@@ -162,7 +173,7 @@ function DemoETransferContent() {
 
           <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
             <a
-              href={googleCalendarUrl({ eventTitle, eventLocation })}
+              href={googleCalendarUrl({ eventTitle, eventLocation, eventStartAt, eventEndAt })}
               target="_blank"
               rel="noreferrer"
               className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
@@ -183,12 +194,14 @@ function DemoETransferContent() {
             )}
           </div>
 
-          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-            <p className="text-sm font-bold text-amber-700">{terms.creditHeadline(amountDisplay)}</p>
-            <p className="text-sm text-amber-700 mt-1">
-              Once your seat is confirmed and your child attends, your {amountDisplay} is credited toward regular Young Engineers enrollment. No-shows do not receive this credit.
-            </p>
-          </div>
+          {creditEnabled && (
+            <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+              <p className="text-sm font-bold text-amber-700">{terms.creditHeadline(amountDisplay)}</p>
+              <p className="text-sm text-amber-700 mt-1">
+                Once your seat is confirmed and your child attends, your {amountDisplay} is credited toward regular Young Engineers enrollment. No-shows do not receive this credit.
+              </p>
+            </div>
+          )}
 
           <div className="mt-5 p-4 bg-slate-50 rounded-xl border border-slate-100">
             <p className="text-xs text-slate-500 leading-relaxed">

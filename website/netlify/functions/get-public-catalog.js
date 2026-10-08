@@ -25,6 +25,9 @@ const OFFERING_FIELDS = [
   // the staff switch that stops public demo booking while seats remain —
   // see submit-demo-registration.js's demoPublicBookingState.
   'eventTitle', 'eventType', 'eventStartAt', 'eventEndAt', 'publicRegistrationPaused',
+  // Paid-workshop pricing/credit switches read by getDemoPricing and the
+  // register form (e.g. Halloween 2026: early bird, HST, no credit).
+  'earlyBirdTuitionCents', 'earlyBirdEndsAt', 'taxRate', 'demoCreditEnabled',
 ]
 const LEGACY_FIELDS = [
   'programId', 'title', 'location', 'startDateTime', 'endDateTime',

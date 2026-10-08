@@ -33,12 +33,15 @@ function buildDemoCards(programs: any[], offeringsByProgram: Record<string, any[
     .map(p => {
       const demoOffering = (offeringsByProgram[p.id] ?? []).find((o: any) => o.offeringType === 'demo')
       if (!demoOffering) return null
-      const { priceCents, currency } = getDemoPricing(demoOffering)
-      const demoPriceLabel = `$${(priceCents / 100).toFixed(2)} ${currency}`
-      const demoPriceDisplay = demoPriceLabel.split(' ')[0]
+      // Before-tax price; "+ tax" when the offering adds HST at registration.
+      const { subtotalCents, taxCents, currency } = getDemoPricing(demoOffering)
+      const tax = taxCents > 0 ? ' + tax' : ''
+      const demoPriceLabel = `$${(subtotalCents / 100).toFixed(2)} ${currency}${tax}`
+      const demoPriceDisplay = `$${(subtotalCents / 100).toFixed(2)}${tax}`
+      const workshop = /WORKSHOP/i.test(String(demoOffering.eventType ?? ''))
       return {
         id: `${p.id}-demo`,
-        title: `${p.title} — ${demoPriceDisplay} Demo`,
+        title: workshop ? `${p.title} — ${demoPriceDisplay}` : `${p.title} — ${demoPriceDisplay} Demo`,
         category: DEMO_CLASS_CATEGORY,
         imageUrl: p.imageUrl,
         ageRange: p.ageRange,
@@ -47,6 +50,7 @@ function buildDemoCards(programs: any[], offeringsByProgram: Record<string, any[
         demoOfferingId: demoOffering.id,
         demoPriceLabel,
         demoPriceDisplay,
+        demoIsWorkshop: workshop,
         // Fully booked or public booking paused — the card then points to
         // the same register link, which shows the waitlist (if enabled) or
         // a fully-booked message instead of the booking form.
@@ -156,7 +160,7 @@ function ProgramCard({ program, packageId }: { program: any; packageId?: string 
             className="inline-flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-white shadow-sm transition-all duration-200 active:scale-95 hover:shadow-[0_4px_12px_rgba(12,97,98,0.35)]"
             style={{ backgroundColor: isDemoCard ? '#0EA5E9' : '#0c6162' }}
           >
-            {isDemoCard ? (program.demoFullyBooked ? (program.demoWaitlistEnabled ? 'Join Waitlist' : 'View') : `Try for ${program.demoPriceDisplay}`) : 'View'}
+            {isDemoCard ? (program.demoFullyBooked ? (program.demoWaitlistEnabled ? 'Join Waitlist' : 'View') : (program.demoIsWorkshop ? 'Register' : `Try for ${program.demoPriceDisplay}`)) : 'View'}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-3 w-3 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5">
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>

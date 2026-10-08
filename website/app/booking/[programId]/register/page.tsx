@@ -68,11 +68,18 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
   const clientRequestId = useRef('')
   // Display-only — the server independently resolves the same value from
   // the offering doc and never trusts anything the browser sends.
-  const { priceCents, currency } = getDemoPricing(offering)
+  const pricing = getDemoPricing(offering)
+  const { priceCents, currency } = pricing
   // Wording follows the offering's eventType (demo vs workshop).
   const terms = eventTerms(offering?.eventType)
   const priceLabel = `$${(priceCents / 100).toFixed(2)} ${currency}`
-  const priceDisplay = priceLabel.split(' ')[0]
+  // Headings use the before-tax price ("$25.00 Workshop"); the price box and
+  // e-transfer amount use priceLabel, which includes any HST.
+  const priceDisplay = `$${(pricing.subtotalCents / 100).toFixed(2)}`
+  const earlyBirdUntil = pricing.earlyBirdEndsAt
+    ? new Date(new Date(pricing.earlyBirdEndsAt).getTime() - 1).toLocaleDateString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric' })
+    : null
+  const creditEnabled = offering?.demoCreditEnabled !== false
   const [form, setFormState] = useState({
     parentName: '', parentEmail: '', parentPhone: '', childName: '', childAge: '', consentAccepted: false,
   })
@@ -174,8 +181,13 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
         eventDate: formatEventDateTime(offering),
         eventTime: formatEventTimeRange(offering),
         eventLocation: offering.location ?? '',
-        amountCents: String(priceCents),
-        currency,
+        // The amount the server actually recorded (it re-prices at submit,
+        // e.g. across the early-bird cutoff); the local value is a fallback.
+        amountCents: String(registerResult.amountCents ?? priceCents),
+        currency: registerResult.currency ?? currency,
+        credit: creditEnabled ? '1' : '0',
+        eventStartAt: offering.eventStartAt ?? '',
+        eventEndAt: offering.eventEndAt ?? '',
       })
       router.push(`/booking/demo-etransfer?${params.toString()}`)
     } catch (err: any) {
@@ -225,7 +237,14 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
           ) : (
             <div className="shrink-0 text-right">
               <p className="text-xl font-black text-slate-800">{priceLabel}</p>
-              <p className="text-xs text-slate-400">{terms.oneTimeCharge}</p>
+              {pricing.taxCents > 0 && (
+                <p className="text-xs text-slate-500">{priceDisplay} + ${(pricing.taxCents / 100).toFixed(2)} HST</p>
+              )}
+              {earlyBirdUntil ? (
+                <p className="text-xs font-bold text-[#ED174B]">Early bird until {earlyBirdUntil} (regular ${(pricing.regularSubtotalCents / 100).toFixed(0)} + tax)</p>
+              ) : (
+                <p className="text-xs text-slate-400">{terms.oneTimeCharge}</p>
+              )}
             </div>
           )}
         </div>
@@ -251,10 +270,12 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
               <p className="text-sm text-slate-400 mt-0.5">Just a few details to hold your child&apos;s {terms.spot}.</p>
             </div>
 
-            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-              <p className="text-sm font-bold text-amber-700">{terms.creditHeadline(priceDisplay)}</p>
-              <p className="text-sm text-amber-700 mt-1">The {priceDisplay} is credited toward regular enrollment after your child attends.</p>
-            </div>
+            {creditEnabled && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                <p className="text-sm font-bold text-amber-700">{terms.creditHeadline(priceDisplay)}</p>
+                <p className="text-sm text-amber-700 mt-1">The {priceDisplay} is credited toward regular enrollment after your child attends.</p>
+              </div>
+            )}
           </>
         )}
 
