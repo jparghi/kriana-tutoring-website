@@ -46,13 +46,24 @@ const label = 'padding:5px 0;color:#4a7c7d;font-size:13px;width:130px;vertical-a
 const value = 'padding:5px 0;font-weight:700;color:#0f172a;font-size:13px'
 const row = (name, content) => `<tr><td style="${label}">${name}</td><td style="${value}">${content}</td></tr>`
 
+/** "4 monthly payments" — the option the parent chose, or ''. */
+export function chosenOptionLabel(view) {
+  return view.paymentChoices?.find(choice => choice.value === view.paymentOption)?.label || ''
+}
+
+function dueLabel(isoDate) {
+  return new Date(`${isoDate}T12:00:00Z`).toLocaleDateString('en-CA', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
+}
+
 function detailsTable({ registration, view, acceptedAtLabel }) {
+  const option = chosenOptionLabel(view)
   return `
     <table style="width:100%;border-collapse:collapse">
       ${row('Program', escapeHtml(view.programTitle))}
       ${row('Child', escapeHtml(registration.childName))}
       ${row('Learning Path', `${escapeHtml(view.packageName)} — ${view.classCount} classes`)}
       ${row('Reference', escapeHtml(view.registrationNumber))}
+      ${option ? row('Payment option', escapeHtml(option)) : ''}
       ${row('Accepted by', escapeHtml(view.acceptedBy))}
       ${row('Accepted on', escapeHtml(acceptedAtLabel))}
       ${row('Terms version', escapeHtml(registration.termsVersion || ''))}
@@ -67,6 +78,24 @@ function statementsHtml() {
 function etransferHtml(view) {
   const e = view.etransfer
   if (view.paymentRecorded || !e) return ''
+  if (view.schedule?.length) {
+    const multiple = view.schedule.length > 1
+    return `
+    <div style="background:#e6f4f4;border-left:4px solid #0c6162;border-radius:12px;padding:16px 18px;margin:20px 0 0">
+      <p style="margin:0 0 8px;font-weight:800;color:#0f172a;font-size:14px">Next: pay by Interac e-Transfer</p>
+      <table style="width:100%;border-collapse:collapse">
+        ${row('Send to', escapeHtml(e.sendTo))}
+        ${row('Send now', `${money(e.nextPaymentCents ?? view.schedule[0].totalCents)} <span style="font-weight:400;color:#64748b">incl. HST</span>`)}
+        ${row('e-Transfer message', escapeHtml(e.message))}
+      </table>
+      ${multiple ? `
+      <p style="margin:12px 0 4px;font-weight:700;color:#0f172a;font-size:13px">Your payment schedule</p>
+      <table style="width:100%;border-collapse:collapse">
+        ${view.schedule.map(item => row(`Payment ${item.number}`, `${money(item.totalCents)} <span style="font-weight:400;color:#64748b">due ${escapeHtml(dueLabel(item.dueDate))}</span>`)).join('')}
+      </table>` : ''}
+      <p style="margin:10px 0 0;color:#64748b;font-size:12px">Your registration is confirmed once your first payment is received.</p>
+    </div>`
+  }
   return `
     <div style="background:#e6f4f4;border-left:4px solid #0c6162;border-radius:12px;padding:16px 18px;margin:20px 0 0">
       <p style="margin:0 0 8px;font-weight:800;color:#0f172a;font-size:14px">Next: pay by Interac e-Transfer</p>
