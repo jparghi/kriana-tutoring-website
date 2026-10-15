@@ -92,7 +92,14 @@ export async function resolveDemoCampaignOffering(db) {
 
   const programRef = db.collection('programs').doc(config.programId)
   const offeringRef = db.collection('programOfferings').doc(config.offeringId)
-  const [programDoc, offeringDoc] = await Promise.all([programRef.get(), offeringRef.get()])
+  let programDoc, offeringDoc
+  try {
+    ;[programDoc, offeringDoc] = await Promise.all([programRef.get(), offeringRef.get()])
+  } catch (error) {
+    // Firestore down or over quota — degrade the page, don't 500 it.
+    console.error('demo campaign offering read failed', error)
+    return withPageState({ status: 'unavailable' })
+  }
 
   let live
   try {
@@ -142,7 +149,14 @@ export async function resolveDemoSessionOfferings(programId, offeringIds, db) {
   if (!programId || !ids.length) return out
   if (!db) db = getAdminDb()
 
-  const programDoc = await db.collection('programs').doc(programId).get()
+  let programDoc
+  try {
+    programDoc = await db.collection('programs').doc(programId).get()
+  } catch (error) {
+    console.error('demo session program read failed', programId, error)
+    for (const offeringId of ids) out[offeringId] = { status: 'unavailable', waitlistOpen: false }
+    return out
+  }
   await Promise.all(ids.map(async offeringId => {
     try {
       const offeringDoc = await db.collection('programOfferings').doc(offeringId).get()
