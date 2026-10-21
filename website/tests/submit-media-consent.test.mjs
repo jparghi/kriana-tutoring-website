@@ -1,16 +1,19 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  CURRENT_MEDIA_CONSENT_EVENT_ID,
   GENERAL_MEDIA_CONSENT_ID,
   MEDIA_CONSENT_VERSION,
   validateMediaConsentPayload,
 } from '../lib/media-consent.js'
 import { mediaConsentSubjectKey, saveMediaConsent } from '../netlify/functions/submit-media-consent.js'
 
+// A past event with am/pm sessions, so the tests don't change whenever the
+// current consent event does.
+const AM_PM_EVENT_ID = 'ye-pd-day-stittsville-2026-10-02'
+
 function baseBody(overrides = {}) {
   return {
-    eventId: CURRENT_MEDIA_CONSENT_EVENT_ID,
+    eventId: AM_PM_EVENT_ID,
     clientRequestId: 'client-request-id-12345',
     parentName: 'Jamie Parent',
     childName: 'Alex Parent',
@@ -208,4 +211,9 @@ test('general and event consent for the same child are separate subjects', async
   assert.equal(general.programName, 'Camp')
   assert.equal(general.sessionLabel, null)
   assert.equal(general.eventSnapshot.date, null)
+})
+
+test('the Halloween workshop accepts its single session', () => {
+  const result = validateMediaConsentPayload(baseBody({ eventId: 'ye-halloween-stittsville-2026-10-25', sessionId: 'halloween' }))
+  assert.equal(result.consent.sessionId, 'halloween')
 })

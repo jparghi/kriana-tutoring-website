@@ -48,9 +48,22 @@ export const MEDIA_CONSENT_EVENTS = Object.freeze({
       { id: 'pm', label: 'Afternoon Workshop (2:00 PM–3:30 PM)' },
     ],
   },
+  'ye-halloween-stittsville-2026-10-25': {
+    id: 'ye-halloween-stittsville-2026-10-25',
+    title: 'Young Engineers Halloween STEM Workshop',
+    dateLabel: 'October 25, 2026',
+    date: '2026-10-25',
+    venueName: 'Stittsville',
+    address: '205 Metric Circle, Stittsville, ON K2V 0L3',
+    operatedBy: 'Kriana Tutoring | Young Engineers Kanata',
+    franchisee: 'Young Engineers Kanata',
+    sessions: [
+      { id: 'halloween', label: 'Halloween Workshop (10:30 AM–12:30 PM)' },
+    ],
+  },
 })
 
-export const CURRENT_MEDIA_CONSENT_EVENT_ID = 'ye-pd-day-stittsville-2026-10-02'
+export const CURRENT_MEDIA_CONSENT_EVENT_ID = 'ye-halloween-stittsville-2026-10-25'
 
 export const GENERAL_MEDIA_CONSENT_ID = 'general'
 

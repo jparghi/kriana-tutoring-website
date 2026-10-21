@@ -15,7 +15,10 @@ export const metadata: Metadata = {
 // the session from an email link. The evergreen version lives at /consent.
 export default function WorkshopMediaConsentPage({ searchParams }: { searchParams: { session?: string } }) {
   const event = MEDIA_CONSENT_EVENTS[CURRENT_MEDIA_CONSENT_EVENT_ID]
-  const initialSessionId = event.sessions.some(session => session.id === searchParams.session) ? searchParams.session : ""
+  // A single-session event needs no pick.
+  const initialSessionId = event.sessions.some(session => session.id === searchParams.session)
+    ? searchParams.session
+    : event.sessions.length === 1 ? event.sessions[0].id : ""
 
   return (
     <MediaConsentPage

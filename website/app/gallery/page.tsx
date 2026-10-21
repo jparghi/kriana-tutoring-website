@@ -15,7 +15,7 @@ import { ASSESSMENT_BOOKING_URL, ROBOTICS_PATH } from "../../lib/site-links";
 const WORKSHOP_WAITLIST_PATH = "/events";
 import { breadcrumbSchema, siteUrl, toJsonLd } from "../../lib/seo";
 
-const { highlight, spotlight, more } = getGalleryVideos();
+const { highlight, spotlight, spotlights, more } = getGalleryVideos();
 
 export const metadata: Metadata = {
   title: "Gallery | See Young Engineers in Action",
@@ -300,12 +300,13 @@ export default function GalleryPage() {
         </section>
         ))}
 
-        {/* The wide build video sits below the real-moments reel: parents
+        {/* The wide build videos sit below the real-moments reel: parents
             arriving from a workshop email see real children building first.
-            The id is the deep link the post-workshop recap email uses
-            (/gallery#bricks-challenge-carousel). */}
-        {spotlight && (
+            The ids are the deep links the emails use
+            (/gallery#bricks-challenge-carousel, /gallery#halloween-ghost-buddies). */}
+        {spotlights.map((spotlight) => (
           <section
+            key={spotlight.id}
             id={spotlight.id}
             aria-label={spotlight.title}
             className="scroll-mt-4 border-t border-[#E5EBE1] px-6 py-14 sm:px-10 lg:py-20"
@@ -331,7 +332,7 @@ export default function GalleryPage() {
               </figure>
             </div>
           </section>
-        )}
+        ))}
 
         <section
           aria-labelledby="coming-soon-title"

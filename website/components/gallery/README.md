@@ -30,8 +30,15 @@ play button drawn on, for the Reel follow-up email, which links to
 `/gallery#october-2-workshop-highlights`. Only one entry should carry `highlight`;
 move it to the next event's Reel when there is one.
 
+A second spotlight, "Halloween Build: Ghost Buddies" (`order: -1`, so it shows
+first), was added 2026-10-21 at the owner's request for the Halloween workshop
+consent email, which links to `/gallery#halloween-ghost-buddies`. Source: the
+Young Engineers franchise portal's Mechanics Camps video `Ghost buddies.mp4`
+(1920 × 1080, 46 s, 167 MB; kept outside `public/`). Same web encode as the
+Carousel (≈7 MB); poster is the frame at 20 seconds.
+
 `featured` picks the homepage/tutoring GalleryPreview (still the Sept 12 reel);
-`spotlight` picks the video that leads `/gallery`. Other approved videos follow
+`spotlight` marks the wide build videos (every marked one is shown, in order; the first is the share image). Other approved videos follow
 below it as social proof.
 
 `data/gallery.ts` is the central collection. `lib/gallery.server.ts` filters

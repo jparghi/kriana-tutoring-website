@@ -19,7 +19,8 @@ interface GalleryMediaBase {
   publicApproved: boolean;
   // Highlighted by the homepage/tutoring GalleryPreview.
   featured?: boolean;
-  // The /gallery "Build spotlight" video, shown after the real-moments reels.
+  // A /gallery "Build spotlight" video (wide), shown after the real-moments
+  // reels; several may carry it, shown in order.
   spotlight?: boolean;
   // The /gallery event highlight, shown first with its own copy and CTAs.
   highlight?: { heading: string; subheading: string; takeaway: string };
@@ -43,6 +44,23 @@ export type GalleryMedia = GalleryVideo | GalleryImage;
 // Curated entries only. Never populate this collection by scanning a folder.
 // Keep unapproved originals outside public/, even when publicApproved is false.
 export const galleryMedia: GalleryMedia[] = [
+  {
+    id: "halloween-ghost-buddies",
+    type: "video",
+    src: "/videos/gallery/halloween-ghost-buddies-v1.mp4",
+    poster: "/images/gallery/halloween-ghost-buddies-v1.jpg",
+    alt: "Two brick-built Young Engineers ghost models moving on a motorized gear base",
+    title: "Halloween Build: Ghost Buddies",
+    caption:
+      "A motor and a train of gears bring these two ghosts to life: the kind of spooky moving machine kids build at our Halloween STEM Workshop.",
+    width: 1280,
+    height: 720,
+    durationLabel: "46 seconds",
+    categories: ["robotics"],
+    publicApproved: true,
+    spotlight: true,
+    order: -1,
+  },
   {
     id: "bricks-challenge-carousel",
     type: "video",
