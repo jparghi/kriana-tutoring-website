@@ -20,9 +20,9 @@ const WORKSHOP = {
   thisEvent: 'This workshop',
   spot: 'workshop spot',
   oneTimeCharge: 'one-time workshop fee',
-  priceTag: price => `${price} Workshop`,
+  priceTag: () => 'Workshop',
   reserveLabel: price => `Reserve a Workshop Spot — ${price}`,
-  registerHeading: price => `Register for the ${price} Workshop`,
+  registerHeading: () => 'Register for the Workshop',
   creditHeadline: price => `Your ${price} workshop fee is credited when you enroll.`,
   faqTitle: 'workshop',
 }
