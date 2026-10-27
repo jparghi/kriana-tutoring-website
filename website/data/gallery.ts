@@ -114,16 +114,37 @@ export const galleryMedia: GalleryMedia[] = [
     durationLabel: "40 seconds",
     categories: ["robotics", "demo"],
     publicApproved: true,
-    highlight: {
-      heading: "October 2 Workshop Highlights",
-      subheading: "See our Young Engineers in action.",
-      takeaway: "They didn’t just build — they learned why it works.",
-    },
     order: 2,
     event: {
       title: "Young Engineers PA/PD Day STEM Workshop",
       date: "2026-10-02",
       location: "Kanata, Ottawa",
+    },
+  },
+  {
+    id: "halloween-workshop-highlights",
+    type: "video",
+    src: "/videos/demo/young-engineers-halloween-workshop-oct-2026-highlight.mp4",
+    poster: "/images/demo/halloween-workshop-oct-2026-highlight-poster.jpg",
+    alt: "Children at Kriana's October 25 Young Engineers Halloween STEM Workshop building motorized Ghost Buddies models",
+    title: "October 25 Young Engineers Halloween STEM Workshop",
+    caption:
+      "Kids built Ghost Buddies, spooky moving machines powered by gears and motors, with a little help from our instructors.",
+    width: 720,
+    height: 1280,
+    durationLabel: "30 seconds",
+    categories: ["robotics", "demo"],
+    publicApproved: true,
+    highlight: {
+      heading: "Halloween Workshop Highlights",
+      subheading: "Ghost Buddies came to life! 👻",
+      takeaway: "Spooky fun on the outside, real engineering on the inside.",
+    },
+    order: 3,
+    event: {
+      title: "Young Engineers Halloween STEM Workshop",
+      date: "2026-10-25",
+      location: "Stittsville, Ottawa",
     },
   },
 ];

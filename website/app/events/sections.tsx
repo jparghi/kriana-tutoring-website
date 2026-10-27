@@ -531,7 +531,7 @@ export function PastDemoGallery({ past }: { past: DemoEvent[] }) {
                       </>
                     )}
                     {(demo.galleryImages?.length ?? 0) > 0 && <div className="mt-5"><PhotoGrid images={demo.galleryImages!} max={8} /></div>}
-                    <Link href={GALLERY_PATH} className="mt-6 inline-block rounded-xl bg-[#0A2D5A] px-6 py-3 text-sm font-black text-white">View {eventTerms(demo.eventType).short} Highlights</Link>
+                    <Link href={demo.galleryId ? `${GALLERY_PATH}#${demo.galleryId}` : GALLERY_PATH} className="mt-6 inline-block rounded-xl bg-[#0A2D5A] px-6 py-3 text-sm font-black text-white">View {eventTerms(demo.eventType).short} Highlights</Link>
                   </div>
                 </div>
               </article>

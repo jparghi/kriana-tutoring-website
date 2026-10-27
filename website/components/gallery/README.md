@@ -30,6 +30,17 @@ play button drawn on, for the Reel follow-up email, which links to
 `/gallery#october-2-workshop-highlights`. Only one entry should carry `highlight`;
 move it to the next event's Reel when there is one.
 
+The highlight moved to "Halloween Workshop Highlights" on 2026-10-27 at the owner's
+request; October 2 now shows with the other reels (every reel section has its `id`,
+so old deep links still land on it). Source:
+`GhostBuddies_Halloween_Workshop_Reel_30.0s.MP4` in the resources repo's
+`Social Media/03 - Photos & Videos/Oct 25, 2026 Halloween Workshop pics/ghost buddies reel/`
+(1080 × 1920 HEVC, 30 s, 34 MB; kept outside `public/`). It shares the /events copy
+(`public/videos/demo/…-oct-2026-highlight.mp4`, 720 × 1280 H.264 CRF 26, ≈5.5 MB;
+poster is the frame at 1.2 s, the "Ghost Buddies came to life!" title card).
+Each `data/demos.ts` event's `galleryId` deep-links its /events "View Highlights"
+button to its reel here.
+
 A second spotlight, "Halloween Build: Ghost Buddies" (`order: -1`, so it shows
 first), was added 2026-10-21 at the owner's request for the Halloween workshop
 consent email, which links to `/gallery#halloween-ghost-buddies`. Source: the

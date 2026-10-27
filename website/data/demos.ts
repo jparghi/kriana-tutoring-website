@@ -62,6 +62,7 @@ export interface DemoEvent {
   // caption: optional line shown under the reel in "Previous Events" proof.
   highlightVideo?: { src: string; poster: string; durationLabel: string; caption?: string };
   galleryImages?: DemoMedia[]; // curated, approved photos only — 8 max
+  galleryId?: string; // data/gallery.ts entry the "View Highlights" button deep-links to
   registrationUrl: string;
   // Firestore programs id the session offerings belong to (must also be in
   // DEMO_ELIGIBLE_PROGRAM_IDS in lib/demo-eligibility.js).
@@ -101,6 +102,7 @@ export const demos: DemoEvent[] = [
       poster: "/images/demo/demo-sept-2026-highlight-poster.jpg",
       durationLabel: "26 seconds",
     },
+    galleryId: "young-engineers-demo-sept-2026",
     galleryImages: [],
     registrationUrl: "https://krianatutoring.com/events",
   },
@@ -143,6 +145,7 @@ export const demos: DemoEvent[] = [
       width: 1400,
       height: 1002,
     },
+    galleryId: "october-2-workshop-highlights",
     registrationUrl: "https://krianatutoring.com/events",
     programId: "young-engineers-demo-stittsville-oct-2026",
   },
@@ -189,6 +192,7 @@ export const demos: DemoEvent[] = [
       durationLabel: "30 seconds",
       caption: "Ghost Buddies came to life! 👻 Our young engineers built spooky moving machines with gears and motors, all with a little help from our instructors.",
     },
+    galleryId: "halloween-workshop-highlights",
     registrationUrl: "https://krianatutoring.com/events",
     programId: "young-engineers-halloween-stittsville-oct-2026",
   },

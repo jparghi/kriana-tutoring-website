@@ -104,8 +104,8 @@ export default function GalleryPage() {
         </section>
 
         {/* Latest workshop highlight: social proof first, then the two next
-            steps. The id is the deep link the Reel follow-up email uses
-            (/gallery#october-2-workshop-highlights). */}
+            steps. The id is the deep link from /events
+            (/gallery#halloween-workshop-highlights). */}
         {highlight?.highlight && (
           <section
             id={highlight.id}
@@ -191,8 +191,9 @@ export default function GalleryPage() {
         {more.map((video, videoIndex) => (
         <section
           key={video.id}
+          id={video.id}
           aria-labelledby={`more-title-${video.id}`}
-          className={`relative isolate overflow-hidden px-6 py-14 sm:px-10 lg:py-20 ${videoIndex === 0 && !highlight ? "pt-6 lg:pt-10" : "border-t border-[#E5EBE1]"}`}
+          className={`relative isolate scroll-mt-4 overflow-hidden px-6 py-14 sm:px-10 lg:py-20 ${videoIndex === 0 && !highlight ? "pt-6 lg:pt-10" : "border-t border-[#E5EBE1]"}`}
         >
           <div
             aria-hidden="true"
