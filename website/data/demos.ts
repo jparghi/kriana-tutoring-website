@@ -59,7 +59,8 @@ export interface DemoEvent {
   build?: string; // the model children built
   learningTopics: string[];
   heroImage?: DemoMedia;
-  highlightVideo?: { src: string; poster: string; durationLabel: string };
+  // caption: optional line shown under the reel in "Previous Events" proof.
+  highlightVideo?: { src: string; poster: string; durationLabel: string; caption?: string };
   galleryImages?: DemoMedia[]; // curated, approved photos only — 8 max
   registrationUrl: string;
   // Firestore programs id the session offerings belong to (must also be in
@@ -173,6 +174,7 @@ export const demos: DemoEvent[] = [
       },
     ],
     program: "Halloween Adventure",
+    build: "Ghost Buddies",
     learningTopics: ["Moving machines", "Gears", "Motors", "Mechanisms", "Building and testing"],
     heroImage: {
       src: "/images/demo/young-engineers-halloween-workshop-oct-2026.jpg",
@@ -181,6 +183,12 @@ export const demos: DemoEvent[] = [
       height: 1080,
     },
     heroVideo: { src: "/videos/demo/young-engineers-halloween-workshop-oct-2026.mp4" },
+    highlightVideo: {
+      src: "/videos/demo/young-engineers-halloween-workshop-oct-2026-highlight.mp4",
+      poster: "/images/demo/halloween-workshop-oct-2026-highlight-poster.jpg",
+      durationLabel: "30 seconds",
+      caption: "Ghost Buddies came to life! 👻 Our young engineers built spooky moving machines with gears and motors, all with a little help from our instructors.",
+    },
     registrationUrl: "https://krianatutoring.com/events",
     programId: "young-engineers-halloween-stittsville-oct-2026",
   },

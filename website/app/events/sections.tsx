@@ -13,7 +13,7 @@ import {
 import type { DemoEvent, DemoMedia, DemoStatus } from "../../data/demos"
 import type { DemoReview } from "../../data/demo-reviews"
 import { eventTerms } from "../../lib/demo-event-copy"
-import { demoMonth, demoPriceText, formatDemoDate } from "../../lib/demo-hub"
+import { demoPriceText, formatDemoDate } from "../../lib/demo-hub"
 import { licensedRoboticsPrograms } from "../../lib/robotics-content"
 import { GALLERY_PATH, ROBOTICS_PATH } from "../../lib/site-links"
 import { DemoHighlightVideo } from "./DemoHighlightVideo"
@@ -273,7 +273,6 @@ function PhotoGrid({ images, max }: { images: DemoMedia[]; max: number }) {
 }
 
 export function PreviousDemoProof({ demo, offeringId, next }: { demo: DemoEvent; offeringId: string; next: DemoEvent | null }) {
-  const month = demoMonth(demo.date)
   const terms = eventTerms(demo.eventType)
   const nextTerms = next ? eventTerms(next.eventType) : null
   return (
@@ -282,7 +281,7 @@ export function PreviousDemoProof({ demo, offeringId, next }: { demo: DemoEvent;
         <SectionHeading
           id="proof-heading"
           title="See What Kids Have Built at Our Previous Events"
-          sub={`Our ${month} Young Engineers ${terms.short}${demo.soldOut ? " SOLD OUT 🎉" : ""}`}
+          sub={`Our ${formatDemoDate(demo.date)} ${demo.title.replace(/^Young Engineers /, "")}${demo.soldOut ? " SOLD OUT 🎉" : ""}`}
         />
         {demo.highlightVideo && (
           <div className="mt-7">
@@ -290,14 +289,15 @@ export function PreviousDemoProof({ demo, offeringId, next }: { demo: DemoEvent;
               offeringId={offeringId || null}
               src={demo.highlightVideo.src}
               poster={demo.highlightVideo.poster}
-              label={`Play the ${formatDemoDate(demo.date)} demo highlight video`}
+              label={`Play the ${formatDemoDate(demo.date)} ${terms.noun} highlight reel`}
             />
+            {demo.highlightVideo.caption && <p className="mx-auto mt-5 max-w-xl text-[15px] leading-relaxed text-slate-700">{demo.highlightVideo.caption}</p>}
           </div>
         )}
         {(demo.galleryImages?.length ?? 0) > 0 && <div className="mt-6 text-left"><PhotoGrid images={demo.galleryImages!} max={5} /></div>}
         <p className="mt-6 text-sm font-black uppercase tracking-wide text-[#0c6162]">Real kids • Real engineering • Real learning</p>
         <Link href={`#gallery-${demo.id}`} className="mt-5 inline-block rounded-xl border-2 border-[#0A2D5A] px-6 py-3 text-sm font-black text-[#0A2D5A] transition-colors hover:bg-[#0A2D5A]/5">
-          See {month} {terms.short} Highlights
+          See {formatDemoDate(demo.date)} {terms.short} Highlights
         </Link>
         {next && nextTerms && (
           <div className="mx-auto mt-10 max-w-xl rounded-2xl border border-[#F2A100]/40 bg-[#FFF7E8] p-6">
@@ -502,7 +502,7 @@ export function PastDemoGallery({ past }: { past: DemoEvent[] }) {
         <div className="mt-8 space-y-8">
           {past.map(demo => {
             const image = demo.highlightVideo
-              ? { src: demo.highlightVideo.poster, alt: `Highlights from the ${formatDemoDate(demo.date)} Young Engineers demo`, width: 540, height: 960 }
+              ? { src: demo.highlightVideo.poster, alt: `Highlights from the ${formatDemoDate(demo.date)} Young Engineers ${eventTerms(demo.eventType).noun}`, width: 540, height: 960 }
               : demo.heroImage
             return (
               <article key={demo.id} id={`gallery-${demo.id}`} className="scroll-mt-4 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">

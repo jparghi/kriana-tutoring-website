@@ -97,7 +97,7 @@ function highlightVideoSchema(demo: DemoEvent) {
     "@context": "https://schema.org",
     "@type": "VideoObject",
     name: `Young Engineers ${demo.location} ${eventTerms(demo.eventType).short} — highlights`,
-    description: `Highlights from a Young Engineers STEM and robotics ${eventTerms(demo.eventType).noun} in Kanata.`,
+    description: `Highlights from a Young Engineers STEM and robotics ${eventTerms(demo.eventType).noun} in ${demo.location}.`,
     thumbnailUrl: `${siteUrl}${demo.highlightVideo.poster}`,
     contentUrl: `${siteUrl}${demo.highlightVideo.src}`,
     uploadDate: demo.sessions[0]?.startIso ?? demo.date,
