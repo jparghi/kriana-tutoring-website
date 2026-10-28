@@ -36,6 +36,7 @@ const JSON_HEADERS = {
 const MAX_BODY_BYTES = 20 * 1024
 const OFFERING_ACTIVE_STATUSES = new Set(['Open', 'Full'])
 const DEMO_CONSENT_VERSION = 'demo-registration-v1'
+const ACCOMMODATIONS_MAX = 500
 
 function json(statusCode, body) {
   return { statusCode, headers: JSON_HEADERS, body: JSON.stringify(body) }
@@ -88,8 +89,8 @@ export function sanitizeAttribution(raw) {
   return out
 }
 
-// ─── Payload validation (5-field spec only — no medical notes, no grade, no
-// emergency contact, no photo consent) ───────────────────────────────────
+// ─── Payload validation (5-field spec plus an optional allergies /
+// accommodations note — no grade, no emergency contact, no photo consent) ──
 
 export function validatePayload(body) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
@@ -117,6 +118,8 @@ export function validatePayload(body) {
     parentPhone: normalizeText(input.parentPhone, 40),
     childName: normalizeText(input.childName, 120),
     childAge: Number(String(input.childAge).trim()),
+    // Optional: only what staff need for the child to take part safely.
+    accommodations: normalizeText(input.accommodations, ACCOMMODATIONS_MAX),
     consentAccepted: input.consentAccepted === true,
   }
 
@@ -372,6 +375,7 @@ export async function saveDemoRegistration(db, request) {
       parentPhone: registration.parentPhone,
       childName: registration.childName,
       childAge: registration.childAge,
+      accommodations: registration.accommodations || null,
       childEligibilityKeyHash,
       registrationNumber,
       consentAccepted: true,

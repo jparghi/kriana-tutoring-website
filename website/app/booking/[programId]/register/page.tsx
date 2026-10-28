@@ -47,7 +47,8 @@ const inputClass = 'w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text
 // ─── Young Engineers Demo Registration ─────────────────────────────────────
 //
 // Intentionally minimal — a 5-field form (parentName, parentEmail,
-// parentPhone, childName, childAge) plus required consent. No medicalNotes,
+// parentPhone, childName, childAge) plus required consent, and for workshops
+// an optional allergies/accommodations note (kids stay for hours). No medicalNotes,
 // emergencyContact, specialRequests, childGrade, or photoConsent — those
 // belong to the separate request_only enrollment form and are not part of
 // this product's spec. This component only renders when the program page's
@@ -81,8 +82,9 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
     : null
   const creditEnabled = offering?.demoCreditEnabled !== false
   const [form, setFormState] = useState({
-    parentName: '', parentEmail: '', parentPhone: '', childName: '', childAge: '', consentAccepted: false,
+    parentName: '', parentEmail: '', parentPhone: '', childName: '', childAge: '', accommodations: '', consentAccepted: false,
   })
+  const askAccommodations = !isWaitlist && terms.kind === 'workshop'
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
@@ -145,6 +147,7 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
             parentPhone: form.parentPhone,
             childName: form.childName,
             childAge: form.childAge,
+            ...(askAccommodations && form.accommodations.trim() ? { accommodations: form.accommodations } : {}),
             consentAccepted: form.consentAccepted,
           },
           marketingAttribution: buildAttribution(),
@@ -205,7 +208,7 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
         <div className="px-5 py-4 flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-0.5">{isWaitlist ? terms.waitlistLabel : terms.priceTag(priceDisplay)}</p>
-            <h2 className="font-black text-slate-800">{program.title}</h2>
+            <h2 className="font-black text-slate-800">{offering.eventTitle || program.title}</h2>
             {/* This campaign's demo has a fixed date/time/location (set on
                 the offering doc by an admin) — never say "we'll follow up
                 to schedule," which is wrong once an offering carries a
@@ -298,6 +301,11 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
         <Field label="Child's Age" required>
           <input required type="number" min={1} max={18} className={inputClass} value={form.childAge} onChange={e => set('childAge', e.target.value)} placeholder="8" />
         </Field>
+        {askAccommodations && (
+          <Field label="Allergies or accommodations" hint="Optional. Only what our instructors need to know to keep your child safe.">
+            <textarea rows={2} maxLength={500} className={inputClass} value={form.accommodations} onChange={e => set('accommodations', e.target.value)} placeholder="e.g. peanut allergy" />
+          </Field>
+        )}
 
         <label className="flex items-start gap-3 cursor-pointer">
           <input type="checkbox" required checked={form.consentAccepted} onChange={e => set('consentAccepted', e.target.checked)} className="mt-0.5 accent-[#0c6162] w-4 h-4 shrink-0" />

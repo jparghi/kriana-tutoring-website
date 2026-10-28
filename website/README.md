@@ -38,6 +38,19 @@ This keeps the site on `http://localhost:3000` (Next.js itself runs
 internally on port 3500 — you never need to visit that port directly;
 Netlify's dev proxy won't share a single port with the framework it wraps).
 
+## Adding a Workshop to /events
+
+`/events` shows the next upcoming event from `data/demos.ts`. Every session is its own Firestore `programOfferings` doc, with its own capacity, waitlist and price. The page never shows a session as bookable unless the register endpoint would accept it.
+
+For a workshop that runs themes on several dates (like the Nov 2026 PA/PD Days):
+
+1. Add an entry to `data/demos.ts` with `themes` (name, palette `teal` or `purple`, blurb, models, model image, comparison rows) and one `sessions` item per date and theme (`theme`, times, `offeringId`). Optional `faq` and `details` replace the generic FAQ and fill the details grid.
+2. Copy `scripts/seed-pa-pd-days-nov-2026-offerings.mjs` and set the ids, times (watch EST/EDT), prices, early-bird end (exclusive: the start of the day after the deadline) and capacity. Give each offering `eligibilityScope` = its own id so a child can book several sessions but not the same one twice. Run it without flags for a dry run, then with `--apply`.
+3. Add the program id to `DEMO_ELIGIBLE_PROGRAM_IDS` in `lib/demo-eligibility.js`.
+4. Put approved images in `public/images/workshops/`. Never write "LEGO" in public copy.
+
+Prices on the page come from each offering through `getDemoPricing()`, the same function that charges. "N spots left" appears only at 3 or fewer seats, counting unpaid 48-hour holds. Tests: `node --test tests/*.test.mjs`.
+
 ## Environment Variables
 
 Copy `.env.example` to `.env.local` and fill in the public Firebase values needed for local development. Keep the enrollment flow fail-closed:

@@ -24,6 +24,7 @@ export const DEMO_ELIGIBLE_PROGRAM_IDS = Object.freeze([
   'young-engineers-demo-kanata-sep-2026', // Sept 12, 2026 Kanata demo — a standalone campaign program, not tied to any regular product
   'young-engineers-demo-stittsville-oct-2026', // Oct 2, 2026 Stittsville demo (two sessions, one offering each)
   'young-engineers-halloween-stittsville-oct-2026', // Oct 25, 2026 Stittsville Halloween workshop (paid, early bird)
+  'young-engineers-pa-pd-days-stittsville-nov-2026', // Nov 20 & 23, 2026 PA/PD Day workshops (four sessions, one offering each)
 ])
 
 export function isDemoEligibleProgramId(id) {

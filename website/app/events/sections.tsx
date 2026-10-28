@@ -10,10 +10,10 @@ import {
   Squares2X2Icon,
   WrenchScrewdriverIcon,
 } from "@heroicons/react/24/outline"
-import type { DemoEvent, DemoMedia, DemoStatus } from "../../data/demos"
+import type { DemoEvent, DemoFaqItem, DemoMedia, DemoStatus } from "../../data/demos"
 import type { DemoReview } from "../../data/demo-reviews"
 import { eventTerms } from "../../lib/demo-event-copy"
-import { demoPriceText, formatDemoDate } from "../../lib/demo-hub"
+import { demoPriceText, eventDateLabel, formatDemoDate } from "../../lib/demo-hub"
 import { licensedRoboticsPrograms } from "../../lib/robotics-content"
 import { GALLERY_PATH, ROBOTICS_PATH } from "../../lib/site-links"
 import { DemoHighlightVideo } from "./DemoHighlightVideo"
@@ -324,15 +324,15 @@ export function PreviousDemoProof({ demo, offeringId, next }: { demo: DemoEvent;
 const CHILD_STEPS = [
   { title: "Build", body: "Create a working engineering model.", Icon: WrenchScrewdriverIcon },
   { title: "Test", body: "Experiment with gears, structures, forces and movement.", Icon: BeakerIcon },
-  { title: "Learn", body: "Understand why the model works.", Icon: LightBulbIcon },
+  { title: "Explore", body: "Discover why the model works.", Icon: LightBulbIcon },
   { title: "Improve", body: "Modify the design and solve challenges.", Icon: ArrowPathIcon },
 ]
 
-export function WhatChildrenDo() {
+export function WhatChildrenDo({ title = "What Will My Child Do?" }: { title?: string }) {
   return (
     <section className="bg-slate-50 px-5 py-12 sm:px-8" aria-labelledby="child-heading">
       <div className="mx-auto max-w-4xl">
-        <SectionHeading id="child-heading" title="What Will My Child Do?" />
+        <SectionHeading id="child-heading" title={title} />
         <ol className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {CHILD_STEPS.map(({ title, body, Icon }, index) => (
             <li key={title} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -455,7 +455,7 @@ export function DemoJourney({
                 <span aria-hidden="true" className={`absolute -left-[1.85rem] top-5 h-3.5 w-3.5 rounded-full border-2 border-white sm:-left-[2.3rem] ${isActive ? "bg-[#F2A100]" : "bg-[#0c6162]"}`} />
                 <div className={`rounded-2xl border bg-white p-5 shadow-sm ${isActive ? "border-[#F2A100]" : "border-slate-200"}`}>
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-sm font-black text-[#0A2D5A]">{formatDemoDate(demo.date, "full")}</p>
+                    <p className="text-sm font-black text-[#0A2D5A]">{eventDateLabel(demo, "full")}</p>
                     <StatusBadge status={status} soldOut={demo.soldOut} />
                   </div>
                   <p className="mt-2 text-base font-black text-slate-800">{demo.title}</p>
@@ -514,7 +514,7 @@ export function PastDemoGallery({ past }: { past: DemoEvent[] }) {
                   )}
                   <div className="p-5 sm:p-7">
                     <StatusBadge status="COMPLETED" soldOut={demo.soldOut} />
-                    <h3 className="mt-3 text-xl font-black text-[#0A2D5A]">{formatDemoDate(demo.date, "long")} {eventTerms(demo.eventType).short} · {demo.location}</h3>
+                    <h3 className="mt-3 text-xl font-black text-[#0A2D5A]">{eventDateLabel(demo, "long")} {eventTerms(demo.eventType).short} · {demo.location}</h3>
                     {demo.build && (
                       <p className="mt-3 text-sm text-slate-500">The Challenge
                         <span className="block text-lg font-black text-slate-800">{demo.build}</span>
@@ -605,10 +605,11 @@ export function ReserveSection({
 
 // ─── FAQ ─────────────────────────────────────────────────────────────────
 
-export function DemoFaq({ ageRange, eventType, durationLabel = "90-minute" }: { ageRange: string; eventType?: string; durationLabel?: string }) {
+// `items` (an event's own `faq` from data/demos.ts) replaces the generic list.
+export function DemoFaq({ ageRange, eventType, durationLabel = "90-minute", items }: { ageRange: string; eventType?: string; durationLabel?: string; items?: DemoFaqItem[] }) {
   const terms = eventTerms(eventType)
   const workshop = terms.kind === "workshop"
-  const faqs = [
+  const faqs = items?.length ? items : [
     {
       q: `What happens at a Young Engineers ${terms.faqTitle}?`,
       a: workshop
