@@ -783,3 +783,39 @@ test('saveDemoRegistration writes nothing for a paused offering (direct register
   assert.deepEqual([...store.entries()], [...before.entries()])
   assert.equal(store.get('programOfferings/demo-off-1').heldCount, 0)
 })
+
+// ─── Optional allergies / accommodations (PA/PD Day workshops) ─────────
+
+test('validatePayload keeps an optional accommodations note, trimmed and capped at 500 chars', () => {
+  const none = validatePayload(baseRequest())
+  assert.equal(none.registration.accommodations, '')
+  const note = validatePayload(baseRequest({ registration: baseRegistration({ accommodations: '  peanut   allergy ' }) }))
+  assert.equal(note.registration.accommodations, 'peanut allergy')
+  const long = validatePayload(baseRequest({ registration: baseRegistration({ accommodations: 'x'.repeat(900) }) }))
+  assert.equal(long.registration.accommodations.length, 500)
+})
+
+test('saveDemoRegistration stores accommodations, or null when none were given', async () => {
+  for (const [input, stored] of [['Uses an inhaler', 'Uses an inhaler'], ['', null]]) {
+    const { db } = makeFakeDb({
+      [`programs/${TEST_PROGRAM_ID}`]: demoProgram(),
+      'programOfferings/demo-off-1': demoOffering(),
+    })
+    const { registration } = validatePayload(baseRequest({ registration: baseRegistration({ accommodations: input }) }))
+    await saveDemoRegistration(db, baseRequest({ registration }))
+    const registrationCreate = db.lastWrites.creates.find(c => c.ref.collectionName === 'demoRegistrations')
+    assert.equal(registrationCreate.data.accommodations, stored)
+  }
+})
+
+test('per-session eligibilityScope: the same child can book the afternoon after the morning', async () => {
+  const registration = baseRegistration()
+  const morning = computeChildEligibilityKeyHash(registration, 'ye-pa-pd-2026-11-20-am')
+  const { db } = makeFakeDb({
+    [`programs/${TEST_PROGRAM_ID}`]: demoProgram(),
+    'programOfferings/demo-off-1': demoOffering({ eligibilityScope: 'ye-pa-pd-2026-11-20-pm' }),
+    [`demoEligibilityLocks/${morning}`]: { demoRegistrationId: 'morning-reg', createdAt: null },
+  })
+  const result = await saveDemoRegistration(db, baseRequest({ registration }))
+  assert.equal(result.duplicate, false)
+})

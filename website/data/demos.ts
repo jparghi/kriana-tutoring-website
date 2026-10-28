@@ -18,6 +18,12 @@ export type DemoStatus = "WAITLIST" | "REGISTRATION_OPEN" | "SOLD_OUT" | "COMPLE
 export interface DemoSession {
   label: string; // "10:30 AM–12:00 PM"
   name?: string; // "Morning Workshop"
+  // Key into the event's `themes` — set on every session of a themed,
+  // multi-date event (see WorkshopTheme). The session's date is its startIso's.
+  theme?: string;
+  // Display fallback only, for when the live offering can't be read (the
+  // charged price always comes from the offering's earlyBirdEndsAt).
+  earlyBirdEndsIso?: string; // exclusive, like DemoEvent.earlyBird.endsIso
   // Firestore programOfferings id for this session (one offering per session,
   // each with its own capacity and waitlist). Omit for past demos.
   offeringId?: string;
@@ -30,6 +36,27 @@ export interface DemoMedia {
   alt: string;
   width: number;
   height: number;
+}
+
+// A workshop theme shared by several sessions/dates (e.g. the November PA/PD
+// Days run one theme at three times over two dates). An event with `themes` renders
+// the date picker + theme cards (app/events/WorkshopPicker.tsx) instead of
+// the single-event session picker.
+export interface WorkshopTheme {
+  name: string; // "Crazy Comical Machines"
+  series?: string; // "Power Play"
+  focus: string; // short subtitle on the card: "Gears & teamwork"
+  palette: "teal" | "purple"; // card colours, see WorkshopPicker
+  blurb: string;
+  models: string[]; // model names shown with the image
+  image: DemoMedia; // approved model render(s) — transparent PNG/WebP
+  // "Which workshop fits your child?" rows, in WORKSHOP_COMPARE_ROWS order.
+  compare: { goodFor: string; builds: string; bigIdea: string; teamwork: string };
+}
+
+export interface DemoFaqItem {
+  q: string;
+  a: string;
 }
 
 export interface DemoEvent {
@@ -67,6 +94,12 @@ export interface DemoEvent {
   // Firestore programs id the session offerings belong to (must also be in
   // DEMO_ELIGIBLE_PROGRAM_IDS in lib/demo-eligibility.js).
   programId?: string;
+  // Themed, multi-date workshops — see WorkshopTheme.
+  themes?: Record<string, WorkshopTheme>;
+  // Replaces the generic FAQ questions (the waitlist answer is always added).
+  faq?: DemoFaqItem[];
+  // "Workshop details" grid: label -> text.
+  details?: { label: string; text: string }[];
 }
 
 export const demos: DemoEvent[] = [
@@ -195,5 +228,113 @@ export const demos: DemoEvent[] = [
     galleryId: "halloween-workshop-highlights",
     registrationUrl: "https://krianatutoring.com/events",
     programId: "young-engineers-halloween-stittsville-oct-2026",
+  },
+  {
+    // One workshop, three sessions (Nov 20 morning + afternoon, Nov 23
+    // morning), one Firestore offering each (own capacity, waitlist and
+    // early-bird deadline). Seeded by
+    // scripts/seed-pa-pd-days-nov-2026-offerings.mjs.
+    id: "2026-11-pa-pd-days-stittsville",
+    title: "Young Engineers PA/PD Day Workshop",
+    eventType: "PD_DAY_WORKSHOP",
+    hook: ["No School.", "Big Ideas."],
+    summary:
+      "Crazy Comical Machines: your child builds Ghost Buddies, a hilarious two-character moving machine, and discovers how gears and mechanisms bring it to life. A hands-on engineering workshop on two PA/PD Days in Stittsville.",
+    priceLabel: "PA/PD Day Workshop",
+    seoDescription:
+      "Young Engineers PA/PD Day workshops in Stittsville on Friday, November 20 and Monday, November 23, 2026. Kids ages 6–12 build Ghost Buddies, a comical moving machine, in a 3-hour hands-on engineering workshop.",
+    date: "2026-11-20",
+    location: "Stittsville",
+    address: "205 Metric Circle, Stittsville, ON K2V 0L3",
+    status: "REGISTRATION_OPEN",
+    price: 39,
+    earlyBird: { price: 34, endsIso: "2026-11-11T00:00:00-05:00" },
+    plusTax: true,
+    ageRange: "6–12",
+    themes: {
+      "crazy-comical-machines": {
+        name: "Crazy Comical Machines",
+        series: "Power Play",
+        focus: "Build Ghost Buddies",
+        palette: "purple",
+        blurb: "Build Ghost Buddies, a pair of goofy moving characters powered by a single motor. Discover how gears and clever mechanisms bring a comical machine to life, then upgrade it with your own faces, speeds and moves.",
+        models: ["Ghost Buddies"],
+        image: {
+          src: "/images/workshops/ghost-buddies.webp",
+          alt: "Ghost Buddies: a yellow and a red character side by side on a motorised base, built from engineering building blocks",
+          width: 592,
+          height: 506,
+        },
+        compare: {
+          goodFor: "Love silly ideas, funny faces and making things move in surprising ways",
+          builds: "Ghost Buddies, two goofy characters driven by one motor",
+          bigIdea: "Turning round-and-round motion into back-and-forth motion",
+          teamwork: "Kids upgrade their machines with new expressions and moving parts",
+        },
+      },
+    },
+    sessions: [
+      {
+        label: "Fri, Nov 20 · 9:30 AM–12:30 PM",
+        name: "Crazy Comical Machines",
+        theme: "crazy-comical-machines",
+        offeringId: "ye-pa-pd-2026-11-20-am",
+        startIso: "2026-11-20T09:30:00-05:00",
+        endIso: "2026-11-20T12:30:00-05:00",
+        earlyBirdEndsIso: "2026-11-11T00:00:00-05:00",
+      },
+      {
+        label: "Fri, Nov 20 · 1:30 PM–4:30 PM",
+        name: "Crazy Comical Machines",
+        theme: "crazy-comical-machines",
+        offeringId: "ye-pa-pd-2026-11-20-pm",
+        startIso: "2026-11-20T13:30:00-05:00",
+        endIso: "2026-11-20T16:30:00-05:00",
+        earlyBirdEndsIso: "2026-11-11T00:00:00-05:00",
+      },
+      {
+        label: "Mon, Nov 23 · 9:30 AM–12:30 PM",
+        name: "Crazy Comical Machines",
+        theme: "crazy-comical-machines",
+        offeringId: "ye-pa-pd-2026-11-23-am",
+        startIso: "2026-11-23T09:30:00-05:00",
+        endIso: "2026-11-23T12:30:00-05:00",
+        earlyBirdEndsIso: "2026-11-14T00:00:00-05:00",
+      },
+    ],
+    program: "Power Play",
+    learningTopics: ["Gears", "Mechanisms", "Circular to linear motion", "Teamwork", "Building and testing"],
+    heroImage: {
+      src: "/images/demo/young-engineers-pd-day-workshop-oct-2026.jpg",
+      alt: "A Young Engineers instructor helping a girl attach a gear to her model",
+      width: 1400,
+      height: 1002,
+    },
+    details: [
+      { label: "Times", text: "Fri, Nov 20: 9:30 AM–12:30 PM or 1:30 PM–4:30 PM. Mon, Nov 23: 9:30 AM–12:30 PM." },
+      { label: "Location", text: "205 Metric Circle, Stittsville, ON K2V 0L3" },
+      { label: "Ages", text: "6–12. No building experience needed." },
+      { label: "Provided", text: "All engineering building blocks, motors and tools." },
+      { label: "What to bring", text: "A water bottle and a nut-free snack." },
+    ],
+    faq: [
+      { q: "Does my child need previous experience?", a: "No. First-time builders are welcome, and instructors adjust each challenge to your child's level." },
+      { q: "Is it right for a 6-year-old and a 12-year-old?", a: "Yes. Younger children follow the step-by-step instructions with help; older children take on the upgrade challenges." },
+      {
+        q: "Are the November 20 morning and afternoon sessions different?",
+        a: "No. Both run the same Crazy Comical Machines workshop, so choose the time that suits your family. Each session is 3 hours.",
+      },
+      {
+        q: "My child has built Ghost Buddies with us before. Is this the same build?",
+        a: "Yes, it's the same Ghost Buddies model. If your child has already built it, call or text us before registering and we'll help you decide if this workshop is right for them.",
+      },
+      { q: "What about snacks?", a: "There's a short snack break in each workshop. Please pack a nut-free snack and a water bottle." },
+      { q: "Who supervises the children?", a: "Trained Young Engineers instructors lead every workshop." },
+      { q: "How do drop-off and pickup work?", a: "Drop off up to 10 minutes before the start time and pick up right at the end time, at 205 Metric Circle. A parent or guardian signs your child in and out." },
+      { q: "How do I pay, and when is my spot confirmed?", a: "After you register, your spot is held for 48 hours while you send the e-Transfer. We confirm your registration by email once the payment arrives." },
+      { q: "What if the workshop I want is full?", a: "Join the waitlist for that session. It's free, and if a spot opens we'll contact the next family on the list." },
+    ],
+    registrationUrl: "https://krianatutoring.com/events",
+    programId: "young-engineers-pa-pd-days-stittsville-nov-2026",
   },
 ];

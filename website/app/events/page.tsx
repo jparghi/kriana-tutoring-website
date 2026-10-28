@@ -4,7 +4,7 @@ import { demos, type DemoEvent, type DemoStatus } from "../../data/demos"
 import { demoReviews } from "../../data/demo-reviews"
 import { resolveDemoCampaignOffering, resolveDemoSessionOfferings } from "../../lib/demo-campaign.server"
 import { eventTerms } from "../../lib/demo-event-copy"
-import { demoPriceText, formatDemoDate, partialSellout, resolveDemoHub, sessionShortName } from "../../lib/demo-hub"
+import { demoPriceText, formatDemoDate, partialSellout, resolveDemoHub, sessionShortName, workshopDays } from "../../lib/demo-hub"
 import { getDemoPricing } from "../../lib/robotics-packages.js"
 import { siteUrl, toJsonLd } from "../../lib/seo"
 import { Footer } from "../../components/footer"
@@ -12,6 +12,8 @@ import { DemoLandingAnalytics } from "./DemoLandingAnalytics"
 import { DemoWaitlistForm } from "./DemoWaitlistForm"
 import { SessionReserve } from "./SessionReserve"
 import { StickyReserveBar } from "./StickyReserveBar"
+import { WorkshopPicker } from "./WorkshopPicker"
+import { WorkshopCompare, WorkshopHero, WorkshopInfo } from "./workshop-sections"
 import {
   CONTACT_SMS_HREF, ContactButtons, CtaButton, DemoFaq, DemoHero, DemoJourney, FutureWorkshopList, ParentReviews, PastDemoGallery,
   PreviousDemoProof, ProgramsSection, ReserveSection, WhatChildrenDo, WhatChildrenLearn, type HubCta, type PartialSelloutCopy,
@@ -57,12 +59,21 @@ export const metadata: Metadata = {
 }
 
 // One Event per session so each time slot is its own valid, dated event.
-function eventSchemas(demo: DemoEvent, status: DemoStatus, canRegister: boolean) {
-  const availability = status === "SOLD_OUT" ? "SoldOut" : canRegister ? "InStock" : null
-  return demo.sessions.map(session => ({
+// `sessionOffers` (themed workshops) gives each session its own live price
+// and availability; otherwise the event-wide status and config price apply.
+function eventSchemas(
+  demo: DemoEvent, status: DemoStatus, canRegister: boolean,
+  sessionOffers?: Record<string, { price: number; availability: string | null }>,
+) {
+  const eventAvailability = status === "SOLD_OUT" ? "SoldOut" : canRegister ? "InStock" : null
+  return demo.sessions.map(session => {
+    const offer = session.offeringId ? sessionOffers?.[session.offeringId] : undefined
+    const availability = sessionOffers ? offer?.availability ?? null : eventAvailability
+    const theme = session.theme ? demo.themes?.[session.theme] : undefined
+    return {
     "@context": "https://schema.org",
     "@type": "Event",
-    name: demo.title,
+    name: theme ? `${theme.name}: ${demo.title}` : demo.title,
     startDate: session.startIso,
     endDate: session.endIso,
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
@@ -75,10 +86,11 @@ function eventSchemas(demo: DemoEvent, status: DemoStatus, canRegister: boolean)
     image: [`${siteUrl}${SHARE_IMAGE_PATH}`],
     description: demo.seoDescription ?? demo.summary ?? `Hands-on STEM, engineering and coding ${eventTerms(demo.eventType).noun} for children ages ${demo.ageRange}.`,
     ...(availability
-      ? { offers: { "@type": "Offer", price: demoPriceText(demo).price.toFixed(2), priceCurrency: "CAD", availability: `https://schema.org/${availability}`, url: `${siteUrl}/events` } }
+      ? { offers: { "@type": "Offer", price: (offer?.price ?? demoPriceText(demo).price).toFixed(2), priceCurrency: "CAD", availability: `https://schema.org/${availability}`, url: `${siteUrl}/events` } }
       : {}),
     organizer: { "@type": "Organization", name: "Kriana Tutoring", url: siteUrl },
-  }))
+    }
+  })
 }
 
 // "2-hour" / "90-minute", from the first session's length.
@@ -221,12 +233,101 @@ export default async function DemoPage({
       <CtaButton cta={fallback} offeringId={campaignOfferingId} content={content} />
     )
 
+  // Themed, multi-date workshops (data/demos.ts `themes`): date picker +
+  // theme cards, each session priced and gated by its own live offering.
+  const themed = Boolean(active?.themes && active.sessions.some(s => s.theme))
+  const liveOfferings: Record<string, any> = {}
+  for (const [offeringId, live] of Object.entries(liveSessions)) if (live.offering) liveOfferings[offeringId] = live.offering
+  const days = themed && active ? workshopDays(active, sessions, liveOfferings) : []
+  const daySessions = days.flatMap(day => day.sessions)
+  const sessionOffers = themed
+    ? Object.fromEntries(daySessions.map(s => [s.offeringId, {
+        price: s.subtotalCents / 100,
+        availability: s.state === "open" ? "InStock" : s.state === "full" ? "SoldOut" : null,
+      }]))
+    : undefined
+
   const latestPast = past[0]
   const schemas = active
-    ? eventSchemas(active, status, canRegister)
+    ? eventSchemas(active, status, canRegister, sessionOffers)
     : latestPast ? [highlightVideoSchema(latestPast)].filter(Boolean) : []
 
   const showWaitlistForm = !active && canJoinWaitlist
+
+  if (themed && active) {
+    const priced = daySessions.find(s => s.state === "open") ?? daySessions[0]
+    const dollars = (cents: number) => `$${cents % 100 === 0 ? cents / 100 : (cents / 100).toFixed(2)}`
+    const priceNote = priced
+      ? `${priced.earlyBirdUntil ? "Early bird " : ""}${dollars(priced.subtotalCents)}${priced.taxCents ? " + HST" : ""} ($${(priced.priceCents / 100).toFixed(2)}) per child`
+      : ""
+    const statusNote = canRegister
+      ? undefined
+      : status === "SOLD_OUT" ? "All sessions are full. Join a waitlist below." : "Online registration opens shortly. Call or text us to register."
+    const rawDate = searchParams.date
+    const initialDate = Array.isArray(rawDate) ? rawDate[0] : rawDate
+    const pickerThemes = Object.fromEntries(Object.entries(active.themes!).map(([id, t]) => [id, {
+      name: t.name, series: t.series, focus: t.focus, palette: t.palette, blurb: t.blurb, models: t.models, image: t.image,
+    }]))
+
+    return (
+      <>
+        {schemas.length > 0 && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(schemas) }} />}
+        <DemoLandingAnalytics
+          offeringId={campaignOfferingId}
+          source={attribution.utm_source ?? attribution.ref ?? null}
+          medium={attribution.utm_medium ?? null}
+          campaign={attribution.utm_campaign ?? null}
+          content={attribution.utm_content ?? null}
+        />
+
+        <main className={`min-h-screen overflow-x-hidden bg-white text-slate-900 ${canRegister ? "pb-20 sm:pb-0" : ""}`}>
+          <WorkshopHero
+            demo={active}
+            heroCtaId={HERO_CTA_ID}
+            reserveHref={`#${RESERVE_SECTION_ID}`}
+            offeringId={campaignOfferingId}
+            priceNote={priceNote}
+            statusNote={statusNote}
+            shareUrl={`${siteUrl}/events`}
+          />
+          <section
+            id={RESERVE_SECTION_ID}
+            aria-label="Register for a workshop"
+            className="scroll-mt-4 px-5 pb-12 pt-14 sm:px-8"
+            style={{ background: "linear-gradient(180deg, #FFF7E8 0%, #FFFFFF 260px)" }}
+          >
+            <div className="mx-auto max-w-6xl">
+              <p className="mb-3 text-xs font-bold uppercase tracking-[0.12em] text-[#0c6162]">Register in three steps</p>
+              {active.programId && (
+                <WorkshopPicker
+                  days={days}
+                  themes={pickerThemes}
+                  programId={active.programId}
+                  attributionQuery={attributionQuery}
+                  initialDate={initialDate}
+                  contactHref={CONTACT_SMS_HREF}
+                  contactLabel="Text us"
+                />
+              )}
+            </div>
+          </section>
+          <WorkshopCompare demo={active} />
+          <WhatChildrenDo title="What Your Child Will Experience" />
+          {/* No previous-event reel here: the latest one is Halloween-branded
+              footage, and this workshop is marketed without Halloween. */}
+          <WorkshopInfo details={active.details ?? []} />
+          <DemoFaq ageRange={active.ageRange} eventType={active.eventType} items={active.faq} />
+          <PastDemoGallery past={past} />
+          <ProgramsSection offeringId={campaignOfferingId} />
+        </main>
+
+        {canRegister && (
+          <StickyReserveBar href={`#${RESERVE_SECTION_ID}`} label={Object.keys(active.themes ?? {}).length === 1 ? "Choose Your Time" : "Choose Your Workshop"} offeringId={campaignOfferingId} watchIds={[HERO_CTA_ID, RESERVE_SECTION_ID]} />
+        )}
+        <Footer />
+      </>
+    )
+  }
 
   return (
     <>
