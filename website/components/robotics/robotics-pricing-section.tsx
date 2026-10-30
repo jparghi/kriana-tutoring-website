@@ -38,10 +38,11 @@ function dollars(cents: number) {
  * slug, which lib/robotics-packages.js keys alongside the real Firestore id,
  * so the 60-minute Smartivo rates can't be confused with the 75-minute ones. */
 function pricedPrograms() {
-  return PRICED_PROGRAM_IDS.map((id) => {
-    const program = licensedRoboticsPrograms.find((item) => item.id === id)!;
-    return { program, packages: getPubliclyVisiblePackages(id) as Pkg[] };
-  });
+  // A program temporarily flagged comingSoon in lib/robotics-content.ts drops
+  // out of the rate card until it re-opens.
+  return PRICED_PROGRAM_IDS.map((id) => licensedRoboticsPrograms.find((item) => item.id === id)!)
+    .filter((program) => !program.comingSoon)
+    .map((program) => ({ program, packages: getPubliclyVisiblePackages(program.id) as Pkg[] }));
 }
 
 function TierHeading({ pkg }: { pkg: Pkg }) {
@@ -168,7 +169,11 @@ export function RoboticsPricingSection() {
           })}
         </ol>
 
-        <div className="mt-10 grid gap-6 lg:grid-cols-3">
+        <div
+          className={`mt-10 grid gap-6 ${
+            programs.length >= 3 ? "lg:grid-cols-3" : programs.length === 2 ? "lg:grid-cols-2" : "mx-auto max-w-md"
+          }`}
+        >
           {programs.map(({ program, packages }) => (
             <ProgramRateCard key={program.id} program={program} packages={packages} />
           ))}

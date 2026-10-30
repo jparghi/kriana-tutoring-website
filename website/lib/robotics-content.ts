@@ -62,6 +62,8 @@ export const licensedRoboticsPrograms: LicensedRoboticsProgram[] = [
   {
     id: "smartivo",
     title: "Smartivo",
+    // Paused for now — remove to re-open enrolment (card, price and rate card return).
+    comingSoon: true,
     ageRange: "4-6",
     durationMin: 60,
     bookingTag: "Robotics & Coding",
@@ -94,6 +96,8 @@ export const licensedRoboticsPrograms: LicensedRoboticsProgram[] = [
   {
     id: "algo-play",
     title: "Algo Play",
+    // Paused for now — remove to re-open enrolment (card, price and rate card return).
+    comingSoon: true,
     ageRange: "9-12",
     durationMin: 75,
     bookingTag: "Robotics & Coding",
