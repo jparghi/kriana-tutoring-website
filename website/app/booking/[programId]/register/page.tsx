@@ -20,13 +20,15 @@ import {
   getPaymentOptionsLabel, resolvePackagePricing, getDemoPricing,
 } from '../../../../lib/robotics-packages.js'
 import { getLearningPathMonthlyTuition } from '../../../../lib/robotics-monthly-tuition.js'
+import { isScheduleLaterProgramId, SCHEDULE_LATER_TITLE } from '../../../../lib/schedule-later.js'
 
 const ROBOTICS_CATEGORY = 'Robotics'
 // Class schedules are no longer published on the site (they change often and
 // were confusing families), so parents can't request a spot in a weekly
 // offering themselves — they contact us to arrange a schedule. The $10 demo
-// (registrationType=demo) is unaffected. Flip to true to restore the
-// self-serve weekly-program request form.
+// (registrationType=demo) is unaffected, and so are schedule-later programs
+// (lib/schedule-later.js), which register without picking a schedule. Flip to
+// true to restore the self-serve weekly-program request form.
 const PUBLIC_SCHEDULE_REQUESTS_ENABLED = false
 const AGE_OPTIONS = [5, 6, 7, 8, 9, 10, 11, 12, 13]
 
@@ -398,6 +400,9 @@ function RegisterForm() {
   const isWaitlistParam = searchParams.get('waitlist') === '1'
   const packageIdParam = searchParams.get('package') ?? ''
   const isDemoRegistration = searchParams.get('registrationType') === 'demo'
+  // No offering in the link: the family picks a learning path only and staff
+  // confirm the class day/time afterwards.
+  const scheduleLater = !isDemoRegistration && !selectedOfferingId && isScheduleLaterProgramId(programId)
   const router = useRouter()
   const clientRequestId = useRef('')
 
@@ -428,6 +433,14 @@ function RegisterForm() {
     }
 
     async function load() {
+      if (scheduleLater) {
+        try {
+          setProgram(await getProgram(programId))
+        } finally {
+          setLoading(false)
+        }
+        return
+      }
       if (!selectedOfferingId) { setLoading(false); return }
       try {
         const [prog, selectedOffering] = await Promise.all([
@@ -447,7 +460,7 @@ function RegisterForm() {
       }
     }
     load()
-  }, [programId, selectedOfferingId])
+  }, [programId, selectedOfferingId, scheduleLater])
 
   function set(field: string, value: any) {
     setFormState(prev => ({ ...prev, [field]: value }))
@@ -459,7 +472,7 @@ function RegisterForm() {
     </BookingLayout>
   )
 
-  if (!isDemoRegistration && !PUBLIC_SCHEDULE_REQUESTS_ENABLED) return (
+  if (!isDemoRegistration && !scheduleLater && !PUBLIC_SCHEDULE_REQUESTS_ENABLED) return (
     <BookingLayout backTo={`/booking/${programId}`} backLabel="Back to Program">
       <div className="mx-auto max-w-lg rounded-2xl border border-slate-100 bg-white px-6 py-12 text-center shadow-sm">
         <h1 className="text-xl font-black text-slate-800">Contact us to schedule</h1>
@@ -474,7 +487,7 @@ function RegisterForm() {
     </BookingLayout>
   )
 
-  if (!program || !offering) return (
+  if (!program || (!offering && !scheduleLater)) return (
     <BookingLayout backTo="/booking" backLabel="All Programs">
       <div className="text-center py-20">
         <p className="text-slate-500 mb-4">This program schedule was not found or is no longer available.</p>
@@ -516,7 +529,7 @@ function RegisterForm() {
     </BookingLayout>
   )
 
-  if (!isOfferingRequestWindowOpen(offering)) return (
+  if (!scheduleLater && !isOfferingRequestWindowOpen(offering)) return (
     <BookingLayout backTo={`/booking/${programId}`} backLabel="Back to Program">
       <div className="mx-auto max-w-lg rounded-2xl border border-slate-100 bg-white px-6 py-12 text-center shadow-sm">
         <h1 className="text-xl font-black text-slate-800">Requests are not open for this schedule</h1>
@@ -531,7 +544,7 @@ function RegisterForm() {
     </BookingLayout>
   )
 
-  const soldOut = isOfferingSoldOut(offering)
+  const soldOut = !scheduleLater && isOfferingSoldOut(offering)
   if (soldOut && !offering.waitlistEnabled) return (
     <BookingLayout backTo={`/booking/${programId}`} backLabel="Back to Program">
       <div className="mx-auto max-w-lg rounded-2xl border border-slate-100 bg-white px-6 py-12 text-center shadow-sm">
@@ -545,23 +558,25 @@ function RegisterForm() {
       </div>
     </BookingLayout>
   )
-  const useWaitlist = isWaitlistParam || (soldOut && offering.waitlistEnabled)
+  const useWaitlist = !scheduleLater && (isWaitlistParam || (soldOut && offering.waitlistEnabled))
   const price = Number(
-    offering.tuitionCents
+    offering?.tuitionCents
       || (program.isDepositOnly ? program.depositAmount : program.price)
       || 0
   )
   const discount = applyProgramDiscount(price, program)
-  const priceLabel = price ? `$${(price / 100).toFixed(2)} ${offering.currency ?? 'CAD'}` : ''
-  const discountedPriceLabel = discount.active ? `$${(discount.finalCents / 100).toFixed(2)} ${offering.currency ?? 'CAD'}` : ''
-  const dateRange = formatOfferingDateRange(offering, selectedPackage)
-  const packageSchedule = selectedPackage ? getPackageClassSchedule(offering, selectedPackage) : null
+  const priceLabel = price ? `$${(price / 100).toFixed(2)} ${offering?.currency ?? 'CAD'}` : ''
+  const discountedPriceLabel = discount.active ? `$${(discount.finalCents / 100).toFixed(2)} ${offering?.currency ?? 'CAD'}` : ''
+  const dateRange = offering ? formatOfferingDateRange(offering, selectedPackage) : ''
+  const packageSchedule = selectedPackage && offering ? getPackageClassSchedule(offering, selectedPackage) : null
   const isBirthday = program.category === 'Birthday Party'
 
   // Payment preference is only meaningful for a real class-package commitment
   // that isn't a free waitlist join — waitlist requests never show or collect
   // a payment preference.
-  const hasPaymentStep = Boolean(selectedPackage) && !useWaitlist
+  // Schedule-later requests skip it too: payment is arranged by staff once the
+  // schedule is confirmed.
+  const hasPaymentStep = Boolean(selectedPackage) && !useWaitlist && !scheduleLater
   // DORMANT for robotics: PUBLIC_SCHEDULE_REQUESTS_ENABLED is false, so
   // families register through staff (portal Manual Registration), which uses
   // the current Builder 2 / Engineer 4 monthly-payment model by e-Transfer.
@@ -574,7 +589,7 @@ function RegisterForm() {
   // Real, schedule-derived monthly numbers — never a guessed/typical amount.
   // Every package is a fixed learning path, so this always averages the full
   // path total across the offering's real billing months.
-  const learningPathTuition = selectedPackage && isMonthlyOnlyPackage
+  const learningPathTuition = selectedPackage && isMonthlyOnlyPackage && offering
     ? getLearningPathMonthlyTuition(offering, selectedPackage)
     : null
 
@@ -615,9 +630,11 @@ function RegisterForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           programId,
-          ...(offering.source === 'legacySession'
-            ? { sessionId: offering.id }
-            : { offeringId: offering.id }),
+          ...(scheduleLater
+            ? { scheduleLater: true }
+            : offering.source === 'legacySession'
+              ? { sessionId: offering.id }
+              : { offeringId: offering.id }),
           clientRequestId: clientRequestId.current,
           requestedAction: useWaitlist ? 'waitlist' : 'enrollment',
           ...(selectedPackage ? { packageId: selectedPackage.id } : {}),
@@ -662,7 +679,7 @@ function RegisterForm() {
       // Carried through so the confirmation page can show the same itemized
       // class schedule the family just reviewed, without re-deriving it from
       // scratch or trying to serialize the whole schedule into the URL.
-      if (offering?.source !== 'legacySession') requestParams.set('offeringId', offering.id)
+      if (offering && offering.source !== 'legacySession') requestParams.set('offeringId', offering.id)
       if (selectedPackage) requestParams.set('package', selectedPackage.id)
       router.push(`/booking/request-received?${requestParams.toString()}`)
     } catch (err: any) {
@@ -681,7 +698,11 @@ function RegisterForm() {
           <div>
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-0.5">{useWaitlist ? 'Joining Waitlist' : 'Requesting a Spot'}</p>
             <h2 className="font-black text-slate-800">{program.title}</h2>
-            <p className="text-sm text-slate-500 mt-0.5">{offering.title} · {formatOfferingWeeklySchedule(offering)}</p>
+            <p className="text-sm text-slate-500 mt-0.5">
+              {scheduleLater
+                ? `${SCHEDULE_LATER_TITLE} — we'll contact you with your class day and time`
+                : `${offering.title} · ${formatOfferingWeeklySchedule(offering)}`}
+            </p>
             {dateRange && <p className="text-xs text-slate-400 mt-0.5">{dateRange}</p>}
           </div>
           {selectedPackage && !useWaitlist ? (
@@ -885,7 +906,18 @@ function RegisterForm() {
               <div className="rounded-xl border border-[#0083CB]/25 bg-[#0083CB]/5 px-4 py-3.5 text-sm">
                 <p className="text-xs font-bold uppercase tracking-wide text-[#0083CB]">Selected Package</p>
                 <p className="mt-1 font-black text-slate-800">{selectedPackage.name}</p>
-                {isMonthlyOnlyPackage ? (
+                {scheduleLater ? (
+                  // Same rate-card figures as the program page's package cards.
+                  <>
+                    <p className="mt-1 text-slate-600">{selectedPackage.classCount} classes · ${(selectedPackage.perClassCents / 100).toFixed(0)}/class</p>
+                    <p className="font-semibold text-slate-800">${(selectedPackage.regularSubtotalCents / 100).toFixed(0)} total + tax</p>
+                    {selectedPackage.paymentPlanInstallments > 0 && (
+                      <p className="mt-1.5 text-xs font-semibold text-[#0c6162]">
+                        Pay in full or {selectedPackage.paymentPlanInstallments} monthly payments of ${(selectedPackage.regularSubtotalCents / selectedPackage.paymentPlanInstallments / 100).toFixed(0)} + tax
+                      </p>
+                    )}
+                  </>
+                ) : isMonthlyOnlyPackage ? (
                   <>
                     <p className="mt-1 text-slate-600">{selectedPackage.classCount} classes</p>
                     <p className="font-semibold text-slate-800">
@@ -898,8 +930,12 @@ function RegisterForm() {
                     <p className="font-semibold text-slate-800">${(selectedPackage.regularSubtotalCents / 100).toFixed(0)} package price</p>
                   </>
                 )}
-                <p className="mt-1.5 text-xs font-semibold text-[#0c6162]">{getPaymentOptionsLabel(selectedPackage)}</p>
-                <p className="mt-1 text-xs text-slate-400">Plus applicable taxes. Payment is not collected when requesting a spot. See your payment preference below for the total based on how you choose to pay.</p>
+                {!scheduleLater && <p className="mt-1.5 text-xs font-semibold text-[#0c6162]">{getPaymentOptionsLabel(selectedPackage)}</p>}
+                <p className="mt-1 text-xs text-slate-400">
+                  {scheduleLater
+                    ? "Plus applicable taxes. No payment is collected now — we'll send your class schedule and payment details after we review your registration."
+                    : 'Plus applicable taxes. Payment is not collected when requesting a spot. See your payment preference below for the total based on how you choose to pay.'}
+                </p>
                 {packageSchedule && packageSchedule.classDates.length > 0 && (
                   <div className="mt-3">
                     <ClassScheduleDisclosure schedule={packageSchedule} packageName={selectedPackage.name} />

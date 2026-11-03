@@ -10,6 +10,7 @@ import {
 import { getLearningPathMonthlyTuition, getRegularMonthlyEstimate } from '../../lib/robotics-monthly-tuition.js'
 import { DEMO_ELIGIBLE_PROGRAM_IDS } from '../../lib/demo-eligibility.js'
 import { computeChildEligibilityKeyHash } from '../../lib/demo-eligibility-crypto.js'
+import { isScheduleLaterProgramId, SCHEDULE_LATER_TITLE } from '../../lib/schedule-later.js'
 
 const ROBOTICS_CATEGORY = 'Robotics'
 
@@ -55,8 +56,29 @@ export function validatePayload(body) {
   // are resolved server-side from the canonical catalogue in validateCatalogueRequest.
   const packageId = normalizeText(body.packageId, 50)
   const input = body.registration
+  // Schedule-later programs (lib/schedule-later.js) register without a class
+  // schedule; staff place the child in a batch after reviewing the request.
+  const scheduleLater = body.scheduleLater === true
 
-  if (!programId || (!offeringId && !sessionId) || !input || typeof input !== 'object' || Array.isArray(input)) {
+  if (scheduleLater) {
+    if (!isScheduleLaterProgramId(programId)) {
+      return { error: 'This program needs a class schedule. Please contact us to schedule.' }
+    }
+    if (offeringId || sessionId) {
+      return { error: 'Do not choose a class schedule for this program.' }
+    }
+    if (requestedAction !== 'enrollment') {
+      return { error: 'Requested action must be enrollment.' }
+    }
+    if (!packageId) {
+      return { error: 'Please choose a learning path before registering.' }
+    }
+    if (body.paymentPreference != null) {
+      return { error: 'Payment details are arranged with you after your schedule is confirmed.' }
+    }
+  }
+
+  if (!programId || (!scheduleLater && !offeringId && !sessionId) || !input || typeof input !== 'object' || Array.isArray(input)) {
     return { error: 'Program, class schedule, and registration details are required.' }
   }
   if (offeringId && sessionId) {
@@ -86,7 +108,7 @@ export function validatePayload(body) {
     if (rawPaymentPreference != null) {
       return { error: 'Payment preference does not apply to waitlist requests.' }
     }
-  } else if (packageId) {
+  } else if (packageId && !scheduleLater) {
     if (!rawPaymentPreference || typeof rawPaymentPreference !== 'object' || Array.isArray(rawPaymentPreference)) {
       return { error: 'Please choose a payment preference before requesting a spot.' }
     }
@@ -133,7 +155,7 @@ export function validatePayload(body) {
   }
   if (!registration.consentAccepted) return { error: 'Consent is required before submitting.' }
 
-  return { programId, offeringId, sessionId, clientRequestId, requestedAction, packageId, paymentPreference, registration }
+  return { programId, offeringId, sessionId, scheduleLater, clientRequestId, requestedAction, packageId, paymentPreference, registration }
 }
 
 function toDateValue(value) {
@@ -368,6 +390,42 @@ export function validateCatalogueRequest(request, programDoc, sessionDoc) {
   return { program, session }
 }
 
+// The schedule-later counterpart of validateCatalogueRequest: there is no
+// offering to check, so only the program and the chosen learning path are
+// validated. `session` is a stand-in carrying just the placeholder title, so
+// scheduleSnapshot/formatSchedule/emails read "Schedule to be confirmed".
+export function validateScheduleLaterRequest(request, programDoc) {
+  if (!programDoc.exists) {
+    throw new RequestRejectedError(404, 'This program is no longer available.')
+  }
+  const program = programDoc.data()
+  if (
+    !isScheduleLaterProgramId(request.programId)
+    || program.isActive !== true
+    || program.publicCatalogVersion !== 1
+    || program.category !== ROBOTICS_CATEGORY
+  ) {
+    throw new RequestRejectedError(409, 'This program is not accepting requests.')
+  }
+
+  const allowedAges = ageRange(program, {})
+  if (
+    (allowedAges.min !== null && request.registration.childAge < allowedAges.min)
+    || (allowedAges.max !== null && request.registration.childAge > allowedAges.max)
+  ) {
+    throw new RequestRejectedError(
+      409,
+      'This program is not available for the age entered. Please contact us for another option.',
+    )
+  }
+
+  if (!getRoboticsPackage(request.programId, request.packageId)) {
+    throw new RequestRejectedError(400, 'Selected class package is not recognized.')
+  }
+
+  return { program, session: { title: SCHEDULE_LATER_TITLE } }
+}
+
 function clientIp(event) {
   const headers = event.headers || {}
   return String(headers['x-nf-client-connection-ip'] || '').trim()
@@ -501,6 +559,16 @@ function packageSummaryLine(packageSnapshot) {
   return `${escapeHtml(packageSnapshot.name)} — ${packageSnapshot.classCount} classes · ${formatAmount(packageSnapshot.perClassCents)}/class · ${formatAmount(packageSnapshot.regularSubtotalCents)} subtotal`
 }
 
+// Schedule-later requests record no payment preference, so the email quotes
+// the current rate card instead: the package total, paid in full or in the
+// package's monthly payments.
+export function scheduleLaterPackageLine(pkg) {
+  const plan = pkg.paymentPlanInstallments
+    ? ` · pay in full or ${pkg.paymentPlanInstallments} monthly payments of ${formatAmount(pkg.regularSubtotalCents / pkg.paymentPlanInstallments)}`
+    : ''
+  return `${escapeHtml(pkg.name)} — ${pkg.classCount} classes · ${formatAmount(pkg.regularSubtotalCents)} total${plan}`
+}
+
 function paymentPreferenceHtml(snapshot) {
   if (!snapshot) return ''
   if (snapshot.method === 'pay_in_full') {
@@ -531,7 +599,7 @@ function paymentPreferenceHtml(snapshot) {
   return ''
 }
 
-async function sendAcknowledgements({ registration, program, session, reference, isWaitlist, packageSnapshot, paymentPreferenceSnapshot }) {
+async function sendAcknowledgements({ registration, program, session, reference, isWaitlist, packageSnapshot, paymentPreferenceSnapshot, scheduleLaterPackage }) {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     console.warn('Enrollment request saved; SMTP credentials are not configured, so email was skipped.')
     return
@@ -543,6 +611,9 @@ async function sendAcknowledgements({ registration, program, session, reference,
   const schedule = escapeHtml(formatSchedule(session))
   const location = session.location ? escapeHtml(session.location) : ''
   const safeReference = escapeHtml(reference)
+  const packageLine = scheduleLaterPackage
+    ? scheduleLaterPackageLine(scheduleLaterPackage)
+    : packageSnapshot ? packageSummaryLine(packageSnapshot) : ''
   const fromAddress = `"Kriana Tutoring" <${process.env.SMTP_USER}>`
   const adminEmail = process.env.ADMIN_EMAIL || 'info@krianatutoring.com'
   const parentSubject = isWaitlist
@@ -561,7 +632,7 @@ async function sendAcknowledgements({ registration, program, session, reference,
         <div style="background:#f8fafc;padding:16px;border-radius:10px;margin:18px 0">
           <p style="margin:0 0 8px"><strong>Schedule:</strong> ${schedule}</p>
           ${location ? `<p style="margin:0 0 8px"><strong>Location:</strong> ${location}</p>` : ''}
-          ${packageSnapshot ? `<p style="margin:0 0 8px"><strong>Package:</strong> ${packageSummaryLine(packageSnapshot)} (plus applicable taxes)</p>` : ''}
+          ${packageLine ? `<p style="margin:0 0 8px"><strong>Package:</strong> ${packageLine} (plus applicable taxes)</p>` : ''}
           ${paymentPreferenceHtml(paymentPreferenceSnapshot)}
           <p style="margin:0"><strong>Reference:</strong> ${safeReference}</p>
         </div>
@@ -577,7 +648,7 @@ async function sendAcknowledgements({ registration, program, session, reference,
     <p><strong>Reference:</strong> ${safeReference}</p>
     <p><strong>Program:</strong> ${programTitle}</p>
     <p><strong>Schedule:</strong> ${schedule}</p>
-    ${packageSnapshot ? `<p><strong>Package:</strong> ${packageSummaryLine(packageSnapshot)}</p>` : ''}
+    ${packageLine ? `<p><strong>Package:</strong> ${packageLine}</p>` : ''}
     ${paymentPreferenceHtml(paymentPreferenceSnapshot)}
     <p><strong>Child:</strong> ${childName} (age ${escapeHtml(registration.childAge)}${registration.childGrade ? `, ${escapeHtml(registration.childGrade)}` : ''})</p>
     <p><strong>Parent:</strong> ${parentName} · ${escapeHtml(registration.parentEmail)} · ${escapeHtml(registration.parentPhone)}</p>
@@ -594,7 +665,7 @@ async function sendAcknowledgements({ registration, program, session, reference,
 }
 
 export function idempotencyDigest(request) {
-  const scheduleId = request.offeringId || request.sessionId
+  const scheduleId = request.offeringId || request.sessionId || (request.scheduleLater ? 'schedule-later' : '')
   return crypto.createHash('sha256')
     .update(`${request.programId}|${scheduleId}|${request.requestedAction}|${request.packageId || ''}|${request.clientRequestId}`)
     .digest('hex')
@@ -777,11 +848,13 @@ export function buildRecurringMonthlyContext(pkg, session) {
 }
 
 async function saveEnrollmentRequest(db, request) {
-  const { programId, offeringId, sessionId, registration } = request
+  const { programId, offeringId, sessionId, scheduleLater, registration } = request
   const programRef = db.collection('programs').doc(programId)
-  const scheduleRef = offeringId
-    ? db.collection('programOfferings').doc(offeringId)
-    : db.collection('sessions').doc(sessionId)
+  const scheduleRef = scheduleLater
+    ? null
+    : offeringId
+      ? db.collection('programOfferings').doc(offeringId)
+      : db.collection('sessions').doc(sessionId)
   const registrationRef = db.collection('registrations').doc()
   const requestKeyRef = idempotencyRef(db, request)
 
@@ -793,8 +866,9 @@ async function saveEnrollmentRequest(db, request) {
     }
 
     const programDoc = await tx.get(programRef)
-    const sessionDoc = await tx.get(scheduleRef)
-    const { program, session } = validateCatalogueRequest(request, programDoc, sessionDoc)
+    const { program, session } = scheduleLater
+      ? validateScheduleLaterRequest(request, programDoc)
+      : validateCatalogueRequest(request, programDoc, await tx.get(scheduleRef))
     const year = new Date().getFullYear()
     const prefix = program.partnerName ? 'YE' : 'KT'
     const counterRef = db.collection('counters').doc(`${prefix}-${year}`)
@@ -829,7 +903,9 @@ async function saveEnrollmentRequest(db, request) {
     tx.set(counterRef, { seq: nextSequence, updatedAt: FieldValue.serverTimestamp() }, { merge: true })
     tx.create(registrationRef, {
       programId,
-      ...(offeringId ? { offeringId } : { sessionId, legacySessionId: sessionId }),
+      ...(scheduleLater
+        ? { schedulePending: true }
+        : offeringId ? { offeringId } : { sessionId, legacySessionId: sessionId }),
       ...registration,
       requestConsentVersion: 'enrollment-request-v1',
       requestConsentRecordedAt: FieldValue.serverTimestamp(),
@@ -945,6 +1021,7 @@ export const handler = async event => {
         isWaitlist: false,
         packageSnapshot: saved.packageSnapshot,
         paymentPreferenceSnapshot: saved.paymentPreferenceSnapshot,
+        scheduleLaterPackage: validated.scheduleLater ? getRoboticsPackage(validated.programId, validated.packageId) : null,
       })
     }
 

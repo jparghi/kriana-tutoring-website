@@ -9,6 +9,7 @@ import { isRequestOnlyBookingFlow } from '../../../lib/booking-flow'
 import { BIRTHDAY_PARTY_PATH, SCHEDULING_CONTACT_URL } from '../../../lib/site-links'
 import BookingLayout from '../../../components/booking/BookingLayout'
 import { getPubliclyVisiblePackages } from '../../../lib/robotics-packages.js'
+import { isScheduleLaterProgramId } from '../../../lib/schedule-later.js'
 
 const ROBOTICS_CATEGORY = 'Robotics'
 
@@ -28,6 +29,24 @@ function ContactToSchedule({ programTitle }: { programTitle: string }) {
         <Link href={SCHEDULING_CONTACT_URL} className="rounded-xl bg-[#0c6162] px-5 py-2.5 text-white hover:opacity-90">
           Contact Us to Schedule
         </Link>
+        <Link href="/booking" className="text-[#0c6162] hover:underline">← Browse other programs</Link>
+      </div>
+    </div>
+  )
+}
+
+// Schedule-later programs (lib/schedule-later.js): families register by
+// choosing a learning path above, and we confirm the class day/time after.
+function ScheduleLaterNote({ programTitle }: { programTitle: string }) {
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 p-8 text-center shadow-sm">
+      <h2 className="text-lg font-black text-slate-800">We&apos;ll confirm your class schedule</h2>
+      <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-500">
+        Choose a learning path above to register for {programTitle}. After you register, we&apos;ll contact you to
+        confirm your child&apos;s class day and time, along with payment details.
+      </p>
+      <div className="mt-5 flex flex-wrap items-center justify-center gap-4 text-sm font-semibold">
+        <Link href={SCHEDULING_CONTACT_URL} className="text-[#0c6162] hover:underline">Questions? Contact us</Link>
         <Link href="/booking" className="text-[#0c6162] hover:underline">← Browse other programs</Link>
       </div>
     </div>
@@ -59,7 +78,7 @@ const PACKAGE_DESCRIPTORS: Record<string, string[]> = {
   engineer: ['Longer learning journey', 'Greater continuity and progression'],
 }
 
-function PackageOverview({ programId }: { programId: string }) {
+function PackageOverview({ programId, canRegister }: { programId: string; canRegister: boolean }) {
   return (
     <div className="relative mb-8 overflow-hidden rounded-[1.75rem] border border-slate-100 bg-gradient-to-br from-white via-[#0c6162]/[0.03] to-[#0083CB]/[0.05] p-6 shadow-[0_20px_50px_rgba(15,23,42,0.08)] md:p-9">
       <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-[#0083CB]/10 blur-3xl" />
@@ -143,6 +162,16 @@ function PackageOverview({ programId }: { programId: string }) {
                   Pay in full or {installments} monthly payments of ${(pkg.regularSubtotalCents / installments / 100).toFixed(0)} + tax
                 </p>
                 <p className="mt-1 text-xs font-semibold text-slate-500">{pkg.classCount}-class learning commitment</p>
+                {canRegister && (
+                  <Link
+                    href={`/booking/${programId}/register?package=${pkg.id}`}
+                    className={`mt-4 block rounded-xl px-4 py-3 text-center text-sm font-black text-white transition-all hover:opacity-90 ${
+                      isFeatured ? 'bg-[#0083CB]' : 'bg-[#0c6162]'
+                    }`}
+                  >
+                    Register for {pkg.name} →
+                  </Link>
+                )}
               </div>
             )
           })
@@ -199,6 +228,7 @@ function ProgramDetailContent() {
   }, [program, router])
 
   const isRobotics = program?.category === ROBOTICS_CATEGORY
+  const scheduleLater = isRobotics && isScheduleLaterProgramId(programId)
 
   if (loading) return (
     <BookingLayout backTo="/booking" backLabel="All Programs">
@@ -334,9 +364,11 @@ function ProgramDetailContent() {
         </div>
       </div>
 
-      {isRobotics && <PackageOverview programId={programId} />}
+      {isRobotics && <PackageOverview programId={programId} canRegister={scheduleLater} />}
 
-      <ContactToSchedule programTitle={program.title} />
+      {scheduleLater
+        ? <ScheduleLaterNote programTitle={program.title} />
+        : <ContactToSchedule programTitle={program.title} />}
     </BookingLayout>
   )
 }

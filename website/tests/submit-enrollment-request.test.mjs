@@ -3,6 +3,8 @@ import assert from 'node:assert/strict'
 import {
   validatePayload,
   validateCatalogueRequest,
+  validateScheduleLaterRequest,
+  scheduleLaterPackageLine,
   RequestRejectedError,
   idempotencyDigest,
   buildRecurringMonthlyContext,
@@ -349,4 +351,68 @@ test('a $10 demo offering is never a regular enrollment or waitlist target', () 
       err => err instanceof RequestRejectedError && /not accepting requests/.test(err.message),
     )
   }
+})
+
+// ─── Schedule-later registrations (lib/schedule-later.js) ──────────────────
+
+const BRICKS_ID = 'lqA6LK62gr7AphDOpesA'
+
+function scheduleLaterBody(overrides = {}) {
+  return {
+    programId: BRICKS_ID,
+    scheduleLater: true,
+    clientRequestId: 'client-request-id-12345',
+    requestedAction: 'enrollment',
+    packageId: 'builder',
+    registration: baseRegistration(),
+    ...overrides,
+  }
+}
+
+test('schedule-later: accepts a Bricks Challenge registration with a package and no schedule', () => {
+  const result = validatePayload(scheduleLaterBody())
+  assert.equal(result.error, undefined)
+  assert.equal(result.scheduleLater, true)
+  assert.equal(result.offeringId, '')
+  assert.equal(result.packageId, 'builder')
+  assert.equal(result.paymentPreference, null)
+})
+
+test('schedule-later: rejects programs not on the schedule-later list', () => {
+  assert.match(validatePayload(scheduleLaterBody({ programId: 'XzltkMNsZwofCqArSJ3z' })).error, /needs a class schedule/)
+})
+
+test('schedule-later: rejects a schedule, waitlist, missing package or payment preference', () => {
+  assert.ok(validatePayload(scheduleLaterBody({ offeringId: 'off-1' })).error)
+  assert.ok(validatePayload(scheduleLaterBody({ requestedAction: 'waitlist' })).error)
+  assert.ok(validatePayload(scheduleLaterBody({ packageId: '' })).error)
+  assert.ok(validatePayload(scheduleLaterBody({ paymentPreference: { method: 'pay_in_full' } })).error)
+})
+
+test('schedule-later: without the flag a missing schedule is still rejected', () => {
+  assert.ok(validatePayload(scheduleLaterBody({ scheduleLater: undefined })).error)
+})
+
+test('schedule-later: validateScheduleLaterRequest checks the live program and age', () => {
+  const request = validatePayload(scheduleLaterBody())
+  const ok = validateScheduleLaterRequest(request, doc(roboticsProgram()))
+  assert.equal(ok.session.title, 'Schedule to be confirmed')
+  assert.equal(formatSchedule(ok.session), 'Schedule to be confirmed')
+
+  assert.throws(() => validateScheduleLaterRequest(request, doc(roboticsProgram({ isActive: false }))), RequestRejectedError)
+  assert.throws(() => validateScheduleLaterRequest(request, doc(null, false)), RequestRejectedError)
+  const tooOld = { ...request, registration: { ...request.registration, childAge: 13 } }
+  assert.throws(() => validateScheduleLaterRequest(tooOld, doc(roboticsProgram())), RequestRejectedError)
+})
+
+test('schedule-later: idempotency key differs from an offering request', () => {
+  const request = validatePayload(scheduleLaterBody())
+  assert.notEqual(idempotencyDigest(request), idempotencyDigest({ ...request, scheduleLater: false, offeringId: 'off-1' }))
+})
+
+test('schedule-later: email package line quotes the rate card', () => {
+  assert.equal(
+    scheduleLaterPackageLine(getRoboticsPackage(BRICKS_ID, 'builder')),
+    'Builder — 20 classes · $600.00 CAD total · pay in full or 2 monthly payments of $300.00 CAD',
+  )
 })
