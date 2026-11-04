@@ -3,6 +3,7 @@ import { Jost, Open_Sans } from "next/font/google";
 import type { ReactNode } from "react";
 import { NavigationBar } from "../components/navigation-bar";
 import { ScrollToTopButton } from "../components/scroll-to-top-button";
+import { MetaPixel } from "../components/meta-pixel";
 import { localBusinessSchema, toJsonLd, websiteSchema } from "../lib/seo";
 import "./globals.css";
 
@@ -62,6 +63,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <NavigationBar />
         {children}
         <ScrollToTopButton />
+        <MetaPixel />
       </body>
     </html>
   );

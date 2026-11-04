@@ -10,6 +10,7 @@ import {
   formatEventDateTime, formatEventTimeRange, isDemoOfferingPubliclyFull,
 } from '../../../../lib/booking'
 import { trackEvent, ALLOWED_ATTRIBUTION_PARAMS } from '../../../../lib/analytics'
+import { trackMetaCompleteRegistration } from '../../../../lib/meta-pixel'
 import { SCHEDULING_CONTACT_URL } from '../../../../lib/site-links'
 import BookingLayout from '../../../../components/booking/BookingLayout'
 import { BookingStepper } from '../../../../components/booking/BookingStepper'
@@ -223,6 +224,9 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
       }
 
       trackEvent('demo_registration_submitted', { offeringId: offering?.id ?? null })
+      // The server has saved the registration (response.ok above) — this is
+      // the Meta ad conversion. Payment is still pending verification.
+      trackMetaCompleteRegistration(registerResult.demoRegistrationId ?? registerResult.registrationNumber ?? null)
 
       // Payment is collected via e-transfer, not Stripe — send the family to
       // the instructions page with everything it needs already in hand, no

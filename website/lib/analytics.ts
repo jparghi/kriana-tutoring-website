@@ -6,8 +6,9 @@
 // `ref` slot.
 export const ALLOWED_ATTRIBUTION_PARAMS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'ref'] as const
 
-// Internal funnel-event dispatcher for the /events marketing funnel. No GA4,
-// Meta Pixel, or GTM script is loaded by this site today — trackEvent()
+// Internal funnel-event dispatcher for the /events marketing funnel. The Meta
+// Pixel is separate (lib/meta-pixel.ts, only the CompleteRegistration
+// conversion). No GA4 or GTM script is loaded by this site today — trackEvent()
 // pushes to window.dataLayer only if something else already defines it
 // (currently nothing does, so this is a no-op in production until an
 // analytics loader is added, at which point nothing here needs to change).
