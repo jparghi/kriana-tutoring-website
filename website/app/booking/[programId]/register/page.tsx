@@ -53,6 +53,15 @@ const inputClass = 'w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text
 const ETRANSFER_EMAIL = process.env.NEXT_PUBLIC_ETRANSFER_EMAIL || 'info@krianatutoring.com'
 const ETRANSFER_REFERENCE_PATTERN = /^[A-Za-z0-9-]{4,40}$/
 
+// Card (Stripe Checkout) is offered first when switched on; the server's
+// ENABLE_CARD_PAYMENTS is the real control (submit-demo-registration.js).
+const CARD_PAYMENTS_ENABLED = process.env.NEXT_PUBLIC_ENABLE_CARD_PAYMENTS === 'true'
+
+function newClientRequestId() {
+  return globalThis.crypto?.randomUUID?.()
+    ?? `demo-request-${Date.now()}-${Math.random().toString(36).slice(2)}`
+}
+
 function normalizeEtransferReference(value: string) {
   return value.replace(/\s+/g, '')
 }
@@ -125,6 +134,13 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
   const askAccommodations = !isWaitlist && terms.kind === 'workshop'
   // Free offerings have nothing to send, so no e-Transfer step.
   const payFirst = !isWaitlist && priceCents > 0
+  const cardAvailable = payFirst && CARD_PAYMENTS_ENABLED
+  const [payMethod, setPayMethod] = useState<'card' | 'etransfer'>(CARD_PAYMENTS_ENABLED ? 'card' : 'etransfer')
+  const payByCard = cardAvailable && payMethod === 'card'
+  // Only the e-Transfer path needs the Interac reference before Register.
+  const needsReference = payFirst && !payByCard
+  // Set when the parent came back from Stripe without paying.
+  const [paymentCancelledNotice, setPaymentCancelledNotice] = useState(false)
   const etransferReference = normalizeEtransferReference(form.etransferReference)
   const referenceValid = ETRANSFER_REFERENCE_PATTERN.test(etransferReference)
   // The booking number doesn't exist until Register, so the note identifies
@@ -135,8 +151,19 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
 
   useEffect(() => {
     if (!clientRequestId.current) {
-      clientRequestId.current = globalThis.crypto?.randomUUID?.()
-        ?? `demo-request-${Date.now()}-${Math.random().toString(36).slice(2)}`
+      clientRequestId.current = newClientRequestId()
+    }
+    // Back from Stripe Checkout without paying: release that unpaid
+    // registration now (seat + the child's one-per-event lock), so they can
+    // register again straight away. A no-op if it was paid or already released.
+    const cancelledPayment = searchParams.get('cancelledPayment')
+    if (cancelledPayment && !isWaitlist) {
+      setPaymentCancelledNotice(true)
+      fetch('/.netlify/functions/cancel-demo-payment-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ demoRegistrationId: cancelledPayment }),
+      }).catch(() => {})
     }
     trackEvent(isWaitlist ? 'demo_waitlist_started' : 'demo_registration_started', { offeringId: offering?.id ?? null })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -175,7 +202,7 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.consentAccepted) { setError('Please accept the consent to continue.'); return }
-    if (payFirst && !referenceValid) {
+    if (needsReference && !referenceValid) {
       setError('Please send your e-Transfer and enter its Interac reference number (letters and numbers, as shown by your bank).')
       return
     }
@@ -197,9 +224,10 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
             childName: form.childName,
             childAge: form.childAge,
             ...(askAccommodations && form.accommodations.trim() ? { accommodations: form.accommodations } : {}),
-            ...(payFirst ? { etransferReference } : {}),
+            ...(needsReference ? { etransferReference } : {}),
             consentAccepted: form.consentAccepted,
           },
+          ...(payFirst ? { paymentMethod: payByCard ? 'card' : 'etransfer' } : {}),
           marketingAttribution: buildAttribution(),
         }),
       })
@@ -210,7 +238,7 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
           : 'We could not submit your registration. Please try again.')
         // They may have already paid: a full/closed session must never leave
         // them wondering about their money.
-        throw new Error(payFirst && registerResponse.status === 409
+        throw new Error(needsReference && registerResponse.status === 409
           ? `${message} If you already sent your e-Transfer, call or text 613-400-6921 and we'll refund it in full.`
           : message)
       }
@@ -228,7 +256,33 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
       // the Meta ad conversion. Payment is still pending verification.
       trackMetaCompleteRegistration(registerResult.demoRegistrationId ?? registerResult.registrationNumber ?? null)
 
-      // Payment is collected via e-transfer, not Stripe — send the family to
+      if (payByCard && registerResult.demoRegistrationId) {
+        // Saved unpaid; now open Stripe Checkout. The seat is held while
+        // they pay, and released if they leave without paying.
+        const sessionResponse = await fetch('/.netlify/functions/create-demo-payment-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ demoRegistrationId: registerResult.demoRegistrationId }),
+        })
+        const sessionResult = await sessionResponse.json().catch(() => ({}))
+        if (sessionResponse.ok && sessionResult.url) {
+          window.location.assign(sessionResult.url)
+          return
+        }
+        // Couldn't open the payment page: release the unpaid registration so
+        // nothing stays held, and start a fresh request id for the retry.
+        await fetch('/.netlify/functions/cancel-demo-payment-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ demoRegistrationId: registerResult.demoRegistrationId }),
+        }).catch(() => {})
+        clientRequestId.current = newClientRequestId()
+        throw new Error(sessionResult.error
+          ? `${sessionResult.error} Nothing was charged.`
+          : 'We couldn’t open the card payment page. Nothing was charged. Please try again, or pay by Interac e-Transfer.')
+      }
+
+      // e-Transfer (or free) — send the family to
       // the instructions page with everything it needs already in hand, no
       // extra fetch (and no Firestore read, which demoRegistrations doesn't
       // allow client-side per firestore.rules).
@@ -252,7 +306,7 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
       })
       // Present → the page shows "registration received, verifying payment"
       // instead of asking them to send an e-Transfer they already sent.
-      if (payFirst) params.set('etransferReference', etransferReference)
+      if (needsReference) params.set('etransferReference', etransferReference)
       router.push(`/booking/demo-etransfer?${params.toString()}`)
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.')
@@ -332,7 +386,9 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
             <div className="mb-1">
               <h3 className="font-black text-slate-800 text-base">{terms.registerHeading(priceDisplay)}</h3>
               <p className="text-sm text-slate-400 mt-0.5">
-                {payFirst
+                {payFirst && cardAvailable
+                  ? <>Fill in your details, then pay {priceLabel} by card or Interac e-Transfer.</>
+                  : payFirst
                   ? <>Fill in your details, send the {priceLabel} e-Transfer, then enter its reference number to register.</>
                   : <>Just a few details to hold your child&apos;s {terms.spot}.</>}
               </p>
@@ -345,6 +401,12 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
               </div>
             )}
           </>
+        )}
+
+        {paymentCancelledNotice && !error && (
+          <div className="bg-sky-50 border border-sky-200 text-sky-800 rounded-xl px-4 py-3 text-sm font-medium">
+            Your card payment wasn&apos;t completed, so nothing was charged and the spot was released. You can register again below.
+          </div>
         )}
 
         {error && (
@@ -372,7 +434,44 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
           </Field>
         )}
 
-        {payFirst && (
+        {cardAvailable && (
+          <div className="pt-2">
+            <h4 className="font-black text-slate-800 text-sm">How would you like to pay {priceLabel}?</h4>
+            <div className="mt-2 grid gap-2" role="radiogroup" aria-label="Payment method">
+              {([
+                { value: 'card', title: 'Pay by card', detail: 'Visa, Mastercard, Amex, Apple Pay or Google Pay. Booked instantly.' },
+                { value: 'etransfer', title: 'Interac e-Transfer', detail: 'Send from your bank, then enter the reference number.' },
+              ] as const).map(option => {
+                const selected = payMethod === option.value
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => { setPayMethod(option.value); setError('') }}
+                    className={`flex items-start gap-3 rounded-xl border px-4 py-3 text-left transition-all ${selected ? 'border-[#0c6162] bg-[#e6f4f4] ring-2 ring-[#0c6162]/20' : 'border-slate-200 bg-white hover:border-slate-300'}`}
+                  >
+                    <span className={`mt-0.5 h-4 w-4 shrink-0 rounded-full border-2 ${selected ? 'border-[#0c6162] bg-[#0c6162] shadow-[inset_0_0_0_2px_white]' : 'border-slate-300'}`} aria-hidden="true" />
+                    <span>
+                      <span className="block text-sm font-bold text-slate-800">{option.title}</span>
+                      <span className="block text-xs text-slate-500 mt-0.5">{option.detail}</span>
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {payByCard && (
+          <div className="rounded-xl border border-[#0c6162]/20 bg-[#e6f4f4] px-4 py-3">
+            <p className="text-sm font-bold text-[#0c6162]">Secure card payment by Stripe</p>
+            <p className="text-sm text-slate-600 mt-1">After you press Register, you&apos;ll pay {priceLabel} on Stripe&apos;s secure page. Your spot is held for 30 minutes while you pay, and nothing is charged until you confirm there.</p>
+          </div>
+        )}
+
+        {needsReference && (
           <>
             <div className="pt-2">
               <h4 className="font-black text-slate-800 text-sm">Send your {priceLabel} e-Transfer</h4>
@@ -414,12 +513,16 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
           </span>
         </label>
 
-        <button type="submit" disabled={submitting || (payFirst && !referenceValid)} className="w-full py-4 rounded-xl text-white font-black text-base transition-all disabled:opacity-50 active:scale-[0.98] shadow-sm" style={{ backgroundColor: '#F2A100' }}>
-          {submitting ? 'Submitting…' : isWaitlist ? 'Join the Waitlist' : payFirst ? 'Register' : 'Register & Get E-Transfer Instructions →'}
+        <button type="submit" disabled={submitting || (needsReference && !referenceValid)} className="w-full py-4 rounded-xl text-white font-black text-base transition-all disabled:opacity-50 active:scale-[0.98] shadow-sm" style={{ backgroundColor: '#F2A100' }}>
+          {submitting
+            ? (payByCard ? 'Opening secure payment…' : 'Submitting…')
+            : isWaitlist ? 'Join the Waitlist' : payByCard ? `Register & Pay ${priceLabel}` : payFirst ? 'Register' : 'Register & Get E-Transfer Instructions →'}
         </button>
         <p className="text-center text-xs text-slate-400">
           {isWaitlist
             ? 'You’ll get an email confirming you’re on the waitlist.'
+            : payByCard
+              ? 'You’ll pay on Stripe’s secure page. If you leave without paying, nothing is charged.'
             : payFirst
               ? (referenceValid
                 ? 'We’ll match your e-Transfer and confirm your spot by email. If the session fills before you register, we’ll refund your e-Transfer in full.'

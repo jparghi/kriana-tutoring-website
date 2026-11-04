@@ -103,7 +103,17 @@ export async function sendDemoAcknowledgement({ registration, program, offering,
   // was already sent, so the email confirms what we received instead of
   // asking them to pay. Older/free registrations keep the pay-within-48h copy.
   const etransferReference = escapeHtml(registration.etransferReference || '')
-  const paymentHtml = etransferReference
+  // Card registrations are only acknowledged once Stripe confirmed the
+  // payment (demo-payment-webhook.js), so this copy says "paid", not "held".
+  const paidByCard = registration.paymentMethod === 'card'
+  const paymentHtml = paidByCard
+    ? `<div style="background:#ecfdf5;border:1px solid rgba(4,120,87,0.25);padding:16px;border-radius:10px;margin:18px 0">
+          <p style="margin:0 0 10px;font-weight:700;color:#047857">Payment Received</p>
+          <p style="margin:0 0 4px"><strong>Paid by card:</strong> ${chargeLabel}</p>
+          <p style="margin:0">Your card statement will show <strong>Kriana Tutoring</strong>.</p>
+        </div>
+        <p>Your child&apos;s ${terms.spot} is booked. We&apos;ll email your confirmation with the final details before the ${terms.noun}.</p>`
+    : etransferReference
     ? `<div style="background:#e6f4f4;border:1px solid rgba(12,97,98,0.2);padding:16px;border-radius:10px;margin:18px 0">
           <p style="margin:0 0 10px;font-weight:700;color:#0c6162">Your E-Transfer</p>
           <p style="margin:0 0 4px"><strong>Interac reference:</strong> ${etransferReference}</p>
@@ -124,7 +134,7 @@ export async function sendDemoAcknowledgement({ registration, program, offering,
     <div style="max-width:600px;margin:24px auto;font-family:Arial,sans-serif;color:#1e293b">
       <div style="background:#0c6162;color:white;padding:28px;border-radius:16px 16px 0 0">
         <p style="margin:0 0 6px;font-size:12px;letter-spacing:.12em;text-transform:uppercase">Kriana Tutoring</p>
-        <h1 style="margin:0;font-size:24px">${priceDisplay} ${terms.registrationTitle} Received</h1>
+        <h1 style="margin:0;font-size:24px">${paidByCard ? `${terms.registrationTitle}: Payment Received` : `${priceDisplay} ${terms.registrationTitle} Received`}</h1>
       </div>
       <div style="border:1px solid #e2e8f0;border-top:0;padding:28px;border-radius:0 0 16px 16px">
         <p>Hi ${parentName},</p>
@@ -153,7 +163,10 @@ export async function sendDemoAcknowledgement({ registration, program, offering,
     <p><strong>Charge:</strong> ${chargeLabel}</p>
     <p><strong>Child:</strong> ${childName} (age ${escapeHtml(registration.childAge)})</p>
     <p><strong>Parent:</strong> ${parentName} · ${escapeHtml(registration.parentEmail)} · ${escapeHtml(registration.parentPhone)}</p>
-    ${etransferReference
+    ${paidByCard
+      ? `<p><strong>Payment:</strong> Paid by card (Stripe)${registration.paymentIntentId ? ` · ${escapeHtml(registration.paymentIntentId)}` : ''}</p>
+    <p>Nothing to verify: Stripe has confirmed the payment, and the registration is marked paid in the program management portal.</p>`
+      : etransferReference
       ? `<p><strong>Interac reference (from the parent):</strong> ${etransferReference}</p>
     <p>Match this reference against the received e-Transfers, then confirm it in the program management portal.</p>`
       : `<p><strong>Expected e-transfer message/note:</strong> ${etransferMessageText}</p>
@@ -161,8 +174,8 @@ export async function sendDemoAcknowledgement({ registration, program, offering,
 
   const transport = createTransport()
   const results = await Promise.allSettled([
-    transport.sendMail({ from: fromAddress, to: registration.parentEmail, subject: `${priceDisplay} ${terms.registrationTitle} Received — ${offering?.eventTitle || program?.title || 'Kriana program'}`, html: parentHtml }),
-    transport.sendMail({ from: fromAddress, to: adminEmail, subject: `New ${priceDisplay} ${terms.kind} registration — ${offering?.eventTitle || program?.title || 'Program'} — ${registration.childName}`, html: adminHtml }),
+    transport.sendMail({ from: fromAddress, to: registration.parentEmail, subject: `${paidByCard ? 'Payment Received' : `${priceDisplay} ${terms.registrationTitle} Received`} — ${offering?.eventTitle || program?.title || 'Kriana program'}`, html: parentHtml }),
+    transport.sendMail({ from: fromAddress, to: adminEmail, subject: `New ${paidByCard ? 'card-paid' : priceDisplay} ${terms.kind} registration — ${offering?.eventTitle || program?.title || 'Program'} — ${registration.childName}`, html: adminHtml }),
   ])
   for (const result of results) {
     if (result.status === 'rejected') console.error('Demo registration acknowledgement email failed:', result.reason)

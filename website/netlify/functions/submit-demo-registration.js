@@ -13,15 +13,18 @@
 // before any other work happens — mirroring the BOOKING_FLOW_MODE
 // fail-closed philosophy in lib/booking-flow.ts.
 //
-// Payment is collected via e-transfer, confirmed manually by staff in the
-// platform repo's admin app (see manage-demo-registration.js /
-// _lib/demo-lifecycle.js's confirmDemoEtransferPayment) — not via Stripe.
-// create-demo-payment-session.js and demo-payment-webhook.js are unused
-// dead code from an earlier Stripe-based delivery, kept in case Stripe is
-// reintroduced for this product later.
+// Two ways to pay a paid offering (body.paymentMethod):
+//   'etransfer' (default) — pay-first Interac e-Transfer, confirmed manually
+//     by staff in the platform repo's admin app (confirmDemoEtransferPayment).
+//   'card' — only when ENABLE_CARD_PAYMENTS === 'true' (_lib/card-payments.js).
+//     The registration is saved unpaid, then the browser goes to Stripe
+//     Checkout (create-demo-payment-session.js) and demo-payment-webhook.js
+//     marks it paid. Its acknowledgement email is sent by the webhook once
+//     paid, not here.
 import crypto from 'node:crypto'
 import { FieldValue, Timestamp } from 'firebase-admin/firestore'
 import { getAdminDb } from './_lib/firebase-admin.js'
+import { cardPaymentsEnabled } from './_lib/card-payments.js'
 import { RequestRejectedError, enforceRateLimit } from './submit-enrollment-request.js'
 import { getDemoPricing } from '../../lib/robotics-packages.js'
 import { DEMO_ELIGIBLE_PROGRAM_IDS, isDemoEligibleProgramId } from '../../lib/demo-eligibility.js'
@@ -152,8 +155,10 @@ export function validatePayload(body) {
   }
 
   const marketingAttribution = sanitizeAttribution(body.marketingAttribution)
+  // Anything but the exact string 'card' is e-Transfer (today's default).
+  const paymentMethod = body.paymentMethod === 'card' ? 'card' : 'etransfer'
 
-  return { programId, demoOfferingId, clientRequestId, registration, marketingAttribution }
+  return { programId, demoOfferingId, clientRequestId, registration, marketingAttribution, paymentMethod }
 }
 
 // ─── Capacity / window helpers (same safety math as submit-enrollment-request.js) ───
@@ -314,10 +319,16 @@ export async function saveDemoRegistration(db, request) {
     const pricing = getDemoPricing(offering)
     const { priceCents, currency } = pricing
 
-    // Pay-first: a paid registration must arrive with the family's Interac
-    // reference. Checked here, against the freshly resolved price, so a free
-    // offering never asks for one.
-    if (priceCents > 0 && !registration.etransferReference) {
+    // Card is only meaningful for a paid offering; a free one is never sent
+    // to Stripe whatever the browser asked for.
+    const paidByCard = priceCents > 0 && request.paymentMethod === 'card'
+    if (paidByCard && !cardPaymentsEnabled()) {
+      throw new RequestRejectedError(400, 'Card payment isn’t available right now. Please pay by Interac e-Transfer.')
+    }
+    // Pay-first: a paid e-Transfer registration must arrive with the family's
+    // Interac reference. Checked here, against the freshly resolved price, so
+    // a free offering never asks for one.
+    if (priceCents > 0 && !paidByCard && !registration.etransferReference) {
       throw new RequestRejectedError(400, 'Please send your e-Transfer and enter its Interac reference number before registering.')
     }
 
@@ -385,15 +396,20 @@ export async function saveDemoRegistration(db, request) {
       demoStatus: 'registered',
       conversionStatus: 'not_converted',
       convertedRegistrationId: null,
-      paymentProvider: 'etransfer',
+      // 'stripe' (card) or 'etransfer'. The portal keys its payment buttons
+      // off paymentProvider (confirmDemoEtransferPayment refuses 'stripe').
+      paymentProvider: paidByCard ? 'stripe' : 'etransfer',
+      paymentMethod: paidByCard ? 'card' : 'etransfer',
       paymentSessionId: null,
       paymentIntentId: null,
-      // Stays 'pending' until staff match the reference in the bank and
-      // press Confirm E-Transfer Received in the portal. A registration that
+      // e-Transfer: stays 'pending' until staff match the reference in the
+      // bank and press Confirm E-Transfer Received in the portal; one that
       // carries a reference is never auto-expired (expire-demo-payment-holds.js).
+      // Card: 'pending' until demo-payment-webhook.js records the payment, or
+      // the checkout is abandoned and the seat released.
       paymentStatus: 'pending',
-      etransferReference: registration.etransferReference || null,
-      etransferReferenceSubmittedAt: registration.etransferReference ? FieldValue.serverTimestamp() : null,
+      etransferReference: paidByCard ? null : (registration.etransferReference || null),
+      etransferReferenceSubmittedAt: !paidByCard && registration.etransferReference ? FieldValue.serverTimestamp() : null,
       priceCents,
       currency,
       // Breakdown of priceCents (tax included) as charged at booking time.
@@ -470,7 +486,7 @@ export async function saveDemoRegistration(db, request) {
       createdAt: FieldValue.serverTimestamp(),
     })
 
-    return { id: registrationRef.id, reference: registrationNumber, duplicate: false, program, offering, priceCents, currency, taxCents: pricing.taxCents }
+    return { id: registrationRef.id, reference: registrationNumber, duplicate: false, program, offering, priceCents, currency, taxCents: pricing.taxCents, paymentMethod: paidByCard ? 'card' : 'etransfer' }
   })
 }
 
@@ -518,7 +534,9 @@ export const handler = async event => {
       offering: saved.offering,
     })
 
-    if (!saved.duplicate) {
+    // Card registrations aren't paid yet — the webhook sends their
+    // acknowledgement once Stripe confirms the payment.
+    if (!saved.duplicate && saved.paymentMethod !== 'card') {
       const emailed = await sendDemoAcknowledgement({
         registration: { ...validated.registration, priceCents: saved.priceCents, currency: saved.currency, taxCents: saved.taxCents },
         program: saved.program,
@@ -534,7 +552,15 @@ export const handler = async event => {
       }
     }
 
-    return json(201, { registrationNumber: saved.reference, demoRegistrationId: saved.id, amountCents: saved.priceCents, currency: saved.currency })
+    return json(201, {
+      registrationNumber: saved.reference,
+      demoRegistrationId: saved.id,
+      amountCents: saved.priceCents,
+      currency: saved.currency,
+      // A duplicate (retried) request doesn't re-read the method; the browser
+      // already knows which one it asked for.
+      paymentMethod: saved.paymentMethod ?? validated.paymentMethod,
+    })
   } catch (error) {
     if (error instanceof RequestRejectedError) {
       return json(error.statusCode, { error: error.message })

@@ -189,3 +189,41 @@ export async function logLeadActivity(db, { registrationId, type, description, m
     console.error('logLeadActivity failed (non-fatal):', error)
   }
 }
+
+/**
+ * Best-effort lead status change plus timeline entry, for events that happen
+ * without staff (a card payment settling or being abandoned — see
+ * demo-payment-webhook.js). Mirrors the portal's recordLeadEvent: the status
+ * only moves when the lead is currently in one of `onlyFromStatuses`, so it
+ * never pulls back a lead staff already moved along. Never throws; no-op if
+ * the lead doesn't exist.
+ */
+export async function recordLeadStatusEvent(db, { registrationId, toStatus, onlyFromStatuses, type, description, metadata, extra }) {
+  try {
+    const leadRef = db.collection('demoLeads').doc(registrationId)
+    const snapshot = await leadRef.get()
+    if (!snapshot.exists) return { changed: false }
+    const fromStatus = snapshot.data()?.leadStatus
+    const changes = Boolean(toStatus) && toStatus !== fromStatus
+      && (!onlyFromStatuses || onlyFromStatuses.includes(fromStatus))
+    const batch = db.batch()
+    batch.update(leadRef, {
+      ...(changes ? { ...(extra || {}), leadStatus: toStatus, newsletterCandidate: NEWSLETTER_CANDIDATE_STATUSES.has(toStatus) } : {}),
+      updatedAt: FieldValue.serverTimestamp(),
+      lastActivityAt: FieldValue.serverTimestamp(),
+    })
+    batch.set(db.collection('demoLeadActivities').doc(crypto.randomUUID()), {
+      leadId: registrationId,
+      type,
+      description,
+      metadata: { ...(metadata || {}), ...(changes ? { from: fromStatus, to: toStatus } : {}) },
+      createdAt: FieldValue.serverTimestamp(),
+      createdBy: 'system',
+    })
+    await batch.commit()
+    return { changed: changes }
+  } catch (error) {
+    console.error('recordLeadStatusEvent failed (non-fatal):', error)
+    return { changed: false, error: true }
+  }
+}

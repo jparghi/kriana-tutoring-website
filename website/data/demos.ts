@@ -331,7 +331,9 @@ export const demos: DemoEvent[] = [
       { q: "What about snacks?", a: "There's a short snack break in each workshop. Please pack a nut-free snack and a water bottle." },
       { q: "Who supervises the children?", a: "Trained Young Engineers instructors lead every workshop." },
       { q: "How do drop-off and pickup work?", a: "Drop off up to 10 minutes before the start time and pick up right at the end time, at 205 Metric Circle. A parent or guardian signs your child in and out." },
-      { q: "How do I pay, and when is my spot confirmed?", a: "By Interac e-Transfer, on the registration page: send it, enter the reference number your bank gives you, and register. We match the payment and confirm your spot by email, usually within one business day." },
+      { q: "How do I pay, and when is my spot confirmed?", a: process.env.NEXT_PUBLIC_ENABLE_CARD_PAYMENTS === 'true'
+        ? "On the registration page, by card (Visa, Mastercard, Amex, Apple Pay or Google Pay) or Interac e-Transfer. Card payments are booked instantly. For e-Transfer, send it, enter the reference number your bank gives you, and register; we match the payment and confirm your spot by email, usually within one business day."
+        : "By Interac e-Transfer, on the registration page: send it, enter the reference number your bank gives you, and register. We match the payment and confirm your spot by email, usually within one business day." },
       { q: "What if the workshop I want is full?", a: "Join the waitlist for that session. It's free, and if a spot opens we'll contact the next family on the list." },
     ],
     registrationUrl: "https://krianatutoring.com/events",

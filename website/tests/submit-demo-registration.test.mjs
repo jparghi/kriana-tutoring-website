@@ -21,7 +21,12 @@ import { expireOneDemoHold } from '../netlify/functions/expire-demo-payment-hold
 import { getDemoPricing } from '../lib/robotics-packages.js'
 import { DEMO_ELIGIBLE_PROGRAM_IDS } from '../lib/demo-eligibility.js'
 import { reconcileDemoWebhookEvent, handler as webhookHandler } from '../netlify/functions/demo-payment-webhook.js'
-import { idempotencyKeyForDemoRegistration, handler as createSessionHandler } from '../netlify/functions/create-demo-payment-session.js'
+import { afterDemoPaymentOutcome } from '../netlify/functions/demo-payment-webhook.js'
+import {
+  idempotencyKeyForDemoRegistration, checkoutWindow, buildCheckoutSessionParams, checkoutBlocker,
+  handler as createSessionHandler,
+} from '../netlify/functions/create-demo-payment-session.js'
+import { cancelUnpaidCardRegistration } from '../netlify/functions/cancel-demo-payment-session.js'
 
 function doc(data, exists = true) {
   return { exists, data: () => data }
@@ -641,10 +646,11 @@ test('demo-payment-webhook handler returns 503 when ENABLE_DEMO_PAYMENTS is not 
 
 // ─── create-demo-payment-session idempotency ────────────────────────────
 
-test('idempotencyKeyForDemoRegistration is deterministic given the same demoRegistrationId', () => {
-  assert.equal(idempotencyKeyForDemoRegistration('reg-123'), idempotencyKeyForDemoRegistration('reg-123'))
-  assert.notEqual(idempotencyKeyForDemoRegistration('reg-123'), idempotencyKeyForDemoRegistration('reg-456'))
-  assert.equal(idempotencyKeyForDemoRegistration('reg-123'), 'demo-session-reg-123')
+test('idempotencyKeyForDemoRegistration is deterministic per registration and checkout window', () => {
+  assert.equal(idempotencyKeyForDemoRegistration('reg-123', 7), idempotencyKeyForDemoRegistration('reg-123', 7))
+  assert.notEqual(idempotencyKeyForDemoRegistration('reg-123', 7), idempotencyKeyForDemoRegistration('reg-456', 7))
+  assert.notEqual(idempotencyKeyForDemoRegistration('reg-123', 7), idempotencyKeyForDemoRegistration('reg-123', 8))
+  assert.equal(idempotencyKeyForDemoRegistration('reg-123', 7), 'demo-session-reg-123-7')
 })
 
 // ─── demo-payment-webhook: signature verification ───────────────────────
@@ -677,7 +683,7 @@ test('an invalid signature is rejected', () => {
 
 test('reconcileDemoWebhookEvent: checkout.session.completed transitions pending -> paid and confirms the held seat', async () => {
   const { db, store } = makeFakeDb({
-    'demoRegistrations/reg-1': { demoOfferingId: 'off-1', paymentStatus: 'pending', priceCents: 1000, currency: 'CAD' },
+    'demoRegistrations/reg-1': { demoOfferingId: 'off-1', demoStatus: 'registered', paymentStatus: 'pending', priceCents: 1000, currency: 'CAD' },
   })
   const stripeEvent = {
     id: 'evt_1',
@@ -693,7 +699,7 @@ test('reconcileDemoWebhookEvent: checkout.session.completed transitions pending 
 
 test('reconcileDemoWebhookEvent: amount/currency mismatch is rejected (defense in depth)', async () => {
   const { db, store } = makeFakeDb({
-    'demoRegistrations/reg-1': { demoOfferingId: 'off-1', paymentStatus: 'pending', priceCents: 1000, currency: 'CAD' },
+    'demoRegistrations/reg-1': { demoOfferingId: 'off-1', demoStatus: 'registered', paymentStatus: 'pending', priceCents: 1000, currency: 'CAD' },
   })
   const stripeEvent = {
     id: 'evt_tampered',
@@ -706,7 +712,7 @@ test('reconcileDemoWebhookEvent: amount/currency mismatch is rejected (defense i
 
 test('reconcileDemoWebhookEvent: checkout.session.expired cancels, releases the hold, voids the credit, and deletes the lock', async () => {
   const { db, store } = makeFakeDb({
-    'demoRegistrations/reg-1': { demoOfferingId: 'off-1', paymentStatus: 'pending', childEligibilityKeyHash: 'hash-1' },
+    'demoRegistrations/reg-1': { demoOfferingId: 'off-1', demoStatus: 'registered', paymentStatus: 'pending', childEligibilityKeyHash: 'hash-1' },
     'demoCredits/reg-1': { status: 'pending_attendance' },
     'demoEligibilityLocks/hash-1': { demoRegistrationId: 'reg-1' },
   })
@@ -729,8 +735,8 @@ test('reconcileDemoWebhookEvent: charge.refunded voids an available credit but l
     'demoRegistrations/reg-2': { paymentIntentId: 'pi_2', paymentStatus: 'paid' },
     'demoCredits/reg-2': { status: 'applied' },
   })
-  await reconcileDemoWebhookEvent(db, { id: 'evt_r1', type: 'charge.refunded', data: { object: { payment_intent: 'pi_1' } } })
-  await reconcileDemoWebhookEvent(db, { id: 'evt_r2', type: 'charge.refunded', data: { object: { payment_intent: 'pi_2' } } })
+  await reconcileDemoWebhookEvent(db, { id: 'evt_r1', type: 'charge.refunded', data: { object: { payment_intent: 'pi_1', refunded: true, amount_refunded: 1000 } } })
+  await reconcileDemoWebhookEvent(db, { id: 'evt_r2', type: 'charge.refunded', data: { object: { payment_intent: 'pi_2', refunded: true, amount_refunded: 1000 } } })
 
   assert.equal(store.get('demoRegistrations/reg-1').paymentStatus, 'refunded')
   assert.equal(store.get('demoCredits/reg-1').status, 'void')
@@ -740,7 +746,7 @@ test('reconcileDemoWebhookEvent: charge.refunded voids an available credit but l
 
 test('reconcileDemoWebhookEvent: a duplicate event.id is a no-op on the second delivery', async () => {
   const { db, store } = makeFakeDb({
-    'demoRegistrations/reg-1': { demoOfferingId: 'off-1', paymentStatus: 'pending', priceCents: 1000, currency: 'CAD' },
+    'demoRegistrations/reg-1': { demoOfferingId: 'off-1', demoStatus: 'registered', paymentStatus: 'pending', priceCents: 1000, currency: 'CAD' },
     'processedDemoWebhookEvents/evt_1': { type: 'checkout.session.completed', processedAt: null },
   })
   const stripeEvent = {
@@ -879,4 +885,277 @@ test('expireOneDemoHold still releases an unpaid hold with no reference (reads b
   assert.equal(store.get('demoRegistrations/reg-old').demoStatus, 'cancelled')
   assert.equal(store.get('demoCredits/reg-old').status, 'void')
   assert.equal(store.get('demoEligibilityLocks/hash-1'), undefined)
+})
+
+// ─── Card payments (Stripe Checkout) ──────────────────────────────────────
+
+function withCardPayments(value, fn) {
+  return async () => {
+    const saved = process.env.ENABLE_CARD_PAYMENTS
+    if (value === undefined) delete process.env.ENABLE_CARD_PAYMENTS
+    else process.env.ENABLE_CARD_PAYMENTS = value
+    try { await fn() } finally {
+      if (saved === undefined) delete process.env.ENABLE_CARD_PAYMENTS
+      else process.env.ENABLE_CARD_PAYMENTS = saved
+    }
+  }
+}
+
+// makeFakeDb plus what the non-transactional code paths use: ref.get(),
+// ref.update() and db.batch().
+function makeFakeDbWithReads(initial = {}) {
+  const { db, store } = makeFakeDb(initial)
+  const baseCollection = db.collection
+  const merge = (key, data) => store.set(key, { ...(store.get(key) || {}), ...data })
+  db.collection = name => {
+    const collection = baseCollection(name)
+    return {
+      ...collection,
+      doc(id) {
+        const ref = collection.doc(id)
+        const key = `${name}/${ref.id}`
+        return {
+          ...ref,
+          async get() { const data = store.get(key); return { exists: data != null, data: () => data } },
+          async update(data) { merge(key, data) },
+        }
+      },
+    }
+  }
+  db.batch = () => {
+    const ops = []
+    return {
+      update(ref, data) { ops.push(() => merge(`${ref.collectionName}/${ref.id}`, data)) },
+      set(ref, data) { ops.push(() => store.set(`${ref.collectionName}/${ref.id}`, data)) },
+      async commit() { ops.forEach(op => op()) },
+    }
+  }
+  return { db, store }
+}
+
+test('validatePayload: paymentMethod is e-Transfer unless exactly "card"', () => {
+  assert.equal(validatePayload(baseRequest()).paymentMethod, 'etransfer')
+  assert.equal(validatePayload({ ...baseRequest(), paymentMethod: 'card' }).paymentMethod, 'card')
+  assert.equal(validatePayload({ ...baseRequest(), paymentMethod: 'CARD' }).paymentMethod, 'etransfer')
+})
+
+test('saveDemoRegistration rejects a card registration while ENABLE_CARD_PAYMENTS is off', withCardPayments(undefined, async () => {
+  const { db } = makeFakeDb({
+    [`programs/${TEST_PROGRAM_ID}`]: demoProgram(),
+    'programOfferings/demo-off-1': demoOffering(),
+  })
+  const request = validatePayload({ ...baseRequest({ registration: baseRegistration({ etransferReference: '' }) }), paymentMethod: 'card' })
+  await assert.rejects(
+    () => saveDemoRegistration(db, request),
+    err => err instanceof RequestRejectedError && err.statusCode === 400 && /Card payment/.test(err.message),
+  )
+}))
+
+test('saveDemoRegistration saves a card registration unpaid, with no Interac reference needed', withCardPayments('true', async () => {
+  const { db } = makeFakeDb({
+    [`programs/${TEST_PROGRAM_ID}`]: demoProgram(),
+    'programOfferings/demo-off-1': demoOffering({ tuitionCents: 3000, taxRate: 0.13 }),
+  })
+  const request = validatePayload({ ...baseRequest({ registration: baseRegistration({ etransferReference: 'CA7mQx2T' }) }), paymentMethod: 'card' })
+  const saved = await saveDemoRegistration(db, request)
+  assert.equal(saved.paymentMethod, 'card')
+  const created = db.lastWrites.creates.find(c => c.ref.collectionName === 'demoRegistrations').data
+  assert.equal(created.paymentProvider, 'stripe')
+  assert.equal(created.paymentMethod, 'card')
+  assert.equal(created.paymentStatus, 'pending')
+  assert.equal(created.etransferReference, null, 'a card registration never stores an Interac reference')
+  assert.equal(created.priceCents, 3390)
+}))
+
+test('checkoutWindow: expiry is always 31–41 minutes away and stable within a window', () => {
+  const now = Date.parse('2026-11-04T15:00:00Z')
+  for (const offset of [0, 1, 299_999, 599_999]) {
+    const { expiresAtSeconds } = checkoutWindow(now + offset)
+    const minutesAway = (expiresAtSeconds * 1000 - (now + offset)) / 60_000
+    assert.ok(minutesAway >= 31 && minutesAway <= 41, `got ${minutesAway} minutes`)
+  }
+  assert.deepEqual(checkoutWindow(now + 1), checkoutWindow(now + 599_999))
+})
+
+const CARD_REGISTRATION = Object.freeze({
+  demoProgramId: 'prog-1',
+  demoOfferingId: 'off-1',
+  demoStatus: 'registered',
+  paymentProvider: 'stripe',
+  paymentMethod: 'card',
+  paymentStatus: 'pending',
+  priceCents: 2825,
+  priceTaxCents: 325,
+  currency: 'CAD',
+  demoCreditEnabled: false,
+  childName: 'Kiddo',
+  parentEmail: 'jamie@example.com',
+  registrationNumber: 'DEMO-2026-0042',
+  eventSnapshot: { eventTitle: 'Halloween STEM Workshop', eventType: 'HOLIDAY_WORKSHOP' },
+})
+
+test('buildCheckoutSessionParams charges the registration’s stored price (HST included), not the $10 default', () => {
+  const params = buildCheckoutSessionParams({ demoRegistrationId: 'reg-1', registration: CARD_REGISTRATION, base: 'https://krianatutoring.com', expiresAtSeconds: 123 })
+  const item = params.line_items[0]
+  assert.equal(item.price_data.unit_amount, 2825)
+  assert.equal(item.price_data.currency, 'cad')
+  assert.equal(item.price_data.product_data.name, 'Halloween STEM Workshop — Kiddo')
+  assert.match(item.price_data.product_data.description, /DEMO-2026-0042.*\$3\.25 HST/)
+  assert.deepEqual(params.payment_method_types, ['card'])
+  assert.equal(params.metadata.demoRegistrationId, 'reg-1')
+  assert.equal(params.payment_intent_data.metadata.demoRegistrationId, 'reg-1')
+  assert.equal(params.payment_intent_data.metadata.checkout, 'true')
+  assert.equal(params.customer_email, 'jamie@example.com')
+  assert.equal(params.expires_at, 123)
+  const success = new URL(params.success_url)
+  assert.equal(success.pathname, '/booking/demo-confirmed')
+  assert.equal(success.searchParams.get('reference'), 'DEMO-2026-0042')
+  assert.equal(success.searchParams.get('amountCents'), '2825')
+  assert.equal(success.searchParams.get('credit'), '0')
+  const cancel = new URL(params.cancel_url)
+  assert.equal(cancel.pathname, '/booking/prog-1/register')
+  assert.equal(cancel.searchParams.get('cancelledPayment'), 'reg-1')
+  assert.equal(cancel.searchParams.get('offeringId'), 'off-1')
+})
+
+test('checkoutBlocker only lets a pending, registered, priced card registration through', () => {
+  assert.equal(checkoutBlocker(CARD_REGISTRATION), null)
+  assert.match(checkoutBlocker({ ...CARD_REGISTRATION, paymentProvider: 'etransfer' }).error, /e-Transfer/)
+  assert.equal(checkoutBlocker({ ...CARD_REGISTRATION, paymentStatus: 'paid' }).paid, true)
+  assert.ok(checkoutBlocker({ ...CARD_REGISTRATION, demoStatus: 'cancelled' }))
+  assert.ok(checkoutBlocker({ ...CARD_REGISTRATION, priceCents: 0 }))
+})
+
+test('create-demo-payment-session returns 503 while ENABLE_CARD_PAYMENTS is off', withCardPayments(undefined, async () => {
+  const saved = process.env.ENABLE_DEMO_PAYMENTS
+  process.env.ENABLE_DEMO_PAYMENTS = 'true'
+  try {
+    const response = await createSessionHandler({ httpMethod: 'POST', body: '{"demoRegistrationId":"x"}' })
+    assert.equal(response.statusCode, 503)
+  } finally {
+    if (saved === undefined) delete process.env.ENABLE_DEMO_PAYMENTS
+    else process.env.ENABLE_DEMO_PAYMENTS = saved
+  }
+}))
+
+test('webhook paid: stamps the seat as confirmed on the registration so the portal never moves it twice', async () => {
+  const { db, store } = makeFakeDb({ 'demoRegistrations/reg-1': { ...CARD_REGISTRATION } })
+  const outcome = await reconcileDemoWebhookEvent(db, {
+    id: 'evt_paid', type: 'checkout.session.completed',
+    data: { object: { id: 'cs_1', payment_status: 'paid', amount_total: 2825, currency: 'cad', payment_intent: 'pi_1', metadata: { demoRegistrationId: 'reg-1' } } },
+  })
+  assert.deepEqual(outcome, { paid: true, demoRegistrationId: 'reg-1' })
+  const registration = store.get('demoRegistrations/reg-1')
+  assert.equal(registration.paymentStatus, 'paid')
+  assert.equal(registration.paymentReceivedMethod, 'card')
+  assert.equal(registration.capacityHoldActive, false)
+  assert.equal(registration.confirmedSeatActive, true)
+  assert.equal(registration.paymentIntentId, 'pi_1')
+
+  // payment_intent.succeeded for the same payment arrives too: no second seat move.
+  const before = db.lastWrites.updates.length
+  const second = await reconcileDemoWebhookEvent(db, {
+    id: 'evt_pi', type: 'payment_intent.succeeded',
+    data: { object: { id: 'pi_1', amount: 2825, currency: 'cad', metadata: { demoRegistrationId: 'reg-1' } } },
+  })
+  assert.equal(second, null)
+  assert.ok(!db.lastWrites.updates.some(u => u.ref.collectionName === 'programOfferings'), `expected no offering update (had ${before} before)`)
+})
+
+test('webhook: a completed but unpaid checkout session changes nothing', async () => {
+  const { db, store } = makeFakeDb({ 'demoRegistrations/reg-1': { ...CARD_REGISTRATION } })
+  await reconcileDemoWebhookEvent(db, {
+    id: 'evt_unpaid', type: 'checkout.session.completed',
+    data: { object: { id: 'cs_1', payment_status: 'unpaid', amount_total: 2825, currency: 'cad', metadata: { demoRegistrationId: 'reg-1' } } },
+  })
+  assert.equal(store.get('demoRegistrations/reg-1').paymentStatus, 'pending')
+})
+
+test('webhook: a failed card attempt inside Checkout does not release the seat (they can try another card)', async () => {
+  const { db, store } = makeFakeDb({ 'demoRegistrations/reg-1': { ...CARD_REGISTRATION } })
+  await reconcileDemoWebhookEvent(db, {
+    id: 'evt_fail', type: 'payment_intent.payment_failed',
+    data: { object: { id: 'pi_1', metadata: { demoRegistrationId: 'reg-1', checkout: 'true' } } },
+  })
+  assert.equal(store.get('demoRegistrations/reg-1').demoStatus, 'registered')
+})
+
+test('webhook: a partial refund is recorded but does not mark the registration refunded', async () => {
+  const { db, store } = makeFakeDb({
+    'demoRegistrations/reg-1': { ...CARD_REGISTRATION, paymentStatus: 'paid', paymentIntentId: 'pi_1' },
+    'demoCredits/reg-1': { status: 'pending_attendance' },
+  })
+  const outcome = await reconcileDemoWebhookEvent(db, {
+    id: 'evt_partial', type: 'charge.refunded',
+    data: { object: { payment_intent: 'pi_1', refunded: false, amount_refunded: 500 } },
+  })
+  assert.equal(outcome.partialRefund, true)
+  assert.equal(store.get('demoRegistrations/reg-1').paymentStatus, 'paid')
+  assert.equal(store.get('demoRegistrations/reg-1').amountRefundedCents, 500)
+  assert.equal(store.get('demoCredits/reg-1').status, 'pending_attendance')
+})
+
+test('afterDemoPaymentOutcome: paid sends the card email and moves the lead NEW -> CONFIRMED', async () => {
+  const { db, store } = makeFakeDbWithReads({
+    'demoRegistrations/reg-1': { ...CARD_REGISTRATION, paymentStatus: 'paid', parentName: 'Jamie Parent' },
+    'programOfferings/off-1': { eventTitle: 'Live title (changed later)', location: 'Kanata' },
+    'programs/prog-1': { title: 'Robotics' },
+    'demoLeads/reg-1': { leadStatus: 'NEW' },
+  })
+  const sent = []
+  await afterDemoPaymentOutcome(db, { paid: true, demoRegistrationId: 'reg-1' }, { sendEmail: async args => { sent.push(args); return true } })
+  assert.equal(sent.length, 1)
+  assert.equal(sent[0].registration.paymentMethod, 'card')
+  assert.equal(sent[0].registration.taxCents, 325)
+  assert.equal(sent[0].reference, 'DEMO-2026-0042')
+  assert.equal(sent[0].offering.eventTitle, 'Halloween STEM Workshop', 'the booking-time snapshot wins over the live offering')
+  assert.equal(sent[0].offering.location, 'Kanata')
+  assert.equal(store.get('demoLeads/reg-1').leadStatus, 'CONFIRMED')
+})
+
+test('afterDemoPaymentOutcome: an abandoned card checkout marks the lead LOST', async () => {
+  const { db, store } = makeFakeDbWithReads({ 'demoLeads/reg-1': { leadStatus: 'NEW' } })
+  await afterDemoPaymentOutcome(db, { released: true, demoRegistrationId: 'reg-1', paymentProvider: 'stripe' })
+  assert.equal(store.get('demoLeads/reg-1').leadStatus, 'LOST')
+  assert.equal(store.get('demoLeads/reg-1').lostReason, 'Card payment not completed')
+})
+
+function fakeStripe(status) {
+  const calls = []
+  return {
+    calls,
+    checkout: { sessions: {
+      async retrieve(id) { calls.push(['retrieve', id]); return { id, status } },
+      async expire(id) { calls.push(['expire', id]); status = 'expired'; return { id, status } },
+    } },
+  }
+}
+
+test('cancelUnpaidCardRegistration expires the open session, then frees the seat and the lock', async () => {
+  const { db, store } = makeFakeDbWithReads({
+    'demoRegistrations/reg-1': { ...CARD_REGISTRATION, paymentSessionId: 'cs_1', childEligibilityKeyHash: 'hash-1' },
+    'demoEligibilityLocks/hash-1': { demoRegistrationId: 'reg-1' },
+  })
+  const stripe = fakeStripe('open')
+  const result = await cancelUnpaidCardRegistration(db, stripe, 'reg-1')
+  assert.equal(result.released, true)
+  assert.deepEqual(stripe.calls.map(c => c[0]), ['retrieve', 'expire'])
+  const registration = store.get('demoRegistrations/reg-1')
+  assert.equal(registration.demoStatus, 'cancelled')
+  assert.equal(registration.paymentStatus, 'canceled')
+  assert.equal(store.get('demoEligibilityLocks/hash-1'), undefined)
+})
+
+test('cancelUnpaidCardRegistration never releases a session that was paid', async () => {
+  const { db, store } = makeFakeDbWithReads({ 'demoRegistrations/reg-1': { ...CARD_REGISTRATION, paymentSessionId: 'cs_1' } })
+  const result = await cancelUnpaidCardRegistration(db, fakeStripe('complete'), 'reg-1')
+  assert.deepEqual(result, { released: false, paid: true })
+  assert.equal(store.get('demoRegistrations/reg-1').demoStatus, 'registered')
+})
+
+test('cancelUnpaidCardRegistration ignores e-Transfer registrations', async () => {
+  const { db, store } = makeFakeDbWithReads({ 'demoRegistrations/reg-1': { ...CARD_REGISTRATION, paymentProvider: 'etransfer' } })
+  const result = await cancelUnpaidCardRegistration(db, fakeStripe('open'), 'reg-1')
+  assert.equal(result.released, false)
+  assert.equal(store.get('demoRegistrations/reg-1').demoStatus, 'registered')
 })

@@ -80,6 +80,14 @@ See [robotics-enrollment-strategy.md](./robotics-enrollment-strategy.md) for the
 
 ## $10 Young Engineers Demo payment lifecycle
 
+> **Update 2026-11-04:** /events registrations now take **card payments
+> (Stripe Checkout) alongside pay-first Interac e-Transfer**, behind
+> `ENABLE_CARD_PAYMENTS` / `NEXT_PUBLIC_ENABLE_CARD_PAYMENTS`. The amount is
+> the registration's own price (HST and early bird included), not $10. Current
+> flow, setup and test checklist: [stripe-card-payments-plan.md](stripe-card-payments-plan.md).
+> Parts of the lifecycle below (fixed $10, 30-minute expiry, no schedule)
+> predate that and are kept for history.
+
 The $10 Young Engineers Demo Registration is a **separate, new payment-collecting
 product**, entirely independent from the request_only enrollment flow above and
 from the parked legacy Stripe Checkout/e-transfer code. It is limited to three
