@@ -11,6 +11,23 @@ new, off-by-default setting (`ENABLE_CARD_PAYMENTS`) until Phase 6.
 Background: see [stripe-integration.md](stripe-integration.md). Keys live only in the
 gitignored `stripe-keys.md` and in Netlify, never in committed files or chat.
 
+## Where we are (2026-11-04)
+
+| Phase | Status |
+|---|---|
+| 0 Decisions | ✅ Done |
+| 1 Stripe account | ✅ "kriana tutoring website" account (public name **Kriana Tutoring Inc**): verified, payouts to TD ••••9545, statement descriptor `WWW.KRIANATUTORING.COM`. |
+| 2–4 Code (website + portal) | ✅ Done and on master. Card payments are **off** on the live site. |
+| 5 Testing on `stripe-test` | 🟡 Card payment + email ✅, back arrow ✅, refund ✅, e-Transfer ✅, live site still refuses card ✅. Close-the-tab expiry is running. Declined card is optional. |
+| 6 Go live | ✅ **Live on krianatutoring.com since 2026-11-04 ~3:45 PM.** First real card payment ($38.42) settled through the live webhook. |
+
+**Next:** cancel the live test booking DEMO-2026-0070 (already refunded) and the sandbox test bookings 0065 to 0069 in the portal. Optionally: update the
+Stripe support phone to 613-400-6921, add Checkout branding, roll the sandbox
+keys, and decide whether to keep the `stripe-test` branch.
+
+**Rollback:** set `ENABLE_CARD_PAYMENTS` and `NEXT_PUBLIC_ENABLE_CARD_PAYMENTS`
+to `false` for Production and redeploy. The form goes back to e-Transfer only.
+
 ---
 
 ## What already exists
@@ -69,24 +86,28 @@ Decided 2026-11-04:
 - [x] **Order on the form:** card first, e-Transfer second.
 - [x] **Refunds:** done from the Stripe dashboard, and the webhook updates the booking.
 
-## Phase 1: Stripe account setup (You, about 30 minutes)
+## Phase 1: Stripe account setup (You)
 
-Status check 2026-11-04 (Netlify setting names and key prefixes only):
-Netlify **already has** `STRIPE_SECRET_KEY` (`sk_test_…`),
-`NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (`pk_test_…`) and `STRIPE_WEBHOOK_SECRET`
-in **both Production and Deploy Previews**. All are **test-mode** keys.
-`ENABLE_DEMO_PAYMENTS=true` (the events flow is live with e-Transfer). The
-existing test webhook points to the **old** enrollment endpoint
-`/.netlify/functions/stripe-webhook`, not to `demo-payment-webhook`.
+**Which Stripe account (decided 2026-11-04):** card payments for the website use
+the **"kriana tutoring website"** Stripe account, kept separate from the
+TutorBird-linked **Kriana Tutoring Inc** (`acct_1PGQyyJy27wNcXJo`). A third
+account, **KrianaTutoring**, is unused here. Testing uses that account's sandbox,
+**"kriana tutoring website sandbox"**.
 
-- [x] Stripe account verified with payouts (Kriana Tutoring Inc, daily automatic payouts to TD Bank; confirmed 2026-11-04). The account is also linked to TutorBird.
-- [x] Statement descriptor checked (2026-11-04).
-- [x] Test-mode secret and publishable keys are in Netlify (Production + Deploy Previews).
-- [x] Keys confirmed to belong to the Kriana Tutoring Inc account (same one TutorBird uses), checked 2026-11-04.
-- [ ] Add `ENABLE_CARD_PAYMENTS=false` and `NEXT_PUBLIC_ENABLE_CARD_PAYMENTS=false`
-      (can wait until Phase 5; missing settings count as off).
-- [ ] Webhook: done in Phase 5 (edit the existing test webhook rather than
-      adding a second one; both functions read the same `STRIPE_WEBHOOK_SECRET`).
+Netlify now holds the sandbox's keys (`sk_test_51UY9yC5…`, `pk_test_51UY9yC5…`)
+in all contexts. That's safe because card payments are off on the live site.
+The keys and the webhook secret were shared in chat, so roll them after testing
+(sandbox only, no real money).
+
+- [x] Testing account chosen: "kriana tutoring website sandbox".
+- [ ] **Before go-live:** verify the **"kriana tutoring website"** business
+      (setup guide → "Verify your account") and add the bank account for payouts.
+- [ ] **Before go-live:** set its statement descriptor to "KRIANA TUTORING"
+      (Settings → Business → Public details).
+- [ ] After testing: roll the sandbox secret key and webhook secret, and update Netlify.
+
+**Gotcha:** the Stripe account menu mixes several accounts and sandboxes. Always
+check the account name at the top left before changing anything.
 
 ## Phase 2: Fix the existing Stripe code (Dev) — done, pushed 2026-11-04 (web 3c03b3d, portal b2090ab)
 
@@ -137,44 +158,74 @@ existing test webhook points to the **old** enrollment endpoint
 
 ## Phase 5: Test mode end to end (You and Dev)
 
-**Where to test without parents seeing it:** a Netlify *branch deploy* of a
-`stripe-test` branch (same code as master), with the card switches set to
-`true` for that branch only (Netlify → Environment variables → value for
-"Branch deploys" / `branch:stripe-test`). The live site keeps them off.
-Branch deploys must be enabled for that branch in Netlify (Site
-configuration → Build & deploy → Branches and deploy contexts). Its URL
-looks like `https://stripe-test--earnest-sprinkles-f67601.netlify.app`.
+**Test site:** https://stripe-test--earnest-sprinkles-f67601.netlify.app. This is
+a Netlify branch deploy of `stripe-test`, the same code as master. Card switches
+are `true` for `branch:stripe-test` only, along with the `DEMO_CAMPAIGN_*` ids.
+The live site is unchanged and still refuses card payments (503). Test bookings
+write to the real Firestore, so cancel them in the portal afterwards.
 
-- [ ] **You:** Stripe (test mode) → Developers → Webhooks → **edit the existing
-      endpoint**: URL `https://stripe-test--earnest-sprinkles-f67601.netlify.app/.netlify/functions/demo-payment-webhook`,
-      events:
-  - `checkout.session.completed`
-  - `checkout.session.expired`
-  - `payment_intent.payment_failed`
-  - `charge.refunded`
-- [ ] (Editing keeps the same signing secret, which Netlify already has.)
-- [x] Both card settings set to `true` for `branch:stripe-test` only (plus the DEMO_CAMPAIGN_* ids); production unchanged. Done 2026-11-04.
-- [ ] **You:** enable branch deploys for `stripe-test` in Netlify.
-- [ ] Test cases on the preview:
-  - [ ] Card `4242 4242 4242 4242`: booking is paid, the seat is confirmed and the email arrives.
-  - [ ] Declined card `4000 0000 0000 0002`: an error shows and no seat is taken.
-  - [ ] Back arrow on Stripe without paying: you return to the form with the "nothing was charged" note, and can register the same child again straight away.
-  - [ ] Closing the Stripe tab: the seat is freed within about 40 minutes.
-  - [ ] Refunding in the Stripe dashboard: the booking shows refunded.
-  - [ ] e-Transfer path: still works exactly as today.
-  - [ ] Portal: badges and buttons are correct.
+**Netlify 4 KB limit (found 2026-11-04):** each function gets at most 4 KB of
+environment variables. Branch deploys use the larger
+`FIREBASE_SERVICE_ACCOUNT_JSON`, which put `stripe-test` at 4,172 bytes and
+failed the deploy. Fixed with a trimmed copy for `branch:stripe-test` only
+(project_id, client_email and private_key), giving 3,670 bytes. Production uses
+`FIREBASE_CLIENT_EMAIL`/`FIREBASE_PRIVATE_KEY` and sits at 3,549 bytes. Other
+branch deploys and previews are at 3,974 bytes, close to the limit. Restricting
+variables to "Builds" only needs a paid Netlify plan.
 
-## Phase 6: Go live (You, with Dev checking)
+- [x] Branch deploys enabled for `stripe-test`, and the test site is built.
+- [x] Sandbox webhook destination created (same 4 events) pointing at
+      `https://stripe-test--earnest-sprinkles-f67601.netlify.app/.netlify/functions/demo-payment-webhook`,
+      with its secret in Netlify.
+- [ ] Test cases on the test site:
+  - [x] Card `4242 4242 4242 4242`: paid, and the "Payment Received" email
+        arrived (DEMO-2026-0066, $38.42, 2026-11-04).
+  - [ ] Portal shows that booking as **paid** + **card**, and the lead as CONFIRMED.
+  - [ ] Declined card `4000 0000 0000 0002`: needs a person on Stripe's page (Stripe shows the error; none of our code runs). Optional.
+  - [x] Back arrow on Stripe without paying: session expired at once, seat released, same child re-registered right away (DEMO-2026-0067 → 0068; run via API 2026-11-04). The form's "nothing was charged" note still needs a look in a browser.
+  - [x] Closing the Stripe tab: DEMO-2026-0068's checkout expired at 15:51, and the webhook released it with no errors (2026-11-04).
+  - [x] Refund (DEMO-2026-0066, full, via sandbox API): `charge.refunded` delivered and processed without errors. Check the portal shows **refunded**.
+  - [x] e-Transfer path: DEMO-2026-0069 saved with ref TEST1234 and the email went to info@. A missing reference is still refused, and the live site still refuses card (checked 2026-11-04).
+- [ ] Clean up: cancel test bookings DEMO-2026-0066 to 0069 in the portal (children "Stripe Test Child B/C"), plus DEMO-2026-0065,
+      which was paid against the wrong account's keys and stays pending.
 
-- [ ] **You:** add the **live** secret key (`sk_live_…`) to Netlify **Production**.
-- [ ] **You:** create a **live-mode** webhook at
-      `https://krianatutoring.com/.netlify/functions/demo-payment-webhook`
-      (same 4 events) and add its secret to Production.
-- [ ] **Dev:** push to master (only after "push").
-- [ ] **You:** set `ENABLE_CARD_PAYMENTS=true` and
-      `NEXT_PUBLIC_ENABLE_CARD_PAYMENTS=true` in Production, then redeploy.
-- [ ] **You:** make one real booking with your own card, check everything, then refund it in Stripe.
-- [ ] **Both:** watch the first few real card bookings in the portal.
+## Before go-live (checklist)
+
+**Must-do**
+- [ ] **You:** verify the **"kriana tutoring website"** Stripe account in **live**
+      mode (not the sandbox). This is the slowest step, so start it first.
+  - [ ] Business details: legal name, address, business number, and the owner's ID.
+  - [ ] Bank account for payouts (without it, Stripe holds the money).
+  - [ ] Statement name: Settings → Business → Public details → `KRIANA TUTORING`.
+- [ ] **You:** check the portal (DEMO-2026-0066 shows **refunded** + **card**),
+      then cancel test bookings DEMO-2026-0065 to 0069.
+- [x] **Dev:** close-the-tab test passed (expired at 15:51, released automatically).
+
+**Nice-to-have**
+- [ ] **You:** Checkout branding: Stripe → Settings → Branding → logo + teal `#0c6162`,
+      so Stripe's payment page looks like Kriana.
+- [ ] **You:** try the test site in a browser once: a declined card
+      (`4000 0000 0000 0002`) and the back arrow, to see what parents see.
+- [ ] **You:** roll the sandbox secret key and webhook secret (they were shared in chat; test-only).
+
+**Already checked:** production has room for the extra settings (3,549 of
+the 4,096-byte function limit), and the code is on master, so go-live needs no push.
+
+## Phase 6: Go live — ✅ done 2026-11-04
+
+- [x] Account verified, bank account linked (TD ••••9545), statement descriptor set.
+- [x] Live secret key ("krianatutoring.com website (Netlify)"),
+      live publishable key and live webhook secret set for Netlify **Production**
+      only, all marked secret. Other contexts keep the sandbox values, and
+      `branch:stripe-test` has its own sandbox webhook secret.
+- [x] Live webhook destination → `https://krianatutoring.com/.netlify/functions/demo-payment-webhook` (4 events).
+- [x] `ENABLE_CARD_PAYMENTS=true` and `NEXT_PUBLIC_ENABLE_CARD_PAYMENTS=true` for
+      Production; production rebuilt (deploy 6aeb98cf…). /events shows "Card or e-Transfer".
+- [x] Real booking with own card: $38.42 paid, webhook processed with no errors.
+- [x] Refunded DEMO-2026-0070 in Stripe (live, 8:52 PM UTC); `charge.refunded` processed with no errors.
+- [ ] Cancel DEMO-2026-0070 in the portal (frees the Nov 20 morning seat).
+- [ ] Watch the first few real card bookings in the portal.
+- [ ] Optional: delete the `stripe-test` branch and its sandbox webhook, or keep them for future testing.
 
 **Rollback:** set `ENABLE_CARD_PAYMENTS=false` (and the `NEXT_PUBLIC_` one), then
 redeploy. The form goes back to e-Transfer only, and existing card bookings are unaffected.
