@@ -115,6 +115,10 @@ function DemoETransferContent() {
     ? `$${(amountCentsParam / 100).toFixed(2)} ${currency}`
     : FALLBACK_DEMO_AMOUNT_LABEL
   const amountDisplay = amountLabel.split(' ')[0]
+  // Set by the pay-first register form: the family already sent the money,
+  // so this page confirms what we received instead of asking them to pay.
+  const etransferReference = searchParams.get('etransferReference') ?? ''
+  const received = Boolean(etransferReference)
   // Event title (not the internal program name) is the identifiable part of
   // the e-transfer note — must match the same field in the acknowledgement
   // email (see demo-email.js's etransferMessage()) so the note the parent
@@ -133,6 +137,35 @@ function DemoETransferContent() {
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-6">
         <div className="h-1.5 w-full" style={{ background: 'linear-gradient(90deg, #F2A100, #ED174B)' }} />
         <div className="p-6">
+          {received ? (
+            <>
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-[#e6f4f4]">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#0c6162" strokeWidth={2.5} className="w-5 h-5"><polyline points="20 6 9 17 4 12" /></svg>
+                </div>
+                <div>
+                  <h1 className="text-lg font-black text-slate-800">Registration Received</h1>
+                  <p className="text-sm text-slate-400">Your {terms.spot} is held while we verify payment</p>
+                </div>
+              </div>
+
+              <div className="bg-[#e6f4f4] border border-[#0c6162]/20 rounded-xl px-4 py-3 mb-6">
+                <p className="text-sm text-[#0f3d3e] font-medium">
+                  We&apos;ll match your e-Transfer and email your confirmation, usually <strong>within one business day</strong>. Nothing else to do.
+                </p>
+              </div>
+
+              <div className="bg-slate-50 rounded-xl mb-6">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide px-4 pt-4 pb-2">Your Payment</p>
+                <div className="px-4 pb-4">
+                  <InfoRow label="Interac Reference" value={etransferReference} />
+                  <InfoRow label="Amount" value={amountLabel} />
+                  <InfoRow label="Sent To" value={ETRANSFER_EMAIL} />
+                </div>
+              </div>
+            </>
+          ) : (
+          <>
           <div className="flex items-center gap-3 mb-5">
             <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: '#fef3e2' }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="#F2A100" strokeWidth={2} className="w-5 h-5">
@@ -159,6 +192,8 @@ function DemoETransferContent() {
               <CopyRow label="Message / Note" value={message} />
             </div>
           </div>
+          </>
+          )}
 
           <div className="bg-slate-50 rounded-xl">
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wide px-4 pt-4 pb-2">Registration Summary</p>
@@ -205,8 +240,10 @@ function DemoETransferContent() {
 
           <div className="mt-5 p-4 bg-slate-50 rounded-xl border border-slate-100">
             <p className="text-xs text-slate-500 leading-relaxed">
-              Your child&apos;s spot is temporarily held. No further action needed after sending — our team will verify your e-transfer and confirm your seat by email.
-              Questions or need to reach us? Call or text <a href={CONTACT_PHONE_HREF} className="text-[#0c6162] font-semibold hover:underline">{CONTACT_PHONE_DISPLAY}</a> or email <a href="mailto:info@krianatutoring.com" className="text-[#0c6162] font-semibold hover:underline">info@krianatutoring.com</a>
+              {received
+                ? <>Typed the wrong reference number, or need to reach us?</>
+                : <>Your child&apos;s spot is temporarily held. No further action needed after sending — our team will verify your e-transfer and confirm your seat by email.
+              Questions or need to reach us?</>} Call or text <a href={CONTACT_PHONE_HREF} className="text-[#0c6162] font-semibold hover:underline">{CONTACT_PHONE_DISPLAY}</a> or email <a href="mailto:info@krianatutoring.com" className="text-[#0c6162] font-semibold hover:underline">info@krianatutoring.com</a>
             </p>
           </div>
         </div>

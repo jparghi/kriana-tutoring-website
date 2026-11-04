@@ -36,6 +36,15 @@ export async function expireOneDemoHold(db, registrationId) {
     // Re-check inside the transaction — another process (e.g. the webhook)
     // may have already resolved this registration since the query ran.
     if (registration.demoStatus !== 'registered' || registration.paymentStatus !== 'pending') return
+    // Pay-first registrations arrive with the family's Interac reference: the
+    // money was (reportedly) sent, so the seat stays held until staff either
+    // confirm it or follow up — never released by the clock.
+    if (registration.etransferReference) return
+
+    // Every read before the first write — Firestore rejects a transaction
+    // that reads after writing.
+    const creditRef = db.collection('demoCredits').doc(registrationId)
+    const creditSnap = await tx.get(creditRef)
 
     tx.update(ref, {
       demoStatus: 'cancelled',
@@ -50,8 +59,6 @@ export async function expireOneDemoHold(db, registrationId) {
       })
     }
 
-    const creditRef = db.collection('demoCredits').doc(registrationId)
-    const creditSnap = await tx.get(creditRef)
     if (creditSnap.exists && creditSnap.data().status === 'pending_attendance') {
       tx.update(creditRef, { status: 'void', updatedAt: FieldValue.serverTimestamp() })
     }
@@ -73,6 +80,7 @@ export async function expireDuePendingDemoHolds(db, { now = Date.now(), limit = 
 
   let expired = 0
   for (const doc of snapshot.docs) {
+    if (doc.data()?.etransferReference) continue
     await expireOneDemoHold(db, doc.id)
     expired += 1
   }

@@ -17,6 +17,7 @@ import {
   handler as submitDemoHandler,
 } from '../netlify/functions/submit-demo-registration.js'
 import { RequestRejectedError } from '../netlify/functions/submit-enrollment-request.js'
+import { expireOneDemoHold } from '../netlify/functions/expire-demo-payment-holds.js'
 import { getDemoPricing } from '../lib/robotics-packages.js'
 import { DEMO_ELIGIBLE_PROGRAM_IDS } from '../lib/demo-eligibility.js'
 import { reconcileDemoWebhookEvent, handler as webhookHandler } from '../netlify/functions/demo-payment-webhook.js'
@@ -41,6 +42,7 @@ function baseRegistration(overrides = {}) {
     parentPhone: '6135551234',
     childName: 'Kiddo',
     childAge: 8,
+    etransferReference: 'CA7mQx2T',
     consentAccepted: true,
     ...overrides,
   }
@@ -818,4 +820,63 @@ test('per-session eligibilityScope: the same child can book the afternoon after 
   })
   const result = await saveDemoRegistration(db, baseRequest({ registration }))
   assert.equal(result.duplicate, false)
+})
+
+// ─── Pay-first: Interac e-Transfer reference ────────────────────────────
+
+test('validatePayload strips spaces from the Interac reference', () => {
+  const result = validatePayload(baseRequest({ registration: baseRegistration({ etransferReference: ' CA7m Qx2T ' }) }))
+  assert.equal(result.error, undefined)
+  assert.equal(result.registration.etransferReference, 'CA7mQx2T')
+})
+
+test('validatePayload rejects an Interac reference with symbols', () => {
+  const result = validatePayload(baseRequest({ registration: baseRegistration({ etransferReference: 'CA7<script>' }) }))
+  assert.match(result.error, /reference number/)
+})
+
+test('saveDemoRegistration rejects a paid registration with no Interac reference', async () => {
+  const { db } = makeFakeDb({
+    [`programs/${TEST_PROGRAM_ID}`]: demoProgram(),
+    'programOfferings/demo-off-1': demoOffering(),
+  })
+  const request = validatePayload(baseRequest({ registration: baseRegistration({ etransferReference: '' }) }))
+  await assert.rejects(
+    () => saveDemoRegistration(db, request),
+    err => err instanceof RequestRejectedError && err.statusCode === 400 && /Interac reference/.test(err.message),
+  )
+})
+
+test('saveDemoRegistration stores the Interac reference and keeps payment pending for staff to verify', async () => {
+  const { db } = makeFakeDb({
+    [`programs/${TEST_PROGRAM_ID}`]: demoProgram(),
+    'programOfferings/demo-off-1': demoOffering(),
+  })
+  await saveDemoRegistration(db, validatePayload(baseRequest()))
+  const registrationCreate = db.lastWrites.creates.find(c => c.ref.collectionName === 'demoRegistrations')
+  assert.equal(registrationCreate.data.etransferReference, 'CA7mQx2T')
+  assert.equal(registrationCreate.data.paymentStatus, 'pending')
+  assert.ok('etransferReferenceSubmittedAt' in registrationCreate.data)
+})
+
+test('expireOneDemoHold never releases a seat whose family entered an Interac reference', async () => {
+  const { db, store } = makeFakeDb({
+    'demoRegistrations/reg-paid': { demoStatus: 'registered', paymentStatus: 'pending', demoOfferingId: 'off-1', etransferReference: 'CA7mQx2T' },
+    'programOfferings/off-1': { heldCount: 1 },
+  })
+  await expireOneDemoHold(db, 'reg-paid')
+  assert.equal(store.get('demoRegistrations/reg-paid').demoStatus, 'registered')
+  assert.equal(store.get('programOfferings/off-1').heldCount, 1)
+})
+
+test('expireOneDemoHold still releases an unpaid hold with no reference (reads before writes)', async () => {
+  const { db, store } = makeFakeDb({
+    'demoRegistrations/reg-old': { demoStatus: 'registered', paymentStatus: 'pending', demoOfferingId: 'off-1', childEligibilityKeyHash: 'hash-1' },
+    'demoCredits/reg-old': { status: 'pending_attendance' },
+    'demoEligibilityLocks/hash-1': { demoRegistrationId: 'reg-old' },
+  })
+  await expireOneDemoHold(db, 'reg-old')
+  assert.equal(store.get('demoRegistrations/reg-old').demoStatus, 'cancelled')
+  assert.equal(store.get('demoCredits/reg-old').status, 'void')
+  assert.equal(store.get('demoEligibilityLocks/hash-1'), undefined)
 })

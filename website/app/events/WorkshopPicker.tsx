@@ -184,7 +184,7 @@ export function WorkshopPicker({
         </div>
       </div>
       <div className="mt-10">
-        <StepHeading n={3} title="Register and pay" sub="A short form, then e-Transfer. Your spot is held for 48 hours and confirmed by email once the payment arrives." />
+        <StepHeading n={3} title="Register and pay" sub="One page: fill in your details, send the e-Transfer, enter its Interac reference number and register. We confirm your spot by email." />
         <ul className="ml-[38px] mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-slate-600">
           {['All equipment provided', 'No card needed', single ? 'Pay by e-Transfer' : 'Each workshop is booked separately'].map(item => (
             <li key={item} className="flex items-center gap-1.5"><span aria-hidden="true" className="font-black text-[#0c6162]">✓</span>{item}</li>
@@ -358,7 +358,7 @@ function SessionBooking({ session, theme, programId, attributionQuery, contactHr
             }`}
           />
           <p className="-mt-2 text-center text-xs text-slate-500">
-            {waitlist ? 'We’ll contact you if a spot opens.' : 'Your spot is held for 48 hours while you pay by e-Transfer.'}
+            {waitlist ? 'We’ll contact you if a spot opens.' : 'Pay by e-Transfer on the next page, then register.'}
           </p>
         </>
       ) : (

@@ -99,6 +99,26 @@ export async function sendDemoAcknowledgement({ registration, program, offering,
   const etransferMessageText = escapeHtml(etransferMessage(offering?.eventTitle || program?.title, reference))
   // Wording follows the offering's eventType (demo vs workshop).
   const terms = eventTerms(offering?.eventType)
+  // Pay-first registrations carry the family's Interac reference: the money
+  // was already sent, so the email confirms what we received instead of
+  // asking them to pay. Older/free registrations keep the pay-within-48h copy.
+  const etransferReference = escapeHtml(registration.etransferReference || '')
+  const paymentHtml = etransferReference
+    ? `<div style="background:#e6f4f4;border:1px solid rgba(12,97,98,0.2);padding:16px;border-radius:10px;margin:18px 0">
+          <p style="margin:0 0 10px;font-weight:700;color:#0c6162">Your E-Transfer</p>
+          <p style="margin:0 0 4px"><strong>Interac reference:</strong> ${etransferReference}</p>
+          <p style="margin:0 0 4px"><strong>Amount:</strong> ${chargeLabel}</p>
+          <p style="margin:0"><strong>Sent to:</strong> ${etransferEmail}</p>
+        </div>
+        <p>Your child&apos;s ${terms.spot} is held while we match your e-Transfer. We&apos;ll email your confirmation, usually within one business day. If we can&apos;t find the payment, we&apos;ll contact you before releasing the ${terms.spot}.</p>`
+    : `<div style="background:#e6f4f4;border:1px solid rgba(12,97,98,0.2);padding:16px;border-radius:10px;margin:18px 0">
+          <p style="margin:0 0 10px;font-weight:700;color:#0c6162">Send Your ${priceDisplay} E-Transfer</p>
+          <p style="margin:0 0 8px">Your child&apos;s ${terms.spot} is temporarily reserved. Please send an Interac e-Transfer within <strong>${ETRANSFER_HOLD_HOURS} hours</strong> to confirm it:</p>
+          <p style="margin:0 0 4px"><strong>Send to:</strong> ${etransferEmail}</p>
+          <p style="margin:0 0 4px"><strong>Amount:</strong> ${chargeLabel}</p>
+          <p style="margin:0"><strong>Message / Note:</strong> ${etransferMessageText}</p>
+        </div>
+        <p>No further action is needed after sending — our team will verify your e-transfer and confirm your seat by email. Your child&apos;s spot is temporarily held until then.</p>`
 
   const parentHtml = `
     <div style="max-width:600px;margin:24px auto;font-family:Arial,sans-serif;color:#1e293b">
@@ -118,14 +138,7 @@ export async function sendDemoAcknowledgement({ registration, program, offering,
         </div>
         ${creditEnabled ? `<p style="font-weight:700">${terms.creditHeadline(priceDisplay)}</p>
         <p>The ${priceDisplay} is credited toward regular enrollment after your child attends.</p>` : ''}
-        <div style="background:#e6f4f4;border:1px solid rgba(12,97,98,0.2);padding:16px;border-radius:10px;margin:18px 0">
-          <p style="margin:0 0 10px;font-weight:700;color:#0c6162">Send Your ${priceDisplay} E-Transfer</p>
-          <p style="margin:0 0 8px">Your child&apos;s ${terms.spot} is temporarily reserved. Please send an Interac e-Transfer within <strong>${ETRANSFER_HOLD_HOURS} hours</strong> to confirm it:</p>
-          <p style="margin:0 0 4px"><strong>Send to:</strong> ${etransferEmail}</p>
-          <p style="margin:0 0 4px"><strong>Amount:</strong> ${chargeLabel}</p>
-          <p style="margin:0"><strong>Message / Note:</strong> ${etransferMessageText}</p>
-        </div>
-        <p>No further action is needed after sending — our team will verify your e-transfer and confirm your seat by email. Your child&apos;s spot is temporarily held until then.</p>
+        ${paymentHtml}
         <p>Questions? Reply to this email or call <a href="tel:+16134006921">(613) 400-6921</a>.</p>
         ${emailSignatureHtml()}
       </div>
@@ -140,8 +153,11 @@ export async function sendDemoAcknowledgement({ registration, program, offering,
     <p><strong>Charge:</strong> ${chargeLabel}</p>
     <p><strong>Child:</strong> ${childName} (age ${escapeHtml(registration.childAge)})</p>
     <p><strong>Parent:</strong> ${parentName} · ${escapeHtml(registration.parentEmail)} · ${escapeHtml(registration.parentPhone)}</p>
-    <p><strong>Expected e-transfer message/note:</strong> ${etransferMessageText}</p>
-    <p>Review the private ${terms.kind} registration record in the program management portal for all additional details, and confirm the e-transfer there once it arrives.</p>`
+    ${etransferReference
+      ? `<p><strong>Interac reference (from the parent):</strong> ${etransferReference}</p>
+    <p>Match this reference against the received e-Transfers, then confirm it in the program management portal.</p>`
+      : `<p><strong>Expected e-transfer message/note:</strong> ${etransferMessageText}</p>
+    <p>Review the private ${terms.kind} registration record in the program management portal for all additional details, and confirm the e-transfer there once it arrives.</p>`}`
 
   const transport = createTransport()
   const results = await Promise.allSettled([

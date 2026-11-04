@@ -46,6 +46,41 @@ function Field({ label, children, required, hint }: { label: string; children: R
 
 const inputClass = 'w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-base sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0c6162]/30 focus:border-[#0c6162] transition-all bg-white'
 
+// Pay-first e-Transfer: the family sends the money while on the form and
+// enters the Interac reference their bank shows, which is required before
+// Register (see submit-demo-registration.js, same pattern).
+const ETRANSFER_EMAIL = process.env.NEXT_PUBLIC_ETRANSFER_EMAIL || 'info@krianatutoring.com'
+const ETRANSFER_REFERENCE_PATTERN = /^[A-Za-z0-9-]{4,40}$/
+
+function normalizeEtransferReference(value: string) {
+  return value.replace(/\s+/g, '')
+}
+
+function CopyLine({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  const [copied, setCopied] = useState(false)
+  function copy() {
+    navigator.clipboard?.writeText(value).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }).catch(() => {})
+  }
+  return (
+    <div className="flex items-center gap-3 py-3 border-b border-[#0c6162]/10 last:border-0">
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-0.5">{label}</p>
+        <p className={`text-sm font-semibold text-slate-800 break-all ${mono ? 'font-mono' : ''}`}>{value}</p>
+      </div>
+      <button
+        type="button"
+        onClick={copy}
+        className={`shrink-0 text-xs font-bold px-3 py-2 min-h-[40px] rounded-lg transition-all active:scale-95 ${copied ? 'bg-green-100 text-green-700' : 'bg-white text-slate-600 hover:bg-slate-100'}`}
+      >
+        {copied ? 'Copied!' : 'Copy'}
+      </button>
+    </div>
+  )
+}
+
 // ─── Young Engineers Demo Registration ─────────────────────────────────────
 //
 // Intentionally minimal — a 5-field form (parentName, parentEmail,
@@ -84,9 +119,16 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
     : null
   const creditEnabled = offering?.demoCreditEnabled !== false
   const [form, setFormState] = useState({
-    parentName: '', parentEmail: '', parentPhone: '', childName: '', childAge: '', accommodations: '', consentAccepted: false,
+    parentName: '', parentEmail: '', parentPhone: '', childName: '', childAge: '', accommodations: '', etransferReference: '', consentAccepted: false,
   })
   const askAccommodations = !isWaitlist && terms.kind === 'workshop'
+  // Free offerings have nothing to send, so no e-Transfer step.
+  const payFirst = !isWaitlist && priceCents > 0
+  const etransferReference = normalizeEtransferReference(form.etransferReference)
+  const referenceValid = ETRANSFER_REFERENCE_PATTERN.test(etransferReference)
+  // The booking number doesn't exist until Register, so the note identifies
+  // the child and event instead; staff match on the Interac reference.
+  const etransferNote = `${form.childName.trim() || "Child's name"} - ${offering.eventTitle || program.title}`
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
@@ -132,6 +174,10 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.consentAccepted) { setError('Please accept the consent to continue.'); return }
+    if (payFirst && !referenceValid) {
+      setError('Please send your e-Transfer and enter its Interac reference number (letters and numbers, as shown by your bank).')
+      return
+    }
     setError('')
     setSubmitting(true)
 
@@ -150,6 +196,7 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
             childName: form.childName,
             childAge: form.childAge,
             ...(askAccommodations && form.accommodations.trim() ? { accommodations: form.accommodations } : {}),
+            ...(payFirst ? { etransferReference } : {}),
             consentAccepted: form.consentAccepted,
           },
           marketingAttribution: buildAttribution(),
@@ -157,9 +204,14 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
       })
       const registerResult = await registerResponse.json().catch(() => ({}))
       if (!registerResponse.ok) {
-        throw new Error(registerResult.error || (isWaitlist
+        const message = registerResult.error || (isWaitlist
           ? 'We could not add you to the waitlist. Please try again.'
-          : 'We could not submit your registration. Please try again.'))
+          : 'We could not submit your registration. Please try again.')
+        // They may have already paid: a full/closed session must never leave
+        // them wondering about their money.
+        throw new Error(payFirst && registerResponse.status === 409
+          ? `${message} If you already sent your e-Transfer, call or text 613-400-6921 and we'll refund it in full.`
+          : message)
       }
 
       if (isWaitlist) {
@@ -194,6 +246,9 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
         eventStartAt: offering.eventStartAt ?? '',
         eventEndAt: offering.eventEndAt ?? '',
       })
+      // Present → the page shows "registration received, verifying payment"
+      // instead of asking them to send an e-Transfer they already sent.
+      if (payFirst) params.set('etransferReference', etransferReference)
       router.push(`/booking/demo-etransfer?${params.toString()}`)
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.')
@@ -272,7 +327,11 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
           <>
             <div className="mb-1">
               <h3 className="font-black text-slate-800 text-base">{terms.registerHeading(priceDisplay)}</h3>
-              <p className="text-sm text-slate-400 mt-0.5">Just a few details to hold your child&apos;s {terms.spot}.</p>
+              <p className="text-sm text-slate-400 mt-0.5">
+                {payFirst
+                  ? <>Fill in your details, send the {priceLabel} e-Transfer, then enter its reference number to register.</>
+                  : <>Just a few details to hold your child&apos;s {terms.spot}.</>}
+              </p>
             </div>
 
             {creditEnabled && (
@@ -309,6 +368,38 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
           </Field>
         )}
 
+        {payFirst && (
+          <>
+            <div className="pt-2">
+              <h4 className="font-black text-slate-800 text-sm">Send your {priceLabel} e-Transfer</h4>
+              <p className="text-sm text-slate-500 mt-0.5">Open your banking app and send an Interac e-Transfer with these details. Keep this page open; your details above stay filled in.</p>
+            </div>
+            <div className="bg-[#e6f4f4] rounded-xl border border-[#0c6162]/20 px-4">
+              <CopyLine label="Send to" value={ETRANSFER_EMAIL} mono />
+              <CopyLine label="Amount" value={priceLabel} />
+              <CopyLine label="Message / Note" value={etransferNote} />
+            </div>
+
+            <Field
+              label="Interac e-Transfer reference number"
+              required
+              hint="Your bank shows it right after you send, and in its confirmation email (e.g. CA7mQx2T)."
+            >
+              <input
+                required
+                className={`${inputClass} font-mono`}
+                value={form.etransferReference}
+                onChange={e => set('etransferReference', e.target.value)}
+                placeholder="e.g. CA7mQx2T"
+                autoComplete="off"
+                autoCapitalize="characters"
+                spellCheck={false}
+                maxLength={60}
+              />
+            </Field>
+          </>
+        )}
+
         <label className="flex items-start gap-3 cursor-pointer">
           <input type="checkbox" required checked={form.consentAccepted} onChange={e => set('consentAccepted', e.target.checked)} className="mt-0.5 accent-[#0c6162] w-4 h-4 shrink-0" />
           <span className="text-sm text-slate-600">
@@ -319,13 +410,17 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
           </span>
         </label>
 
-        <button type="submit" disabled={submitting} className="w-full py-4 rounded-xl text-white font-black text-base transition-all disabled:opacity-50 active:scale-[0.98] shadow-sm" style={{ backgroundColor: '#F2A100' }}>
-          {submitting ? 'Submitting…' : isWaitlist ? 'Join the Waitlist' : 'Register & Get E-Transfer Instructions →'}
+        <button type="submit" disabled={submitting || (payFirst && !referenceValid)} className="w-full py-4 rounded-xl text-white font-black text-base transition-all disabled:opacity-50 active:scale-[0.98] shadow-sm" style={{ backgroundColor: '#F2A100' }}>
+          {submitting ? 'Submitting…' : isWaitlist ? 'Join the Waitlist' : payFirst ? 'Register' : 'Register & Get E-Transfer Instructions →'}
         </button>
         <p className="text-center text-xs text-slate-400">
           {isWaitlist
             ? 'You’ll get an email confirming you’re on the waitlist.'
-            : <>You&apos;ll receive instructions to send your {priceLabel} payment by e-transfer.</>}
+            : payFirst
+              ? (referenceValid
+                ? 'We’ll match your e-Transfer and confirm your spot by email. If the session fills before you register, we’ll refund your e-Transfer in full.'
+                : 'Send the e-Transfer and enter its reference number to register.')
+              : <>You&apos;ll receive instructions to send your {priceLabel} payment by e-transfer.</>}
         </p>
       </form>
     </BookingLayout>

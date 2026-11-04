@@ -89,6 +89,21 @@ export function sanitizeAttribution(raw) {
   return out
 }
 
+// ─── Interac e-Transfer reference ─────────────────────────────────────────
+//
+// Families pay first and type the reference their bank shows after sending
+// (e.g. "CA7mQx2T"). It's self-reported, so staff still match it against the
+// bank before confirming — it only makes that match fast. Banks format it
+// differently, so this accepts letters, digits and dashes (spaces dropped)
+// rather than one exact pattern. Required for a paid registration (see
+// saveDemoRegistration); the waitlist ignores it.
+export const ETRANSFER_REFERENCE_PATTERN = /^[A-Za-z0-9-]{4,40}$/
+
+export function normalizeEtransferReference(value) {
+  if (typeof value !== 'string') return ''
+  return value.replace(/\s+/g, '').slice(0, 60)
+}
+
 // ─── Payload validation (5-field spec plus an optional allergies /
 // accommodations note — no grade, no emergency contact, no photo consent) ──
 
@@ -120,6 +135,7 @@ export function validatePayload(body) {
     childAge: Number(String(input.childAge).trim()),
     // Optional: only what staff need for the child to take part safely.
     accommodations: normalizeText(input.accommodations, ACCOMMODATIONS_MAX),
+    etransferReference: normalizeEtransferReference(input.etransferReference),
     consentAccepted: input.consentAccepted === true,
   }
 
@@ -131,6 +147,9 @@ export function validatePayload(body) {
     return { error: "Please enter the child's age between 1 and 18." }
   }
   if (!registration.consentAccepted) return { error: 'Consent is required before submitting.' }
+  if (registration.etransferReference && !ETRANSFER_REFERENCE_PATTERN.test(registration.etransferReference)) {
+    return { error: 'Please check your Interac e-Transfer reference number. It should be letters and numbers only, as shown by your bank.' }
+  }
 
   const marketingAttribution = sanitizeAttribution(body.marketingAttribution)
 
@@ -295,6 +314,13 @@ export async function saveDemoRegistration(db, request) {
     const pricing = getDemoPricing(offering)
     const { priceCents, currency } = pricing
 
+    // Pay-first: a paid registration must arrive with the family's Interac
+    // reference. Checked here, against the freshly resolved price, so a free
+    // offering never asks for one.
+    if (priceCents > 0 && !registration.etransferReference) {
+      throw new RequestRejectedError(400, 'Please send your e-Transfer and enter its Interac reference number before registering.')
+    }
+
     // (c) Eligibility hash + one-time-offer lock check.
     const eligibilityScope = typeof offering.eligibilityScope === 'string' && offering.eligibilityScope ? offering.eligibilityScope : null
     const childEligibilityKeyHash = computeChildEligibilityKeyHash(registration, eligibilityScope)
@@ -362,7 +388,12 @@ export async function saveDemoRegistration(db, request) {
       paymentProvider: 'etransfer',
       paymentSessionId: null,
       paymentIntentId: null,
+      // Stays 'pending' until staff match the reference in the bank and
+      // press Confirm E-Transfer Received in the portal. A registration that
+      // carries a reference is never auto-expired (expire-demo-payment-holds.js).
       paymentStatus: 'pending',
+      etransferReference: registration.etransferReference || null,
+      etransferReferenceSubmittedAt: registration.etransferReference ? FieldValue.serverTimestamp() : null,
       priceCents,
       currency,
       // Breakdown of priceCents (tax included) as charged at booking time.
