@@ -79,9 +79,10 @@ in **both Production and Deploy Previews**. All are **test-mode** keys.
 existing test webhook points to the **old** enrollment endpoint
 `/.netlify/functions/stripe-webhook`, not to `demo-payment-webhook`.
 
-- [ ] Stripe account: finish business verification and bank payout details.
-- [ ] Set the statement descriptor (the name parents see on their card statement) to "Kriana Tutoring".
+- [x] Stripe account verified with payouts (Kriana Tutoring Inc, daily automatic payouts to TD Bank; confirmed 2026-11-04). The account is also linked to TutorBird.
+- [x] Statement descriptor checked (2026-11-04).
 - [x] Test-mode secret and publishable keys are in Netlify (Production + Deploy Previews).
+- [x] Keys confirmed to belong to the Kriana Tutoring Inc account (same one TutorBird uses), checked 2026-11-04.
 - [ ] Add `ENABLE_CARD_PAYMENTS=false` and `NEXT_PUBLIC_ENABLE_CARD_PAYMENTS=false`
       (can wait until Phase 5; missing settings count as off).
 - [ ] Webhook: done in Phase 5 (edit the existing test webhook rather than
@@ -152,7 +153,8 @@ looks like `https://stripe-test--earnest-sprinkles-f67601.netlify.app`.
   - `payment_intent.payment_failed`
   - `charge.refunded`
 - [ ] (Editing keeps the same signing secret, which Netlify already has.)
-- [ ] **You:** set both card settings to `true` for the `stripe-test` branch only.
+- [x] Both card settings set to `true` for `branch:stripe-test` only (plus the DEMO_CAMPAIGN_* ids); production unchanged. Done 2026-11-04.
+- [ ] **You:** enable branch deploys for `stripe-test` in Netlify.
 - [ ] Test cases on the preview:
   - [ ] Card `4242 4242 4242 4242`: booking is paid, the seat is confirmed and the email arrives.
   - [ ] Declined card `4000 0000 0000 0002`: an error shows and no seat is taken.
