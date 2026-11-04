@@ -87,7 +87,7 @@ existing test webhook points to the **old** enrollment endpoint
 - [ ] Webhook: done in Phase 5 (edit the existing test webhook rather than
       adding a second one; both functions read the same `STRIPE_WEBHOOK_SECRET`).
 
-## Phase 2: Fix the existing Stripe code (Dev) — done 2026-11-04, not pushed
+## Phase 2: Fix the existing Stripe code (Dev) — done, pushed 2026-11-04 (web 3c03b3d, portal b2090ab)
 
 - [x] Checkout charges the registration's stored `priceCents` (HST and early
       bird included), which is exactly what the webhook checks.
@@ -107,7 +107,7 @@ existing test webhook points to the **old** enrollment endpoint
 - [x] Tests: 16 new or updated in `tests/submit-demo-registration.test.mjs`
       (website suite: 324 pass).
 
-## Phase 3: Card option on the form (Dev) — done, not pushed
+## Phase 3: Card option on the form (Dev) — done, pushed 2026-11-04 (web 3c03b3d, portal b2090ab)
 
 - [x] Payment choice on the register form: **Pay by card** (first, default)
       or **Interac e-Transfer** (today's flow, reference required).
@@ -123,7 +123,7 @@ existing test webhook points to the **old** enrollment endpoint
       with booking reference and amount (no more "$10 demo").
 - [x] /events wording ("Card or e-Transfer") and the payment FAQ follow the switch.
 
-## Phase 4: Emails and portal (Dev) — done, not pushed
+## Phase 4: Emails and portal (Dev) — done, pushed 2026-11-04 (web 3c03b3d, portal b2090ab)
 
 - [x] Card registrations get no email at Register (not paid yet). The webhook
       sends "Payment Received" to the parent and "New card-paid registration"
@@ -136,15 +136,23 @@ existing test webhook points to the **old** enrollment endpoint
 
 ## Phase 5: Test mode end to end (You and Dev)
 
+**Where to test without parents seeing it:** a Netlify *branch deploy* of a
+`stripe-test` branch (same code as master), with the card switches set to
+`true` for that branch only (Netlify → Environment variables → value for
+"Branch deploys" / `branch:stripe-test`). The live site keeps them off.
+Branch deploys must be enabled for that branch in Netlify (Site
+configuration → Build & deploy → Branches and deploy contexts). Its URL
+looks like `https://stripe-test--earnest-sprinkles-f67601.netlify.app`.
+
 - [ ] **You:** Stripe (test mode) → Developers → Webhooks → **edit the existing
-      endpoint**: URL `https://<deploy-preview-url>/.netlify/functions/demo-payment-webhook`,
+      endpoint**: URL `https://stripe-test--earnest-sprinkles-f67601.netlify.app/.netlify/functions/demo-payment-webhook`,
       events:
   - `checkout.session.completed`
   - `checkout.session.expired`
   - `payment_intent.payment_failed`
   - `charge.refunded`
 - [ ] (Editing keeps the same signing secret, which Netlify already has.)
-- [ ] **You:** set both card settings to `true` for Deploy Previews only.
+- [ ] **You:** set both card settings to `true` for the `stripe-test` branch only.
 - [ ] Test cases on the preview:
   - [ ] Card `4242 4242 4242 4242`: booking is paid, the seat is confirmed and the email arrives.
   - [ ] Declined card `4000 0000 0000 0002`: an error shows and no seat is taken.
