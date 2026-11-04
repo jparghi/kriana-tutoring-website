@@ -29,7 +29,7 @@ export const dynamic = "force-dynamic"
 
 const HERO_CTA_ID = "demo-hero-cta"
 const RESERVE_SECTION_ID = "reserve"
-const SHARE_IMAGE_PATH = "/images/gallery/young-engineers-demo-sept-2026-v1.jpg"
+const SHARE_IMAGE_PATH = "/images/demo/young-engineers-pd-day-workshop-oct-2026.jpg"
 
 // generateMetadata and the page both need the campaign — cache() dedupes the
 // Firestore read to once per request.
@@ -53,7 +53,7 @@ export const metadata: Metadata = {
     description,
     url: `${siteUrl}/events`,
     type: "website",
-    images: [{ url: `${siteUrl}${SHARE_IMAGE_PATH}`, width: 720, height: 1280, alt: "A child building a Young Engineers model at a Kanata event" }],
+    images: [{ url: `${siteUrl}${SHARE_IMAGE_PATH}`, width: 1400, height: 1002, alt: "Young Engineers PD Day workshop at Kriana Tutoring in Kanata" }],
   },
   twitter: { card: "summary_large_image", title, description, images: [`${siteUrl}${SHARE_IMAGE_PATH}`] },
 }
