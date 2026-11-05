@@ -4,9 +4,10 @@ import { useState } from 'react'
 import Image from 'next/image'
 import type { WorkshopTheme } from '../../data/demos'
 import { DemoRegisterCta } from './DemoRegisterCta'
+import { CARD_PAYMENTS_ENABLED, ETRANSFER_OFFERED } from '../../lib/payment-options'
 
 // Card payments on the register page (see register/page.tsx).
-const CARD_PAYMENTS = process.env.NEXT_PUBLIC_ENABLE_CARD_PAYMENTS === 'true'
+const CARD_PAYMENTS = CARD_PAYMENTS_ENABLED
 
 // Steps 1 and 2 of a themed, multi-date workshop (see WorkshopTheme in
 // data/demos.ts): pick a date, then one of that date's theme cards — or, when
@@ -187,9 +188,9 @@ export function WorkshopPicker({
         </div>
       </div>
       <div className="mt-10">
-        <StepHeading n={3} title="Register and pay" sub={CARD_PAYMENTS ? 'One page: fill in your details and pay by card (booked instantly) or Interac e-Transfer. We email your booking details.' : 'One page: fill in your details, send the e-Transfer, enter its Interac reference number and register. We confirm your spot by email.'} />
+        <StepHeading n={3} title="Register and pay" sub={CARD_PAYMENTS ? (ETRANSFER_OFFERED ? 'One page: fill in your details and pay by card (booked instantly) or Interac e-Transfer. We email your booking details.' : 'One page: fill in your details and pay securely by card. You’re booked instantly and we email your booking details.') : 'One page: fill in your details, send the e-Transfer, enter its Interac reference number and register. We confirm your spot by email.'} />
         <ul className="ml-[38px] mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-slate-600">
-          {['All equipment provided', CARD_PAYMENTS ? 'Card or e-Transfer' : 'No card needed', single ? (CARD_PAYMENTS ? 'Pay securely online' : 'Pay by e-Transfer') : 'Each workshop is booked separately'].map(item => (
+          {['All equipment provided', CARD_PAYMENTS ? (ETRANSFER_OFFERED ? 'Card or e-Transfer' : 'Booked instantly') : 'No card needed', single ? (CARD_PAYMENTS ? 'Pay securely online' : 'Pay by e-Transfer') : 'Each workshop is booked separately'].map(item => (
             <li key={item} className="flex items-center gap-1.5"><span aria-hidden="true" className="font-black text-[#0c6162]">✓</span>{item}</li>
           ))}
         </ul>
@@ -361,7 +362,7 @@ function SessionBooking({ session, theme, programId, attributionQuery, contactHr
             }`}
           />
           <p className="-mt-2 text-center text-xs text-slate-500">
-            {waitlist ? 'We’ll contact you if a spot opens.' : (CARD_PAYMENTS ? 'Pay by card or e-Transfer on the next page.' : 'Pay by e-Transfer on the next page, then register.')}
+            {waitlist ? 'We’ll contact you if a spot opens.' : (CARD_PAYMENTS ? (ETRANSFER_OFFERED ? 'Pay by card or e-Transfer on the next page.' : 'Pay securely by card on the next page.') : 'Pay by e-Transfer on the next page, then register.')}
           </p>
         </>
       ) : (

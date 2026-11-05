@@ -22,6 +22,7 @@ import {
 } from '../../../../lib/robotics-packages.js'
 import { getLearningPathMonthlyTuition } from '../../../../lib/robotics-monthly-tuition.js'
 import { isScheduleLaterProgramId, SCHEDULE_LATER_TITLE } from '../../../../lib/schedule-later.js'
+import { CARD_PAYMENTS_ENABLED, ETRANSFER_OFFERED } from '../../../../lib/payment-options'
 
 const ROBOTICS_CATEGORY = 'Robotics'
 // Class schedules are no longer published on the site (they change often and
@@ -53,9 +54,6 @@ const inputClass = 'w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text
 const ETRANSFER_EMAIL = process.env.NEXT_PUBLIC_ETRANSFER_EMAIL || 'info@krianatutoring.com'
 const ETRANSFER_REFERENCE_PATTERN = /^[A-Za-z0-9-]{4,40}$/
 
-// Card (Stripe Checkout) is offered first when switched on; the server's
-// ENABLE_CARD_PAYMENTS is the real control (submit-demo-registration.js).
-const CARD_PAYMENTS_ENABLED = process.env.NEXT_PUBLIC_ENABLE_CARD_PAYMENTS === 'true'
 
 function newClientRequestId() {
   return globalThis.crypto?.randomUUID?.()
@@ -136,7 +134,8 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
   const payFirst = !isWaitlist && priceCents > 0
   const cardAvailable = payFirst && CARD_PAYMENTS_ENABLED
   const [payMethod, setPayMethod] = useState<'card' | 'etransfer'>(CARD_PAYMENTS_ENABLED ? 'card' : 'etransfer')
-  const payByCard = cardAvailable && payMethod === 'card'
+  // With e-Transfer hidden, card is the only choice (no radio shown).
+  const payByCard = cardAvailable && (!ETRANSFER_OFFERED || payMethod === 'card')
   // Only the e-Transfer path needs the Interac reference before Register.
   const needsReference = payFirst && !payByCard
   // Set when the parent came back from Stripe without paying.
@@ -279,7 +278,9 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
         clientRequestId.current = newClientRequestId()
         throw new Error(sessionResult.error
           ? `${sessionResult.error} Nothing was charged.`
-          : 'We couldn’t open the card payment page. Nothing was charged. Please try again, or pay by Interac e-Transfer.')
+          : (ETRANSFER_OFFERED
+            ? 'We couldn’t open the card payment page. Nothing was charged. Please try again, or pay by Interac e-Transfer.'
+            : 'We couldn’t open the card payment page. Nothing was charged. Please try again, or call or text 613-400-6921.'))
       }
 
       // e-Transfer (or free) — send the family to
@@ -387,7 +388,9 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
               <h3 className="font-black text-slate-800 text-base">{terms.registerHeading(priceDisplay)}</h3>
               <p className="text-sm text-slate-400 mt-0.5">
                 {payFirst && cardAvailable
-                  ? <>Fill in your details, then pay {priceLabel} by card or Interac e-Transfer.</>
+                  ? (ETRANSFER_OFFERED
+                    ? <>Fill in your details, then pay {priceLabel} by card or Interac e-Transfer.</>
+                    : <>Fill in your details, then pay {priceLabel} securely by card.</>)
                   : payFirst
                   ? <>Fill in your details, send the {priceLabel} e-Transfer, then enter its reference number to register.</>
                   : <>Just a few details to hold your child&apos;s {terms.spot}.</>}
@@ -434,7 +437,7 @@ function DemoRegisterForm({ programId, program, offering, mode = 'register' }: {
           </Field>
         )}
 
-        {cardAvailable && (
+        {cardAvailable && ETRANSFER_OFFERED && (
           <div className="pt-2">
             <h4 className="font-black text-slate-800 text-sm">How would you like to pay {priceLabel}?</h4>
             <div className="mt-2 grid gap-2" role="radiogroup" aria-label="Payment method">
