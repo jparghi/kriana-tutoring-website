@@ -4,7 +4,7 @@ import { demos, type DemoEvent, type DemoStatus } from "../../data/demos"
 import { demoReviews } from "../../data/demo-reviews"
 import { resolveDemoCampaignOffering, resolveDemoSessionOfferings } from "../../lib/demo-campaign.server"
 import { eventTerms } from "../../lib/demo-event-copy"
-import { demoPriceText, formatDemoDate, partialSellout, resolveDemoHub, sessionShortName, workshopDays } from "../../lib/demo-hub"
+import { demoPriceText, eventDateLabel, formatDemoDate, partialSellout, resolveDemoHub, sessionShortName, workshopDays } from "../../lib/demo-hub"
 import { getDemoPricing } from "../../lib/robotics-packages.js"
 import { siteUrl, toJsonLd } from "../../lib/seo"
 import { Footer } from "../../components/footer"
@@ -12,8 +12,8 @@ import { DemoLandingAnalytics } from "./DemoLandingAnalytics"
 import { DemoWaitlistForm } from "./DemoWaitlistForm"
 import { SessionReserve } from "./SessionReserve"
 import { StickyReserveBar } from "./StickyReserveBar"
-import { WorkshopPicker } from "./WorkshopPicker"
-import { WorkshopCompare, WorkshopHero, WorkshopInfo } from "./workshop-sections"
+import { QuickBookForm, QuickBookProvider, QuickBookSessions } from "./QuickBook"
+import { WorkshopCompare, WorkshopHero, WorkshopInfo, WorkshopIntro } from "./workshop-sections"
 import {
   CONTACT_SMS_HREF, ContactButtons, CtaButton, DemoFaq, DemoHero, DemoJourney, FutureWorkshopList, ParentReviews, PastDemoGallery,
   PreviousDemoProof, ProgramsSection, ReserveSection, WhatChildrenDo, WhatChildrenLearn, type HubCta, type PartialSelloutCopy,
@@ -29,6 +29,8 @@ export const dynamic = "force-dynamic"
 
 const HERO_CTA_ID = "demo-hero-cta"
 const RESERVE_SECTION_ID = "reserve"
+const QUICK_BOOK_ID = "book"
+const QUICK_BOOK_FORM_ID = "register"
 const SHARE_IMAGE_PATH = "/images/demo/young-engineers-pd-day-workshop-oct-2026.jpg"
 
 // generateMetadata and the page both need the campaign — cache() dedupes the
@@ -42,20 +44,35 @@ const title = "Upcoming Workshops, Camps & Events | Kriana Tutoring"
 const description =
   "Explore upcoming workshops, STEM and robotics programs, PD Day activities, camps and special events from Kriana Tutoring and Young Engineers in Kanata."
 
-export const metadata: Metadata = {
-  // absolute: the root layout's "%s · Kriana Tutoring" template would
-  // otherwise append the brand a second time.
-  title: { absolute: title },
-  description,
-  alternates: { canonical: `${siteUrl}/events` },
-  openGraph: {
-    title,
-    description,
-    url: `${siteUrl}/events`,
-    type: "website",
-    images: [{ url: `${siteUrl}${SHARE_IMAGE_PATH}`, width: 1400, height: 1002, alt: "Young Engineers PD Day workshop at Kriana Tutoring in Kanata" }],
-  },
-  twitter: { card: "summary_large_image", title, description, images: [`${siteUrl}${SHARE_IMAGE_PATH}`] },
+// While a themed workshop is the next event, the page is its booking page
+// (shared on Facebook), so the share card describes that workshop. Config
+// only (no live offering read), so it can't fail or slow the page.
+export function generateMetadata(): Metadata {
+  const { active } = resolveDemoHub(demos, {})
+  const workshop = active?.themes && active.sessions.some(s => s.theme) ? active : null
+  const themeNames = workshop ? Object.values(workshop.themes ?? {}).map(t => t.name) : []
+  const pageTitle = workshop
+    ? `${themeNames.length === 1 ? `${themeNames[0]} · ` : ""}PA/PD Day Workshop, ${eventDateLabel(workshop, "short")} · ${workshop.location}`
+    : title
+  const pageDescription = workshop
+    ? `Ages ${workshop.ageRange}. ${workshop.summary ?? workshop.seoDescription ?? ""} Pick a session and book in a minute.`.trim()
+    : description
+  const image = workshop?.heroImage ?? { src: SHARE_IMAGE_PATH, width: 1400, height: 1002, alt: "Young Engineers PD Day workshop at Kriana Tutoring in Kanata" }
+  return {
+    // absolute: the root layout's "%s · Kriana Tutoring" template would
+    // otherwise append the brand a second time.
+    title: { absolute: workshop ? `${pageTitle} | Kriana Tutoring` : pageTitle },
+    description: pageDescription,
+    alternates: { canonical: `${siteUrl}/events` },
+    openGraph: {
+      title: pageTitle,
+      description: pageDescription,
+      url: `${siteUrl}/events`,
+      type: "website",
+      images: [{ url: `${siteUrl}${image.src}`, width: image.width, height: image.height, alt: image.alt }],
+    },
+    twitter: { card: "summary_large_image", title: pageTitle, description: pageDescription, images: [`${siteUrl}${image.src}`] },
+  }
 }
 
 // One Event per session so each time slot is its own valid, dated event.
@@ -255,19 +272,18 @@ export default async function DemoPage({
   const showWaitlistForm = !active && canJoinWaitlist
 
   if (themed && active) {
-    const priced = daySessions.find(s => s.state === "open") ?? daySessions[0]
-    const dollars = (cents: number) => `$${cents % 100 === 0 ? cents / 100 : (cents / 100).toFixed(2)}`
-    const priceNote = priced
-      ? `${priced.earlyBirdUntil ? "Early bird " : ""}${dollars(priced.subtotalCents)}${priced.taxCents ? " + HST" : ""} ($${(priced.priceCents / 100).toFixed(2)}) per child`
-      : ""
-    const statusNote = canRegister
-      ? undefined
-      : status === "SOLD_OUT" ? "All sessions are full. Join a waitlist below." : "Online registration opens shortly. Call or text us to register."
-    const rawDate = searchParams.date
-    const initialDate = Array.isArray(rawDate) ? rawDate[0] : rawDate
-    const pickerThemes = Object.fromEntries(Object.entries(active.themes!).map(([id, t]) => [id, {
-      name: t.name, series: t.series, focus: t.focus, palette: t.palette, blurb: t.blurb, models: t.models, image: t.image,
-    }]))
+    const dollars = (cents: number) => `$${(cents / 100).toFixed(2)}`
+    const open = daySessions.filter(s => s.state === "open")
+    const prices = [...new Set((open.length ? open : daySessions).map(s => s.priceCents))].sort((a, b) => a - b)
+    const anyTax = daySessions.some(s => s.taxCents > 0)
+    const priceLine = !canRegister
+      ? (status === "SOLD_OUT" ? "All sessions are full. Join a waitlist below." : "Online registration opens shortly. Call or text us to register.")
+      : prices.length
+        ? `${prices.length > 1 ? "From " : ""}${dollars(prices[0])} per child${anyTax ? ", HST included" : ""}`
+        : ""
+    const one = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value)
+    const themeList = Object.values(active.themes!)
+    const singleTheme = themeList.length === 1 ? themeList[0] : null
 
     return (
       <>
@@ -281,36 +297,28 @@ export default async function DemoPage({
         />
 
         <main className={`min-h-screen overflow-x-hidden bg-white text-slate-900 ${canRegister ? "pb-20 sm:pb-0" : ""}`}>
-          <WorkshopHero
-            demo={active}
-            heroCtaId={HERO_CTA_ID}
-            reserveHref={`#${RESERVE_SECTION_ID}`}
-            offeringId={campaignOfferingId}
-            priceNote={priceNote}
-            statusNote={statusNote}
-            shareUrl={`${siteUrl}/events`}
-          />
-          <section
-            id={RESERVE_SECTION_ID}
-            aria-label="Register for a workshop"
-            className="scroll-mt-4 px-5 pb-12 pt-14 sm:px-8"
-            style={{ background: "linear-gradient(180deg, #FFF7E8 0%, #FFFFFF 260px)" }}
-          >
-            <div className="mx-auto max-w-6xl">
-              <p className="mb-3 text-xs font-bold uppercase tracking-[0.12em] text-[#0c6162]">Register in three steps</p>
-              {active.programId && (
-                <WorkshopPicker
-                  days={days}
-                  themes={pickerThemes}
-                  programId={active.programId}
-                  attributionQuery={attributionQuery}
-                  initialDate={initialDate}
-                  contactHref={CONTACT_SMS_HREF}
-                  contactLabel="Text us"
-                />
-              )}
-            </div>
-          </section>
+          {/* Session buttons in the hero; picking one opens the form in its
+              own section right under the hero (not inside it). */}
+          {active.programId ? (
+            <QuickBookProvider
+              id={QUICK_BOOK_ID}
+              formId={QUICK_BOOK_FORM_ID}
+              days={days}
+              themeNames={Object.fromEntries(Object.entries(active.themes!).map(([id, t]) => [id, t.name]))}
+              programId={active.programId}
+              programTitle={active.title}
+              initialSession={one(searchParams.session)}
+              initialOffering={one(searchParams.offering)}
+              another={one(searchParams.another) === "1"}
+              contactHref={CONTACT_SMS_HREF}
+            >
+              <WorkshopHero demo={active} priceLine={priceLine} shareUrl={`${siteUrl}/events`} booking={<QuickBookSessions />} />
+              <QuickBookForm />
+            </QuickBookProvider>
+          ) : (
+            <WorkshopHero demo={active} priceLine={priceLine} shareUrl={`${siteUrl}/events`} booking={null} />
+          )}
+          {singleTheme && <WorkshopIntro theme={singleTheme} ageRange={active.ageRange} />}
           <WorkshopCompare demo={active} />
           <WhatChildrenDo title="What Your Child Will Experience" />
           {/* No previous-event reel here: the latest one is Halloween-branded
@@ -322,7 +330,7 @@ export default async function DemoPage({
         </main>
 
         {canRegister && (
-          <StickyReserveBar href={`#${RESERVE_SECTION_ID}`} label={Object.keys(active.themes ?? {}).length === 1 ? "Choose Your Time" : "Choose Your Workshop"} offeringId={campaignOfferingId} watchIds={[HERO_CTA_ID, RESERVE_SECTION_ID]} />
+          <StickyReserveBar href={`#${QUICK_BOOK_ID}`} label="Choose a Session" offeringId={campaignOfferingId} watchIds={[QUICK_BOOK_ID, QUICK_BOOK_FORM_ID]} />
         )}
         <Footer />
       </>

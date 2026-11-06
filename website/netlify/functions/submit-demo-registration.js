@@ -108,7 +108,7 @@ export function normalizeEtransferReference(value) {
 }
 
 // ─── Payload validation (5-field spec plus an optional allergies /
-// accommodations note — no grade, no emergency contact, no photo consent) ──
+// accommodations note and a Yes/No photo consent — no grade, no emergency contact) ──
 
 export function validatePayload(body) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
@@ -140,6 +140,9 @@ export function validatePayload(body) {
     accommodations: normalizeText(input.accommodations, ACCOMMODATIONS_MAX),
     etransferReference: normalizeEtransferReference(input.etransferReference),
     consentAccepted: input.consentAccepted === true,
+    // 'YES' / 'NO' from the form's required choice; anything else (older
+    // pages, waitlist) is stored as no answer rather than rejected.
+    photoConsent: input.photoConsent === 'YES' || input.photoConsent === 'NO' ? input.photoConsent : null,
   }
 
   if (registration.parentName.length < 2) return { error: 'Please enter the parent or guardian name.' }
@@ -423,6 +426,10 @@ export async function saveDemoRegistration(db, request) {
       childName: registration.childName,
       childAge: registration.childAge,
       accommodations: registration.accommodations || null,
+      // Shown in the portal's photo-consent badge when there's no signed
+      // consent form for this child (a signed form takes precedence).
+      photoConsent: registration.photoConsent ?? null,
+      photoConsentRecordedAt: registration.photoConsent ? FieldValue.serverTimestamp() : null,
       childEligibilityKeyHash,
       registrationNumber,
       consentAccepted: true,

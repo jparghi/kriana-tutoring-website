@@ -1,7 +1,5 @@
 import Image from "next/image"
 import type { DemoEvent, WorkshopTheme } from "../../data/demos"
-import { eventDateLabel } from "../../lib/demo-hub"
-import { DemoRegisterCta } from "./DemoRegisterCta"
 import { ShareInviteButton } from "./ShareInviteButton"
 import { CONTACT_PHONE_DISPLAY, CONTACT_PHONE_HREF } from "./sections"
 
@@ -12,6 +10,50 @@ import { CONTACT_PHONE_DISPLAY, CONTACT_PHONE_HREF } from "./sections"
 const PALETTE_TEXT: Record<WorkshopTheme["palette"], string> = {
   teal: "text-[#0E8C99]",
   purple: "text-[#6A3BCF]",
+}
+
+// Literal class strings so Tailwind keeps them.
+const PALETTE_INTRO: Record<WorkshopTheme["palette"], { band: string; tint: string }> = {
+  teal: { band: "from-[#0E8C99] to-[#1D6FD8]", tint: "bg-[#E7F6F7]" },
+  purple: { band: "from-[#6A3BCF] to-[#F2761B]", tint: "bg-[#F3EEFF]" },
+}
+
+/** The workshop itself (single-theme events): build photo, blurb, key facts. */
+export function WorkshopIntro({ theme, ageRange }: { theme: WorkshopTheme; ageRange: string }) {
+  const palette = PALETTE_INTRO[theme.palette]
+  const text = PALETTE_TEXT[theme.palette]
+  return (
+    <section className="px-5 py-12 sm:px-8" aria-labelledby="workshop-intro-heading">
+      <article className="mx-auto grid max-w-6xl overflow-hidden rounded-3xl border border-slate-200 bg-white md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+        <div className={`flex items-center bg-gradient-to-br ${palette.band} p-4 sm:p-5`}>
+          <div className="mx-auto max-w-md overflow-hidden rounded-2xl bg-white shadow-[0_6px_16px_rgba(0,0,0,0.15)]">
+            <Image src={theme.image.src} alt={theme.image.alt} width={theme.image.width} height={theme.image.height} sizes="(min-width: 768px) 448px, 100vw" className="block h-auto w-full" />
+          </div>
+        </div>
+        <div className="flex flex-col gap-3 p-5 sm:p-6">
+          <p className={`text-xs font-bold uppercase tracking-wider ${text}`}>
+            The workshop{theme.series ? ` · ${theme.series}` : ""}
+          </p>
+          <div>
+            <h2 id="workshop-intro-heading" className="text-[28px] font-black leading-tight text-[#0A2D5A]">{theme.name}</h2>
+            <p className="text-sm font-semibold text-slate-500">{theme.focus}</p>
+          </div>
+          <p className="text-[15px] leading-relaxed text-slate-800">{theme.blurb}</p>
+          <p className="text-xs font-bold text-slate-500">
+            {theme.models.length === 1 ? `The build: ${theme.models[0]}, one per child, built start to finish` : `Models: ${theme.models.join(" · ")}`}
+          </p>
+          <ul className="mt-auto grid grid-cols-2 gap-2 text-sm">
+            {[["Duration", "3 hours"], ["Ages", ageRange]].map(([label, value]) => (
+              <li key={label} className={`rounded-xl ${palette.tint} px-3 py-2`}>
+                <span className={`block text-[11px] font-bold uppercase tracking-wider ${text}`}>{label}</span>
+                {value}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </article>
+    </section>
+  )
 }
 
 function Fact({ icon, children }: { icon: "calendar" | "clock" | "pin"; children: React.ReactNode }) {
@@ -28,72 +70,56 @@ function Fact({ icon, children }: { icon: "calendar" | "clock" | "pin"; children
   )
 }
 
+// The hero is the booking area: workshop name, price and the session picker
+// card (QuickBook) up top, so a parent from a Facebook link can book without
+// scrolling. The rest of the pitch sits under the card on phones and beside
+// it on desktop.
 export function WorkshopHero({
-  demo, heroCtaId, reserveHref, offeringId, priceNote, shareUrl, statusNote,
+  demo, booking, priceLine, shareUrl,
 }: {
   demo: DemoEvent
-  heroCtaId: string
-  reserveHref: string
-  offeringId: string
-  priceNote: string // "Early bird $34 + HST ($38.42) per workshop"
+  booking: React.ReactNode // the QuickBook card
+  priceLine: string // "$38.42 per child, HST included"
   shareUrl: string
-  statusNote?: string // shown instead of the price when nothing is bookable
 }) {
-  // "9:30 AM–12:30 PM or 1:30 PM–4:30 PM" — each distinct session time once.
-  const times = [...new Set(demo.sessions.map(s => s.label.split(" · ").pop()))].join(" or ")
-  const image = demo.heroImage
   const themeList = Object.values(demo.themes ?? {})
   const singleTheme = themeList.length === 1 ? themeList[0] : null
   return (
-    <section className="relative overflow-hidden bg-[#0A2D5A] text-white">
+    <section className="relative bg-[#0A2D5A] text-white">
       {/* engineering-block studs */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-[0.13] [mask-image:linear-gradient(105deg,transparent_30%,#000_85%)]"
+        className="pointer-events-none absolute inset-0 overflow-hidden opacity-[0.13] [mask-image:linear-gradient(105deg,transparent_30%,#000_85%)]"
         style={{ backgroundImage: "radial-gradient(circle at 50% 50%, #fff 0 5px, transparent 6px)", backgroundSize: "28px 28px" }}
       />
-      <div className="relative mx-auto grid max-w-6xl gap-10 px-5 pb-12 pt-9 sm:px-8 md:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] md:items-center md:gap-12 md:py-16">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#9fd3d8]">
-            {singleTheme ? `PA/PD Day Workshop · ${singleTheme.name}` : "PA/PD Day Workshops"} · Ages {demo.ageRange}
+      {/* Phones: header, card, details. Desktop: header + details left, card right. */}
+      <div className="relative mx-auto grid max-w-6xl gap-x-12 gap-y-6 px-4 pb-10 pt-6 sm:px-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:grid-rows-[auto_1fr] md:py-14">
+        <div className="md:col-start-1 md:row-start-1">
+          <p className="text-xs font-bold uppercase tracking-[0.1em] text-[#9fd3d8]">
+            PA/PD Day Workshop · Ages {demo.ageRange} · {demo.location}
           </p>
-          <h1 className="mt-3 text-[46px] font-black leading-[0.98] sm:text-[68px]">
-            {demo.hook?.[0] ?? demo.title}
-            {demo.hook?.[1] && <span className="block text-[#F2A100]">{demo.hook[1]}</span>}
-          </h1>
-          {demo.summary && <p className="mt-4 max-w-xl text-lg leading-relaxed text-[#d8e2ee]">{demo.summary}</p>}
+          <h1 className="mt-1.5 text-[34px] font-black leading-[1.02] sm:text-5xl">{singleTheme?.name ?? demo.title}</h1>
+          {priceLine && <p className="mt-2 text-base font-semibold text-[#F2A100]">{priceLine}</p>}
+        </div>
+        <div className="md:col-start-2 md:row-span-2 md:row-start-1 md:self-start">{booking}</div>
+        <div className="md:col-start-1 md:row-start-2">
+          {demo.hook && (
+            <p className="text-2xl font-black leading-tight">
+              {demo.hook[0]} <span className="text-[#F2A100]">{demo.hook[1]}</span>
+            </p>
+          )}
+          {demo.summary && <p className="mt-3 max-w-xl text-base leading-relaxed text-[#d8e2ee] sm:text-lg">{demo.summary}</p>}
+          {/* No combined date/time line: "Nov 20 & 23 · 9:30–12:30 or
+              1:30–4:30" implied a Nov 23 afternoon. The session picker lists
+              the real sessions. */}
           <ul className="mt-5 flex flex-wrap gap-2">
-            <Fact icon="calendar">{eventDateLabel(demo, "short")}</Fact>
-            {times && <Fact icon="clock">{times}</Fact>}
             <Fact icon="pin">{demo.address.split(",")[0]}, {demo.location}</Fact>
           </ul>
-          <div id={heroCtaId} className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-3">
-            <DemoRegisterCta
-              href={reserveHref}
-              offeringId={offeringId}
-              label={singleTheme ? "Choose Your Time" : "Choose Your Workshop"}
-              content="hero"
-              className="inline-flex min-h-[52px] items-center justify-center rounded-xl bg-[#F2A100] px-7 text-lg font-black text-[#1d1300] shadow-[0_6px_18px_rgba(242,161,0,0.35)] transition-all hover:-translate-y-px hover:shadow-[0_10px_26px_rgba(242,161,0,0.5)] active:scale-[0.98]"
-            />
-            <p className="text-sm text-[#b8c6d8]">{statusNote ?? priceNote}</p>
-          </div>
           <p className="mt-4 text-sm text-[#b8c6d8]">
             Questions? Call/Text <a href={CONTACT_PHONE_HREF} className="font-bold text-white hover:underline">{CONTACT_PHONE_DISPLAY}</a>
           </p>
           <div className="mt-4"><ShareInviteButton url={shareUrl} title={demo.title} /></div>
         </div>
-        {image && (
-          <div className="relative">
-            <div className="overflow-hidden rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.35)]">
-              <Image src={image.src} alt={image.alt} width={image.width} height={image.height} priority sizes="(min-width: 768px) 520px, 100vw" className="block h-auto w-full" />
-            </div>
-            <div className="absolute -bottom-4 left-4 flex items-center gap-3 rounded-xl bg-white px-4 py-2 shadow-[0_8px_22px_rgba(0,0,0,0.18)]">
-              <Image src="/images/email-signature/young-engineers-wordmark-high-resolution.png" alt="Young Engineers" width={1350} height={470} className="h-7 w-auto" />
-              <span aria-hidden="true" className="h-6 w-px bg-slate-200" />
-              <Image src="/images/kriana-tutoring-logo-horizontal-4.png" alt="Kriana Tutoring" width={1505} height={452} className="h-7 w-auto" />
-            </div>
-          </div>
-        )}
       </div>
     </section>
   )

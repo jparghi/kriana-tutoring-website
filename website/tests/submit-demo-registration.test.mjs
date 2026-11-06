@@ -1159,3 +1159,21 @@ test('cancelUnpaidCardRegistration ignores e-Transfer registrations', async () =
   assert.equal(result.released, false)
   assert.equal(store.get('demoRegistrations/reg-1').demoStatus, 'registered')
 })
+
+// ─── photo consent (required Yes/No on the form; stored as YES / NO / null) ──
+
+test('validatePayload keeps a YES or NO photo consent answer', () => {
+  for (const answer of ['YES', 'NO']) {
+    const result = validatePayload(baseRequest({ registration: { ...baseRegistration(), photoConsent: answer } }))
+    assert.equal(result.error, undefined)
+    assert.equal(result.registration.photoConsent, answer)
+  }
+})
+
+test('validatePayload stores anything else as no photo consent answer, without rejecting', () => {
+  for (const answer of [undefined, true, 'yes', 'MAYBE', '']) {
+    const result = validatePayload(baseRequest({ registration: { ...baseRegistration(), photoConsent: answer } }))
+    assert.equal(result.error, undefined)
+    assert.equal(result.registration.photoConsent, null)
+  }
+})

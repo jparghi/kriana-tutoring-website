@@ -22,6 +22,8 @@ export type FunnelEvent =
   | 'demo_registration_submitted'
   | 'demo_payment_instructions_viewed'
   | 'demo_card_payment_completed'
+  | 'quick_book_session_selected'
+  | 'register_another_child_click'
   | 'demo_waitlist_click'
   | 'demo_waitlist_started'
   | 'demo_waitlist_submitted'

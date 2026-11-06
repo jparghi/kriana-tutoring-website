@@ -1,4 +1,5 @@
 import { CARD_PAYMENTS_ENABLED, ETRANSFER_OFFERED } from '../lib/payment-options'
+import { REFUND_POLICY_FAQ } from "../lib/refund-policy";
 // The Young Engineers Demo Hub's event list — the single place to add, edit
 // or retire a demo. Never populate media by scanning a folder: only add files
 // that are approved for public use (see components/gallery/README.md).
@@ -338,6 +339,8 @@ export const demos: DemoEvent[] = [
         ? "On the registration page, by card (Visa, Mastercard, Amex, Apple Pay or Google Pay) or Interac e-Transfer. Card payments are booked instantly. For e-Transfer, send it, enter the reference number your bank gives you, and register; we match the payment and confirm your spot by email, usually within one business day."
         : "By Interac e-Transfer, on the registration page: send it, enter the reference number your bank gives you, and register. We match the payment and confirm your spot by email, usually within one business day." },
       { q: "What if the workshop I want is full?", a: "Join the waitlist for that session. It's free, and if a spot opens we'll contact the next family on the list." },
+      { q: "I'm registering siblings. Can I book them together?", a: "Please complete one registration per child. After you pay, press Register another child and your details are filled in for you." },
+      REFUND_POLICY_FAQ,
     ],
     registrationUrl: "https://krianatutoring.com/events",
     programId: "young-engineers-pa-pd-days-stittsville-nov-2026",

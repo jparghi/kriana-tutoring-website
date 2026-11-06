@@ -1,12 +1,13 @@
 'use client'
 
-import { Suspense, useEffect } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import BookingLayout from '../../../components/booking/BookingLayout'
 import { BookingStepper } from '../../../components/booking/BookingStepper'
 import { eventTerms } from '../../../lib/demo-event-copy.js'
 import { trackEvent } from '../../../lib/analytics'
+import { readLastEventParent } from '../../../components/booking/DemoRegisterForm'
 
 // Stripe Checkout's success_url lands here (see
 // create-demo-payment-session.js buildCheckoutSessionParams), carrying the
@@ -26,8 +27,13 @@ function DemoConfirmedContent() {
   const terms = eventTerms(searchParams.get('eventType'))
   const amountLabel = Number.isFinite(amountCents) && amountCents > 0 ? `$${(amountCents / 100).toFixed(2)} ${currency}` : ''
 
+  // "Register another child": back to /events with the same session picked
+  // and the parent details (saved on this browser at Register) filled in.
+  const [anotherHref, setAnotherHref] = useState('/events#book')
   useEffect(() => {
     trackEvent('demo_card_payment_completed')
+    const last = readLastEventParent()
+    if (last?.offeringId) setAnotherHref(`/events?${new URLSearchParams({ offering: last.offeringId, another: '1' })}#register`)
   }, [])
 
   return (
@@ -83,6 +89,14 @@ function DemoConfirmedContent() {
       </div>
 
       <div className="flex flex-col gap-3 text-center sm:flex-row sm:justify-center">
+        <a
+          href={anotherHref}
+          onClick={() => trackEvent('register_another_child_click')}
+          className="rounded-xl px-5 py-3 text-sm font-black text-[#1d1300] shadow-sm transition-all hover:opacity-90"
+          style={{ backgroundColor: '#F2A100' }}
+        >
+          Register another child
+        </a>
         <Link href="/events" className="rounded-xl px-5 py-3 text-sm font-black text-white shadow-sm transition-all hover:opacity-90" style={{ backgroundColor: '#0c6162' }}>
           Back to Events
         </Link>
