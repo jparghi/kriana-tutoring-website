@@ -9,6 +9,7 @@ import { getDemoPricing } from "../../lib/robotics-packages.js"
 import { siteUrl, toJsonLd } from "../../lib/seo"
 import { Footer } from "../../components/footer"
 import { DemoLandingAnalytics } from "./DemoLandingAnalytics"
+import { StartAtTop } from "./StartAtTop"
 import { DemoWaitlistForm } from "./DemoWaitlistForm"
 import { SessionReserve } from "./SessionReserve"
 import { StickyReserveBar } from "./StickyReserveBar"
@@ -288,6 +289,7 @@ export default async function DemoPage({
     return (
       <>
         {schemas.length > 0 && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(schemas) }} />}
+        <StartAtTop />
         <DemoLandingAnalytics
           offeringId={campaignOfferingId}
           source={attribution.utm_source ?? attribution.ref ?? null}
@@ -340,6 +342,7 @@ export default async function DemoPage({
   return (
     <>
       {schemas.length > 0 && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(schemas) }} />}
+      <StartAtTop />
       <DemoLandingAnalytics
         offeringId={campaignOfferingId}
         source={attribution.utm_source ?? attribution.ref ?? null}

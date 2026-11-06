@@ -108,7 +108,9 @@ export function QuickBookProvider({
   const [selectedId, setSelectedId] = useState<string | null>(initial?.offeringId ?? null)
   const [offerings, setOfferings] = useState<Loaded>({})
   const [prefill, setPrefill] = useState<LastEventParent | null>(null)
-  const scrollPending = useRef(Boolean(initial))
+  // A preselected session (?session=) stays on the hero; only "Register
+  // another child" (another=1) jumps straight to the form.
+  const scrollPending = useRef(Boolean(initial) && Boolean(another))
   const formRef = useRef<HTMLElement>(null)
   const radiosRef = useRef<HTMLFieldSetElement>(null)
   const selected = rows.find(row => row.offeringId === selectedId) ?? null
