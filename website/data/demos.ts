@@ -29,6 +29,10 @@ export interface DemoSession {
   // Firestore programOfferings id for this session (one offering per session,
   // each with its own capacity and waitlist). Omit for past demos.
   offeringId?: string;
+  // Left off /events (picker, quick-book, schema) but still bookable through
+  // a direct register link. To block booking too, set publicRegistrationPaused
+  // on the offering.
+  hidden?: boolean;
   startIso: string; // with explicit offset, e.g. 2026-10-02T10:30:00-04:00
   endIso: string;
 }
@@ -280,6 +284,7 @@ export const demos: DemoEvent[] = [
         name: "Crazy Comical Machines",
         theme: "crazy-comical-machines",
         offeringId: "ye-pa-pd-2026-11-20-am",
+        hidden: true, // hidden 2026-11-15, still bookable by direct link
         startIso: "2026-11-20T09:30:00-05:00",
         endIso: "2026-11-20T12:30:00-05:00",
       },
@@ -296,6 +301,7 @@ export const demos: DemoEvent[] = [
         name: "Crazy Comical Machines",
         theme: "crazy-comical-machines",
         offeringId: "ye-pa-pd-2026-11-23-am",
+        hidden: true, // hidden 2026-11-15, still bookable by direct link
         startIso: "2026-11-23T09:30:00-05:00",
         endIso: "2026-11-23T12:30:00-05:00",
       },

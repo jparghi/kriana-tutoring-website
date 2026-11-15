@@ -111,3 +111,13 @@ test('eventDateLabel covers multi-date events and keeps single-date output', () 
   const single = { date: '2026-10-02', sessions: [{ startIso: '2026-10-02T10:30:00-04:00' }] }
   assert.equal(eventDateLabel(single, 'full'), 'Friday, October 2, 2026')
 })
+
+test('hidden sessions are left off the page', () => {
+  const live = Object.fromEntries(event.sessions.map(s => [s.offeringId, { status: 'open' }]))
+  const withHidden = { ...event, sessions: event.sessions.map(s => (s.offeringId.endsWith('-am') ? { ...s, hidden: true } : s)) }
+  const hub = resolveDemoHub([withHidden], live, Date.parse('2026-11-15T12:00:00-05:00'))
+  assert.deepEqual(hub.sessions.map(s => s.offeringId), ['ye-pa-pd-2026-11-20-pm'])
+  assert.deepEqual(hub.active.sessions.map(s => s.offeringId), ['ye-pa-pd-2026-11-20-pm'])
+  assert.equal(eventDateLabel(hub.active, 'short'), 'Nov 20')
+  assert.equal(hub.canRegister, true)
+})

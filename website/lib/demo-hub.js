@@ -52,7 +52,9 @@ export function resolveDemoHub(demos, live, now = Date.now()) {
 
   const upcoming = byDate.filter(demo => !isOver(demo) && !allClosed(demo))
   const past = byDate.filter(demo => isOver(demo) || allClosed(demo)).sort((a, b) => b.date.localeCompare(a.date))
-  const active = upcoming[0] ?? null
+  // Sessions marked `hidden` in config are left off the page entirely.
+  const next = upcoming[0] ?? null
+  const active = next && { ...next, sessions: next.sessions.filter(session => !session.hidden) }
   if (!active) return { active: null, status: 'WAITLIST', sessions: [], canRegister: false, past }
 
   // SOLD_OUT / WAITLIST pinned in the data file means "stop public booking".
