@@ -233,9 +233,9 @@ export const demos: DemoEvent[] = [
   },
   {
     // One workshop, three sessions (Nov 20 morning + afternoon, Nov 23
-    // morning), one Firestore offering each (own capacity, waitlist and
-    // early-bird deadline). Seeded by
-    // scripts/seed-pa-pd-days-nov-2026-offerings.mjs.
+    // morning), one Firestore offering each (own capacity and waitlist).
+    // Seeded by scripts/seed-pa-pd-days-nov-2026-offerings.mjs; flat $34, no HST
+    // (early bird removed 2026-11-13) by scripts/set-pa-pd-nov-2026-price-34.mjs.
     id: "2026-11-pa-pd-days-stittsville",
     title: "Young Engineers PA/PD Day Workshop",
     eventType: "PD_DAY_WORKSHOP",
@@ -249,9 +249,8 @@ export const demos: DemoEvent[] = [
     location: "Stittsville",
     address: "205 Metric Circle, Stittsville, ON K2V 0L3",
     status: "REGISTRATION_OPEN",
-    price: 39,
-    earlyBird: { price: 34, endsIso: "2026-11-11T00:00:00-05:00" },
-    plusTax: true,
+    price: 34,
+    plusTax: false, // flat $34, no HST (2026-11-13)
     ageRange: "6–12",
     themes: {
       "crazy-comical-machines": {
@@ -283,7 +282,6 @@ export const demos: DemoEvent[] = [
         offeringId: "ye-pa-pd-2026-11-20-am",
         startIso: "2026-11-20T09:30:00-05:00",
         endIso: "2026-11-20T12:30:00-05:00",
-        earlyBirdEndsIso: "2026-11-11T00:00:00-05:00",
       },
       {
         label: "Fri, Nov 20 · 1:30 PM–4:30 PM",
@@ -292,7 +290,6 @@ export const demos: DemoEvent[] = [
         offeringId: "ye-pa-pd-2026-11-20-pm",
         startIso: "2026-11-20T13:30:00-05:00",
         endIso: "2026-11-20T16:30:00-05:00",
-        earlyBirdEndsIso: "2026-11-11T00:00:00-05:00",
       },
       {
         label: "Mon, Nov 23 · 9:30 AM–12:30 PM",
@@ -301,7 +298,6 @@ export const demos: DemoEvent[] = [
         offeringId: "ye-pa-pd-2026-11-23-am",
         startIso: "2026-11-23T09:30:00-05:00",
         endIso: "2026-11-23T12:30:00-05:00",
-        earlyBirdEndsIso: "2026-11-14T00:00:00-05:00",
       },
     ],
     program: "Power Play",
