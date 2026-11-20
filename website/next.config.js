@@ -48,6 +48,18 @@ const nextConfig = {
         destination: "/birthday",
         permanent: true
       },
+      // Consent is generic (no event details): workshop links, including
+      // ones already emailed as /demo/consent?session=…, open /consent.
+      {
+        source: "/events/consent",
+        destination: "/consent",
+        permanent: false
+      },
+      {
+        source: "/demo/consent",
+        destination: "/consent",
+        permanent: false
+      },
       // /demo became /events. Flyers, QR codes, ads and emails (including the
       // portal's /demo/consent links) still use the old URLs; query strings
       // such as utm_* and ref are carried through.
