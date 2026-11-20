@@ -61,9 +61,25 @@ export const MEDIA_CONSENT_EVENTS = Object.freeze({
       { id: 'halloween', label: 'Halloween Workshop (10:30 AM–12:30 PM)' },
     ],
   },
+  'ye-pa-pd-stittsville-2026-11-20': {
+    id: 'ye-pa-pd-stittsville-2026-11-20',
+    title: 'Young Engineers PA/PD Day Workshop: Crazy Comical Machines',
+    dateLabel: 'November 20, 2026',
+    date: '2026-11-20',
+    venueName: 'Stittsville',
+    address: '205 Metric Circle, Stittsville, ON K2V 0L3',
+    operatedBy: 'Kriana Tutoring | Young Engineers Kanata',
+    franchisee: 'Young Engineers Kanata',
+    // Ids match the offering suffixes (ye-pa-pd-2026-11-20-am/-pm), so the
+    // family email's ?session= link pre-selects the right one.
+    sessions: [
+      { id: 'am', label: 'Morning Workshop (9:30 AM–12:30 PM)' },
+      { id: 'pm', label: 'Afternoon Workshop (1:30 PM–4:30 PM)' },
+    ],
+  },
 })
 
-export const CURRENT_MEDIA_CONSENT_EVENT_ID = 'ye-halloween-stittsville-2026-10-25'
+export const CURRENT_MEDIA_CONSENT_EVENT_ID = 'ye-pa-pd-stittsville-2026-11-20'
 
 export const GENERAL_MEDIA_CONSENT_ID = 'general'
 
